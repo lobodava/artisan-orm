@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>Database</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{13350295-4fbd-470d-9258-aac77094309a}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql130DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>Database</RootNamespace>
+    <AssemblyName>Database</AssemblyName>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="1. Tables" />
+    <Folder Include="4. Types" />
+    <Folder Include="5. Procedures" />
+    <Folder Include="3. Functions" />
+    <Folder Include="6. Post-Deployment" />
+    <Folder Include="Utility Scripts" />
+    <Folder Include="5. Procedures\Records" />
+    <Folder Include="5. Procedures\GrandRecords" />
+    <Folder Include="1. Tables\Records" />
+    <Folder Include="1. Tables\Users" />
+    <Folder Include="5. Procedures\Users" />
+    <Folder Include="3. Functions\Utility Functions" />
+    <Folder Include="2. Views" />
+    <Folder Include="4. Types\Common" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Artisan.publish.xml" />
+    <None Include="6. Post-Deployment\RecordTypes.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Utility Scripts\Generate Entity.sql" />
+    <None Include="Utility Scripts\Generate MERGE SQL.sql" />
+    <Build Include="4. Types\RecordTableType.sql" />
+    <Build Include="4. Types\GrandRecordTableType.sql" />
+    <Build Include="5. Procedures\Records\GetRecordById.sql" />
+    <Build Include="5. Procedures\Records\SaveRecords.sql" />
+    <Build Include="5. Procedures\Records\GetRecords.sql" />
+    <Build Include="5. Procedures\GrandRecords\GetGrandRecords.sql" />
+    <Build Include="4. Types\ChildRecordTableType.sql" />
+    <Build Include="5. Procedures\GrandRecords\GetGrandRecordById.sql" />
+    <Build Include="5. Procedures\GrandRecords\SaveGrandRecords.sql" />
+    <Build Include="1. Tables\Records\1. GrandRecords.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <PostDeploy Include="6. Post-Deployment\PostDeployment.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="1. Tables\Records\2. Records.sql" />
+    <Build Include="1. Tables\Records\3. ChildRecords.sql" />
+    <Build Include="1. Tables\Records\4. RecordTypes.sql" />
+    <Build Include="1. Tables\Users\1. Users.sql" />
+    <Build Include="1. Tables\Users\2. Roles.sql" />
+    <Build Include="1. Tables\Users\4. ExtraPermits.sql" />
+    <None Include="6. Post-Deployment\Roles.sql" />
+    <Build Include="1. Tables\Users\3. UserRoles.sql" />
+    <Build Include="4. Types\UserTableType.sql" />
+    <Build Include="5. Procedures\Users\GetUserById.sql" />
+    <Build Include="5. Procedures\Users\GetUsers.sql" />
+    <Build Include="3. Functions\GetUserRoleIds.sql" />
+    <Build Include="3. Functions\Utility Functions\GetErrorMessage.sql" />
+    <Build Include="3. Functions\Utility Functions\SplitTinyIntIds.sql" />
+    <Build Include="3. Functions\Utility Functions\SplitIntIds.sql" />
+    <Build Include="3. Functions\Utility Functions\SplitSmallIntIds.sql" />
+    <Build Include="5. Procedures\Users\SaveUsers.sql" />
+    <Build Include="2. Views\vwChildRecords.sql" />
+    <Build Include="2. Views\vwGrandRecords.sql" />
+    <Build Include="2. Views\vwRecords.sql" />
+    <Build Include="2. Views\vwRecordsWithTypes.sql" />
+    <Build Include="2. Views\vwUsers.sql" />
+    <Build Include="4. Types\Common\SmallIntIdTableType.sql" />
+    <Build Include="4. Types\Common\IntIdTableType.sql" />
+    <Build Include="4. Types\Common\TinyIntIdTableType.sql" />
+    <Build Include="4. Types\Common\DataMessageTableType.sql" />
+    <Build Include="5. Procedures\Users\SaveUser.sql" />
+    <Build Include="5. Procedures\Users\DeleteUser.sql" />
+  </ItemGroup>
+</Project>
