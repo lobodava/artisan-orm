@@ -14,7 +14,7 @@ To achieve these goals Artisan ORM uses:
 * *unique negative identities* as a flag of new entities;
 * a special approach to writing stored procedures for entity reading and saving.
 
-Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM)
+Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
 
 ## Simple sample
 
