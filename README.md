@@ -16,6 +16,8 @@ To achieve these goals Artisan ORM uses:
 
 Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
 
+More detailed documentation is available in Artisan ORM [wiki](https://github.com/lobodava/artisan-orm/wiki/Welcome-to-Artisan-ORM-wiki!).
+
 ## Simple sample
 
 Let's say we have database tables *Users* and *UserRoles* (TSQL):
@@ -264,3 +266,7 @@ public class UserRepository: Artisan.Orm.RepositoryBase
 ```
 
 More examples of the Artisan ORM use are available in the Test and Database projects.
+
+For further reading please visit Artisan ORM [wiki](https://github.com/lobodava/artisan-orm/wiki/Welcome-to-Artisan-ORM-wiki!)
+
+
