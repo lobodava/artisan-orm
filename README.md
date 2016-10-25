@@ -255,7 +255,7 @@ public class UserRepository: Artisan.Orm.RepositoryBase
 
 	public void Save(User user)
 	{
-		return ExecuteCommand(cmd =>
+		ExecuteCommand(cmd =>
 		{
 			cmd.UseProcedure("dbo.SaveUser");
 			cmd.AddTableParam("@User", user.ToDataTable());
