@@ -16,7 +16,7 @@ To achieve these goals Artisan ORM uses:
 
 Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
 
-More detailed information is available in Artisan ORM documentation [wiki](https://github.com/lobodava/artisan-orm/wiki/Welcome-to-Artisan-ORM-wiki!).
+More information is available in Artisan ORM documentation [wiki](https://github.com/lobodava/artisan-orm/wiki/Welcome-to-Artisan-ORM-wiki!).
 
 ## Simple sample
 
