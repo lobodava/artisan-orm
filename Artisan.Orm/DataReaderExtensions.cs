@@ -353,15 +353,20 @@ namespace Artisan.Orm
 			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetDecimal(ordinal);
 		}
 
-        public static decimal GetBigDecimal(this SqlDataReader reader, int ordinal)
-        {
-            return decimal.Parse(reader.GetSqlDecimal(ordinal).ToString(), CultureInfo.InvariantCulture);
-        }
+		public static decimal GetBigDecimal(this SqlDataReader reader, int ordinal)
+		{
+			return decimal.Parse(reader.GetSqlDecimal(ordinal).ToString(), CultureInfo.InvariantCulture);
+		}
 
-        public static decimal? GetBigDecimalNullable(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetBigDecimal(ordinal);
-        }
+		public static decimal? GetBigDecimalNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetBigDecimal(ordinal);
+		}
+
+		public static float? GetFloatNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (float?)null : reader.GetFloat(ordinal);
+		}
 
 		public static double? GetDoubleNullable(this SqlDataReader reader, int ordinal)
 		{
@@ -373,17 +378,17 @@ namespace Artisan.Orm
 			return reader.IsDBNull(ordinal) ? (DateTime?)null : reader.GetDateTime(ordinal);
 		}
 
-        public static DateTime GetUtcDateTime(this SqlDataReader reader, int ordinal)
-        {
-            return DateTime.SpecifyKind(reader.GetDateTime(ordinal), DateTimeKind.Utc);
-        }
+		public static DateTime GetUtcDateTime(this SqlDataReader reader, int ordinal)
+		{
+			return DateTime.SpecifyKind(reader.GetDateTime(ordinal), DateTimeKind.Utc);
+		}
 
 		public static TimeSpan? GetTimeSpanNullable(this SqlDataReader reader, int ordinal)
 		{
 			return reader.IsDBNull(ordinal) ? (TimeSpan?)null : reader.GetTimeSpan(ordinal);
 		}
 		
-		public static string GetRowVersion(this SqlDataReader reader, int ordinal)
+		public static string GetRowVersionToBase64String(this SqlDataReader reader, int ordinal)
 		{
 			if (reader.IsDBNull(ordinal))
 				return null;

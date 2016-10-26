@@ -71,6 +71,7 @@
     <Folder Include="3. Functions\Utility Functions" />
     <Folder Include="2. Views" />
     <Folder Include="4. Types\Common" />
+    <Folder Include="5. Procedures\SqlParameters" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Artisan.publish.xml" />
@@ -81,7 +82,6 @@
     <None Include="Utility Scripts\Generate MERGE SQL.sql" />
     <Build Include="4. Types\RecordTableType.sql" />
     <Build Include="4. Types\GrandRecordTableType.sql" />
-    <Build Include="5. Procedures\Records\GetRecordById.sql" />
     <Build Include="5. Procedures\Records\SaveRecords.sql" />
     <Build Include="5. Procedures\Records\GetRecords.sql" />
     <Build Include="5. Procedures\GrandRecords\GetGrandRecords.sql" />
@@ -122,5 +122,8 @@
     <Build Include="4. Types\Common\DataMessageTableType.sql" />
     <Build Include="5. Procedures\Users\SaveUser.sql" />
     <Build Include="5. Procedures\Users\DeleteUser.sql" />
+    <Build Include="5. Procedures\SqlParameters\GetFractionalNumberParams.sql" />
+    <Build Include="5. Procedures\Records\GetRecordById.sql" />
+    <Build Include="5. Procedures\SqlParameters\GetWholeNumberParams.sql" />
   </ItemGroup>
 </Project>

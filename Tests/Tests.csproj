@@ -65,6 +65,7 @@
     <Compile Include="DAL\Users\Models\Role.cs" />
     <Compile Include="DAL\Users\Models\User.cs" />
     <Compile Include="DAL\Users\Repository.cs" />
+    <Compile Include="SqlParemeterTest.cs" />
     <Compile Include="GrandRecordRepositoryTest.cs" />
     <Compile Include="EspecialRepositoryTest.cs" />
     <Compile Include="UserRepositoryTest.cs" />

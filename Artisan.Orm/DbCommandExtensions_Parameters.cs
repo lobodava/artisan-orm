@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 
 namespace Artisan.Orm
 {
@@ -19,10 +20,312 @@ namespace Artisan.Orm
 			cmd.CommandText = sql;
 		}
 
+		// http://blogs.msmvps.com/jcoehoorn/blog/2014/05/12/can-we-stop-using-addwithvalue-already/
+
+
+		public static void AddBitParam(this SqlCommand cmd, string parameterName, bool value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Bit, 
+				Value = value ? 1 : 0
+			});
+		}
+
+		public static void AddBitParam(this SqlCommand cmd, string parameterName, bool? value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Bit, 
+				Value = value == null ? DBNull.Value : (object)(value == true ? 1 : 0)
+			});
+		}
+
+
+		public static void AddTinyIntParam(this SqlCommand cmd, string parameterName, byte value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.TinyInt, 
+				Value = value
+			});
+		}
+
+		public static void AddTinyIntParam(this SqlCommand cmd, string parameterName, byte? value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.TinyInt, 
+				Value = value == null ? DBNull.Value : (object)value.Value
+			});
+		}
+
+
+		public static void AddSmallIntParam(this SqlCommand cmd, string parameterName, short value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.SmallInt, 
+				Value = value
+			});
+		}
+
+		public static void AddSmallIntParam(this SqlCommand cmd, string parameterName,  short? value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.SmallInt, 
+				Value = value == null ? DBNull.Value : (object)value.Value
+			});
+		}
+
+
+		public static void AddIntParam(this SqlCommand cmd, string parameterName, int value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Int, 
+				Value = value
+			});
+		}
+
+		public static void AddIntParam(this SqlCommand cmd, string parameterName, int? value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Int, 
+				Value = value == null ? DBNull.Value : (object)value.Value
+			});
+		}
+
+
+		public static void AddBigIntParam(this SqlCommand cmd, string parameterName, long value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.BigInt, 
+				Value = value
+			});
+		}
+
+		public static void AddBigIntParam(this SqlCommand cmd, string parameterName, long? value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.BigInt, 
+				Value = value == null ? DBNull.Value : (object)value.Value
+			});
+		}
+
+
+		public static void AddDecimalParam(this SqlCommand cmd, string parameterName, byte precision,  byte scale,  decimal value, bool truncateFraction = false)
+		{
+			var valueString = Math.Abs(value).ToString(CultureInfo.InvariantCulture);
+			var split = valueString.Split('.');
+
+			if (split.Length > 1 && scale < split[1].Length && !truncateFraction)
+				throw new OverflowException($"Fractional part of SqlParameter {parameterName} = {value} is longer than acceptable for SQL Server decimal({precision},{scale}) type. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
+
+			if (precision - scale < split[0].Length)
+			{
+				var integerPart		=  new string('9', precision - scale);
+				var fractionalPart	=  new string('9', scale);
+				var minValue = $"-{integerPart}.{fractionalPart}";
+				var maxValue = $"{integerPart}.{fractionalPart}";
+
+				throw new OverflowException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server decimal({precision},{scale}) type range [{minValue}, {maxValue}]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
+			}
+
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Decimal,
+				Scale = scale,
+ 				Precision = precision,
+				Value = value
+			});
+		}
+
+		public static void AddDecimalParam(this SqlCommand cmd, string parameterName, byte precision,  byte scale,  decimal? value, bool truncateFraction = false )
+		{
+			if (value != null)
+				cmd.AddDecimalParam(parameterName, precision, scale, value.Value, truncateFraction);
+			else
+				cmd.Parameters.Add(new SqlParameter
+				{
+					ParameterName = parameterName,
+					Direction = ParameterDirection.Input,
+					SqlDbType = SqlDbType.Decimal,
+					Scale = scale,
+					Precision = precision,
+					Value = DBNull.Value
+				});
+		}
+
+
+		public static void AddSmallMoneyParam(this SqlCommand cmd, string parameterName, decimal value )
+		{
+			if (value < -214748.3648m || 214748.3647m < value) 
+				throw new OverflowException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server smallmoney type range [-214748.3648, 214748.3647]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
+
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.SmallMoney,
+				Value = value
+			});
+		}
+
+		public static void AddSmallMoneyParam(this SqlCommand cmd, string parameterName, decimal? value )
+		{
+			if (value != null)
+				cmd.AddSmallMoneyParam(parameterName, value.Value);
+			else
+				cmd.Parameters.Add(new SqlParameter
+				{
+					ParameterName = parameterName,
+					Direction = ParameterDirection.Input,
+					SqlDbType = SqlDbType.SmallMoney,
+					Value = DBNull.Value
+				});
+		}
+
+
+		public static void AddMoneyParam(this SqlCommand cmd, string parameterName, decimal value )
+		{
+			if (value < -922337203685477.5808m || 922337203685477.5807m < value) 
+				throw new OverflowException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server money type range [-922337203685477.5808, 922337203685477.5807]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
+
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Money,
+				Value = value
+			});
+		}
+
+		public static void AddMoneyParam(this SqlCommand cmd, string parameterName, decimal? value )
+		{
+			if (value != null)
+				cmd.AddMoneyParam(parameterName, value.Value);
+			else
+				cmd.Parameters.Add( new SqlParameter
+				{ 
+					ParameterName = parameterName,
+					Direction = ParameterDirection.Input,
+					SqlDbType = SqlDbType.Money,
+					Value = DBNull.Value
+				});
+		}
+
+
+		public static void AddRealParam(this SqlCommand cmd, string parameterName, float value )
+		{
+			if (value < -3.40E+38f || 3.40E+38f < value) 
+				throw new OverflowException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server real type range [3.40E+38, 3.40E+38]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
+			
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Real,
+				Value = value
+			});
+		}
+
+		public static void AddRealParam(this SqlCommand cmd, string parameterName, float? value )
+		{
+			if (value != null)
+				cmd.AddRealParam(parameterName, value.Value);
+			else
+				cmd.Parameters.Add( new SqlParameter
+				{ 
+					ParameterName = parameterName,
+					Direction = ParameterDirection.Input,
+					SqlDbType = SqlDbType.Real,
+					Value = DBNull.Value
+				});
+		}
+
+
+		public static void AddFloatParam(this SqlCommand cmd, string parameterName, double value )
+		{
+			if (value < -1.79E+308d || 1.79E+308d < value) 
+				throw new OverflowException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server float type range [-1.79E+308, 1.79E+308]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
+	
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Float,
+				Value = value
+			});
+		}
+
+		public static void AddFloatParam(this SqlCommand cmd, string parameterName, double? value )
+		{
+			if (value != null)
+				cmd.AddFloatParam(parameterName, value.Value);
+			else
+				cmd.Parameters.Add( new SqlParameter
+				{ 
+					ParameterName = parameterName,
+					Direction = ParameterDirection.Input,
+					SqlDbType = SqlDbType.Float,
+					Value = DBNull.Value
+				});
+		}
+
+
+		public static void AddCharParam(this SqlCommand cmd, string parameterName, string value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Char,
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+
+		public static void AddNCharParam(this SqlCommand cmd, string parameterName, string value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.NChar,
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+
 
         public static void AddVarcharParam(this SqlCommand cmd, string parameterName, int size, string value)
         {
-            NormalizateStringParam(ref value, size);
+            TruncateStringParam(ref value, size);
 
 			cmd.Parameters.Add(new SqlParameter
             {
@@ -36,7 +339,7 @@ namespace Artisan.Orm
 		
 		public static void AddNVarcharParam(this SqlCommand cmd, string parameterName, int size, string value )
 		{
-			NormalizateStringParam(ref value, size);
+			TruncateStringParam(ref value, size);
 			
 			cmd.Parameters.Add( new SqlParameter
 			{ 
@@ -47,8 +350,8 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value,
 			});
 		}
-
-		private static void NormalizateStringParam(ref string value,  int size)
+		
+		private static void TruncateStringParam(ref string value,  int size)
 		{
 			if (value == null) return;
 
@@ -57,6 +360,7 @@ namespace Artisan.Orm
 			else if (value.Length == 0)
 				value = null;
 		}
+
 
         public static void AddVarcharMaxParam(this SqlCommand cmd, string parameterName, string value)
         {
@@ -82,154 +386,66 @@ namespace Artisan.Orm
 			});
 		}
 
-		public static void AddRowVersionFromBase64StringParam(this SqlCommand cmd, string parameterName, string value )
+
+		public static void AddBinaryParam(this SqlCommand cmd, string parameterName, int size, byte[] value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Binary, 
+				Size = size, 
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+
+		public static void AddVarbinaryParam(this SqlCommand cmd, string parameterName, int size, byte[] value )
 		{
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
 				Direction = ParameterDirection.Input,
 				SqlDbType = SqlDbType.VarBinary, 
-				Size = -1,
-				Value = (value == null) ? DBNull.Value : (object)Convert.FromBase64String(value)
-			});
-		}
-
-		public static void AddBigIntParam(this SqlCommand cmd, string parameterName, long value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.BigInt, 
-				Value = value
-			});
-		}
-
-		public static void AddIntParam(this SqlCommand cmd, string parameterName, int value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.Int, 
-				Value = value
-			});
-		}
-
-		public static void AddIntParam(this SqlCommand cmd, string parameterName, int? value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.Int, 
-				Value = value == null ? DBNull.Value : (object)value.Value
-			});
-		}
-
-		public static void AddSmallIntParam(this SqlCommand cmd, string parameterName, int value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.SmallInt, 
-				Value = value
-			});
-		}
-
-		public static void AddSmallIntParam(this SqlCommand cmd, string parameterName,  int? value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.SmallInt, 
-				Value = value == null ? DBNull.Value : (object)value.Value
-			});
-		}
-
-
-		public static void AddTinyIntParam(this SqlCommand cmd, string parameterName, int value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.TinyInt, 
-				Value = value
-			});
-		}
-
-		public static void AddTinyIntParam(this SqlCommand cmd, string parameterName, int? value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.TinyInt, 
-				Value = value == null ? DBNull.Value : (object)value.Value
-			});
-		}
-
-		public static void AddDecimalParam(this SqlCommand cmd, string parameterName, byte precision,  byte scale,  decimal value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.Decimal,
-				Scale = scale,
- 				Precision = precision,
-				Value = value
-			});
-		}
-
-		public static void AddDecimalParam(this SqlCommand cmd, string parameterName, byte precision, byte scale, decimal? value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.Decimal,
-				Scale = scale,
- 				Precision = precision,
-				Value = value == null ? DBNull.Value : (object)value.Value
+				Size = size, 
+				Value = (object)value ?? DBNull.Value
 			});
 		}
 		
-		public static void AddVarbinaryParam(this SqlCommand cmd, string parameterName, int size, byte[] value  )
+		public static void AddVarbinaryMaxParam(this SqlCommand cmd, string parameterName, byte[] value )
 		{
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
 				Direction = ParameterDirection.Input,
 				SqlDbType = SqlDbType.VarBinary, 
+				Size = -1, 
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+
+
+		public static void AddSmallDateTimeParam(this SqlCommand cmd, string parameterName, DateTime value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.SmallDateTime, 
 				Value = value
 			});
 		}
-
-		public static void AddBitParam(this SqlCommand cmd, string parameterName, bool value )
+		
+		public static void AddSmallDateTimeParam(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
 				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.Bit, 
-				Value = value ? 1 : 0
+				SqlDbType = SqlDbType.SmallDateTime, 
+				Value = (object)value ?? DBNull.Value
 			});
 		}
-
-		public static void AddBitParam(this SqlCommand cmd, string parameterName, bool? value )
-		{
-			cmd.Parameters.Add( new SqlParameter
-			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.Bit, 
-				Value = value == null ? DBNull.Value : (object)(value == true ? 1 : 0)
-			});
-		}
+		
 
 		public static void AddDateTimeParam(this SqlCommand cmd, string parameterName, DateTime value )
 		{
@@ -253,6 +469,18 @@ namespace Artisan.Orm
 			});
 		}
 		
+
+		public static void AddDateTime2Param(this SqlCommand cmd, string parameterName, DateTime value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.DateTime2, 
+				Value = value
+			});
+		}
+		
 		public static void AddDateTime2Param(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -261,6 +489,18 @@ namespace Artisan.Orm
 				Direction = ParameterDirection.Input,
 				SqlDbType = SqlDbType.DateTime2, 
 				Value = (object)value ?? DBNull.Value
+			});
+		}
+
+
+		public static void AddDateParam(this SqlCommand cmd, string parameterName, DateTime value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Date, 
+				Value = value
 			});
 		}
 
@@ -275,6 +515,69 @@ namespace Artisan.Orm
 			});
 		}
 		
+
+		public static void AddTimeParam(this SqlCommand cmd, string parameterName, TimeSpan value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Time, 
+				Value = value
+			});
+		}
+
+		public static void AddTimeParam(this SqlCommand cmd, string parameterName, TimeSpan? value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Time, 
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+
+
+		public static void AddDateTimeOffsetParam(this SqlCommand cmd, string parameterName, DateTimeOffset value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.DateTimeOffset, 
+				Value = value
+			});
+		}
+
+		public static void AddDateTimeOffsetParam(this SqlCommand cmd, string parameterName, DateTimeOffset? value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.DateTimeOffset, 
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+
+
+
+
+
+
+
+		public static void AddGuidParam(this SqlCommand cmd, string parameterName, Guid value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.UniqueIdentifier, 
+				Value = value
+			});
+		}
+
 		public static void AddGuidParam(this SqlCommand cmd, string parameterName, Guid? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -285,6 +588,59 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
+
+
+		public static void AddRowVersionParam(this SqlCommand cmd, string parameterName, byte[] value )
+		{
+			cmd.AddTimestampParam(parameterName, value);
+		}
+
+		public static void AddTimestampParam(this SqlCommand cmd, string parameterName, byte[] value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Timestamp, 
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+
+		public static void AddRowVersionFromBase64StringParam(this SqlCommand cmd, string parameterName, string value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.VarBinary, 
+				Size = -1,
+				Value = (value == null) ? DBNull.Value : (object)Convert.FromBase64String(value)
+			});
+		}
+
+
+		public static void AddSqlVariantParam(this SqlCommand cmd, string parameterName, object value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Variant,
+				Value = value ?? DBNull.Value
+			});
+		}
+		
+		public static void AddXmlParam(this SqlCommand cmd, string parameterName, string value )
+		{
+			cmd.Parameters.Add( new SqlParameter
+			{ 
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Xml,
+				Value = (object)value ?? DBNull.Value
+			});
+		}
+		
 
 		public static void AddTableParam(this SqlCommand cmd, string parameterName, DataTable dataTable)
 		{
@@ -299,6 +655,7 @@ namespace Artisan.Orm
 				Value = dataTable					
 			});
 		}
+
 
 		public static void AddVarcharOutputParam(this SqlCommand cmd, string parameterName, int size )
 		{
@@ -321,6 +678,7 @@ namespace Artisan.Orm
 				Size = size,					
 			});
 		}
+
 
 		public static SqlParameter ReturnValueParam(this SqlCommand cmd)
 		{
