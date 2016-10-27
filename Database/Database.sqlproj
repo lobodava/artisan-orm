@@ -125,5 +125,8 @@
     <Build Include="5. Procedures\SqlParameters\GetFractionalNumberParams.sql" />
     <Build Include="5. Procedures\Records\GetRecordById.sql" />
     <Build Include="5. Procedures\SqlParameters\GetWholeNumberParams.sql" />
+    <Build Include="5. Procedures\SqlParameters\GetStringParams.sql" />
+    <Build Include="5. Procedures\SqlParameters\GetDateTimeParams.sql" />
+    <Build Include="5. Procedures\SqlParameters\GetGuidAndRowVersionParams.sql" />
   </ItemGroup>
 </Project>

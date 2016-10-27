@@ -33,7 +33,7 @@ namespace Artisan.Orm
 			return obj;
 		}
 
-		public static void ReadBy(this SqlDataReader dr, Action<SqlDataReader> action, bool getNextResult = true) 
+		public static void Read(this SqlDataReader dr, Action<SqlDataReader> action, bool getNextResult = true) 
 		{
 			if (dr != null && dr.Read()) 
 				action(dr);
@@ -307,6 +307,21 @@ namespace Artisan.Orm
 		{
 			return reader.IsDBNull(ordinal) ? null : (Guid?)reader.GetGuid(ordinal);
 		}
+		
+		public static Char GetCharacter(this SqlDataReader reader, int ordinal)
+		{
+			var buffer = new char[1];
+			reader.GetChars(ordinal, 0, buffer, 0, 1);
+			return buffer[0];
+		}
+
+		public static Char? GetCharacterNullable(this SqlDataReader reader, int ordinal)
+		{	
+			if (reader.IsDBNull(ordinal))
+				return null;
+
+			return reader.GetCharacter(ordinal);
+		}
 
 		public static string GetStringNullable(this SqlDataReader reader, int ordinal)
 		{
@@ -378,6 +393,11 @@ namespace Artisan.Orm
 			return reader.IsDBNull(ordinal) ? (DateTime?)null : reader.GetDateTime(ordinal);
 		}
 
+		public static DateTimeOffset? GetDateTimeOffsetNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (DateTimeOffset?)null : reader.GetDateTimeOffset(ordinal);
+		}
+
 		public static DateTime GetUtcDateTime(this SqlDataReader reader, int ordinal)
 		{
 			return DateTime.SpecifyKind(reader.GetDateTime(ordinal), DateTimeKind.Utc);
@@ -388,14 +408,38 @@ namespace Artisan.Orm
 			return reader.IsDBNull(ordinal) ? (TimeSpan?)null : reader.GetTimeSpan(ordinal);
 		}
 		
-		public static string GetRowVersionToBase64String(this SqlDataReader reader, int ordinal)
+		public static byte[] GetBytesFromRowVersion(this SqlDataReader reader, int ordinal)
+		{
+			if (reader.IsDBNull(ordinal))
+				return null;
+			
+			return (byte[])reader.GetValue(ordinal);
+		}
+
+
+		public static long GetInt64FromRowVersion(this SqlDataReader reader, int ordinal)
+		{
+			return BitConverter.ToInt64((byte[])reader.GetValue(ordinal), 0);
+		}
+
+
+		public static long? GetInt64NullableFromRowVersion(this SqlDataReader reader, int ordinal)
+		{
+			if (reader.IsDBNull(ordinal))
+				return null;
+			
+			return BitConverter.ToInt64((byte[])reader.GetValue(ordinal), 0);
+		}
+
+
+		public static string GetBase64StringFromRowVersion(this SqlDataReader reader, int ordinal)
 		{
 			if (reader.IsDBNull(ordinal))
 				return null;
 			
 			return (Convert.ToBase64String((byte[])reader.GetValue(ordinal)));
 		}
-
+		
 
 		public static byte[] GetBytesNullable(this SqlDataReader reader, int ordinal)
 		{

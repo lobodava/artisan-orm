@@ -8,7 +8,7 @@
 			return value.Trim();
 		}
 
-		public static string CutTo(this string value, int length) {
+		public static string TruncateTo(this string value, int length) {
 			if (value == null) return null;
 			if (value.Length <= length) return value;
 			return value.Substring(0, length);

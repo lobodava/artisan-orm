@@ -143,10 +143,15 @@ namespace Artisan.Orm
 		}
 
 
-		//public async Task RunCommandAsync(Action<SqlCommand> funcAsync)
-		//{
-		//	await Task.Run(() => funcAsync(CreateCommand())).ConfigureAwait(false);
-		//}
+		public void RunCommand(Action<SqlCommand> funcAsync)
+		{
+			funcAsync(CreateCommand());
+		}
+		
+		public async Task RunCommandAsync(Action<SqlCommand> funcAsync)
+		{
+			await Task.Run(() => funcAsync(CreateCommand())).ConfigureAwait(false);
+		}
 
 
 		public static DataStatus? GetDataStatus (string dataStatusCode) {
