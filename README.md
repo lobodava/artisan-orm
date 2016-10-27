@@ -39,7 +39,7 @@ create table dbo.UserRoles
 	primary key clustered (UserId, RoleId)
 );
 
-// The Roles table is just a dictionary or readonly table and users don't edit it.
+// The Roles table is just a dictionary or lookup table and users don't edit it.
 ```
 
 And we have a POCO class for *User* entity (C#):
@@ -166,7 +166,7 @@ begin
 	
 	declare @UserIds table ( InsertedId int primary key, ParamId int unique);
 
-	begin -- save Users 
+	begin -- save User
 
 		merge into dbo.Users as target
 			using 
