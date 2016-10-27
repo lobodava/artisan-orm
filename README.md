@@ -1,6 +1,6 @@
 # Artisan ORM &#8212; ADO.NET Micro-ORM to SQL Server
 
-Artisan ОRМ was created to answer the following requirements:
+Artisan ОRМ was created to meet the following requirements:
 * interactions with database should mostly be made through *Stored Procedures*;
 * all calls to database should be encapsulated into *Repository Methods*;
 * a Repository Method should be able to read or save a *complex object graph* with one Stored Procedure;
