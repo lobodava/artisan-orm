@@ -265,7 +265,7 @@ public class UserRepository: Artisan.Orm.RepositoryBase
 }
 ```
 
-More examples of the Artisan ORM use are available in the Test and Database projects.
+More examples of the Artisan ORM usage are available in the [Tests](https://github.com/lobodava/artisan-orm/tree/master/Tests) and [Database](https://github.com/lobodava/artisan-orm/tree/master/Database) projects.
 
 For further reading please visit Artisan ORM documentation [Wiki](https://github.com/lobodava/artisan-orm/wiki).
 
