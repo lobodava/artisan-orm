@@ -4,7 +4,7 @@ using Artisan.Orm;
 
 namespace Tests.DAL.GrandRecords.Models
 {
-	public class RecordType : IEntity
+	public class RecordType
 	{
 		public Byte Id { get; set; }
 

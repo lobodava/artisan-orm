@@ -6,7 +6,7 @@ using Artisan.Orm;
 
 namespace Tests.DAL.GrandRecords.Models
 {
-	public class GrandRecord : IEntity
+	public class GrandRecord
 	{
 		public Int32 Id { get; set; }
 

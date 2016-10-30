@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Reflection;
 
 namespace Artisan.Orm
 {
@@ -701,20 +704,92 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
 
-		public static void AddTableParam(this SqlCommand cmd, string parameterName, DataTable dataTable)
+		public static void AddTableParamFrom<T>(this SqlCommand cmd, string parameterName, T obj)
 		{
-			if (dataTable == null) return;
+			var param = CreateInputParam(parameterName, SqlDbType.Structured);
 
-			cmd.Parameters.Add( new SqlParameter
+			if (obj == null)
+				param.Value = DBNull.Value;
+			else
 			{ 
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = SqlDbType.Structured,
-				TypeName = dataTable.TableName, 
-				Value = dataTable					
-			});
+				var dataTable = DataTableHelpers.GetDataTableFrom(obj);
+
+				param.TypeName = dataTable.TableName;
+				param.Value = dataTable;
+			}
+
+			cmd.Parameters.Add(param);
+		}
+
+		public static void AddTableParamFrom<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list)
+		{
+			var param = CreateInputParam(parameterName, SqlDbType.Structured);
+
+			if (list == null)
+				param.Value = DBNull.Value;
+			else
+			{ 
+				DataTable dataTable;
+
+				if (typeof(T).IsValueType)
+					dataTable = DataTableHelpers.GetValueTypeDataTable(list);
+				else
+					dataTable = DataTableHelpers.GetDataTableFromList(list);
+
+				param.TypeName = dataTable.TableName;
+				param.Value = dataTable;
+			}
+
+			cmd.Parameters.Add(param);
+		}
+
+
+		public static void AddTableParam(this SqlCommand cmd, string parameterName, object obj)
+		{
+			var param = CreateInputParam(parameterName, SqlDbType.Structured);
+			
+			if (obj == null)
+			{
+				param.Value = DBNull.Value;
+			}
+			else
+			{
+				DataTable dataTable;
+				var objType = obj.GetType();
+			
+				if (obj is IEnumerable)
+				{
+					if (objType.IsGenericType)
+					{
+						var itemType = obj.GetType().GetGenericArguments()[0];
+
+						if (!itemType.IsValueType)
+							dataTable = DataTableHelpers.GetDataTableFromList(obj, itemType);
+						else
+							dataTable = DataTableHelpers.GetValueTypeDataTable(obj);
+					}
+					else
+						dataTable = DataTableHelpers.GetValueTypeDataTable(obj);;
+				}
+				else
+				{
+					dataTable =  obj as DataTable;
+
+					if (dataTable == null)
+					{
+						dataTable =  DataTableHelpers.GetDataTableFrom(obj, objType);
+					}
+				}
+
+				if (dataTable == null)
+					throw new NullReferenceException($"No mapping function found to create DataTable and DataRow for type {objType.FullName}");
+
+				param.TypeName = dataTable.TableName;
+				param.Value = dataTable;
+			}
+
+			cmd.Parameters.Add(param);
 		}
 
 
@@ -754,6 +829,19 @@ namespace Artisan.Orm
 
 			return returnValueParam;
 		}
+
+
+		private static SqlParameter CreateInputParam(string parameterName, SqlDbType parameterType)
+		{
+			return new SqlParameter
+			{
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = parameterType,
+			};
+		}
+		
+
 		
 	}
 }

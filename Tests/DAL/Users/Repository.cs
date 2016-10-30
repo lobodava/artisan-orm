@@ -39,6 +39,18 @@ namespace Tests.DAL.Users
 		}
 
 
+		public User GetUserByIdWithSql(int id)
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseSql("select * from vwUsers where Id = @Id");
+				cmd.AddIntParam("@Id", id);
+
+				return cmd.ReadTo<User>();
+			});
+		}
+
+
 		#endregion 
 
 
@@ -106,9 +118,9 @@ namespace Tests.DAL.Users
 			{
 				cmd.UseProcedure("dbo.SaveUser");
 
-				cmd.AddTableParam("@User", user.ToDataTable());
+				cmd.AddTableParam("@User", user);
 
-				cmd.AddTableParam("@RoleIds", user.RoleIds.ToTinyIntIdDataTable());
+				cmd.AddTableParam("@RoleIds", user.RoleIds);
 
 				return cmd.GetByReader(ReadSavedUser);
 
@@ -130,9 +142,9 @@ namespace Tests.DAL.Users
 			{
 				cmd.UseProcedure("dbo.SaveUser");
 
-				cmd.AddTableParam("@User", user.ToDataTable());
+				cmd.AddTableParam("@User", user);
 
-				cmd.AddTableParam("@RoleIds", user.RoleIds.ToTinyIntIdDataTable());
+				cmd.AddTableParam("@RoleIds", user.RoleIds);
 
 				return cmd.GetByReaderAsync(ReadSavedUser);
 			});
@@ -159,7 +171,7 @@ namespace Tests.DAL.Users
 			{
 				cmd.UseProcedure("dbo.SaveUsers");
 
-				cmd.AddTableParam("@Users", users.ToDataTable<User>());
+				cmd.AddTableParam("@Users", users);
 				
 				return cmd.GetByReader(ReadSavedUsers);
 
@@ -181,7 +193,7 @@ namespace Tests.DAL.Users
 			{
 				cmd.UseProcedure("dbo.SaveUsers");
 
-				cmd.AddTableParam("@Users", users.ToDataTable<User>());
+				cmd.AddTableParam("@Users", users);
 
 				return cmd.GetByReaderAsync(ReadSavedUsers);
 			});

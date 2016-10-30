@@ -102,7 +102,7 @@ namespace Artisan.Orm
 			if (CreateEntityFuncDictionary.TryGetValue(typeof(T), out obj))
 				return (Func<SqlDataReader, T>)obj;
 
-			return null;
+			throw new NullReferenceException($"CreateEntity Func not found. Check if MapperFor {typeof(T).FullName} exists and CreateEntity exist.");
 		}
 
 		public static Func<SqlDataReader, object[]> GetCreateEntityRowFunc<T>()
@@ -112,7 +112,7 @@ namespace Artisan.Orm
 			if (CreateEntityRowFuncDictionary.TryGetValue(typeof(T), out obj))
 				return (Func<SqlDataReader, object[]>)obj;
 
-			return null;
+			throw new NullReferenceException($"CreateRow Func not found. Check if MapperFor {typeof(T).FullName} and CreateRow exist.");
 		}
 
 
@@ -151,6 +151,27 @@ namespace Artisan.Orm
 
 			return false;
 		}
+
+
+		public static bool GetCreateDataFuncs(Type type, out Func<DataTable> createDataTableFunc, out Delegate createDataRowFunc)
+		{
+			Tuple<Func<DataTable>, Delegate> obj;
+
+			if (CreateDataTableFuncsDictionary.TryGetValue(type, out obj))
+			{
+				createDataTableFunc = obj.Item1;
+				createDataRowFunc = obj.Item2;
+
+				return true;
+			}
+
+			createDataTableFunc = null;
+			createDataRowFunc = null;
+
+			return false;
+		}
+
+
 
 
 		private static IEnumerable<Type> GetTypesWithMapperForAttribute() {

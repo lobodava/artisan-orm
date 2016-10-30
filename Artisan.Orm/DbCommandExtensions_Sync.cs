@@ -66,14 +66,20 @@ namespace Artisan.Orm
 			return (int)returnValueParam.Value;
 		}
 
+		public static T ReadAs<T>(this SqlCommand cmd)
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(String))
+				return cmd.ReadTo(DataReaderExtensions.GetValue<T>);
+
+			return cmd.ReadTo(DataReaderExtensions.CreateEntity<T>);
+		}
+		
 		public static T ReadTo<T>(this SqlCommand cmd)
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadTo(DataReaderExtensions.GetValue<T>);
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return cmd.ReadTo(createEntityFunc ?? DataReaderExtensions.CreateEntity<T>);
+			return cmd.ReadTo(MappingManager.GetCreateEntityFunc<T>());
 		}
 
 		public static T ReadTo<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
@@ -85,15 +91,22 @@ namespace Artisan.Orm
 				return reader.Read() ? createFunc(reader) : default(T);
 			}
 		}
+		
+
+		public static IList<T> ReadAsList<T>(this SqlCommand cmd) 
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(String))
+				return cmd.ReadToList(DataReaderExtensions.GetValue<T>);
+
+			return cmd.ReadToList(DataReaderExtensions.CreateEntity<T>);
+		}
 
 		public static IList<T> ReadToList<T>(this SqlCommand cmd) 
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToList(DataReaderExtensions.GetValue<T>);
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return cmd.ReadToList(createEntityFunc ?? DataReaderExtensions.CreateEntity<T>);
+			return cmd.ReadToList(MappingManager.GetCreateEntityFunc<T>());
 		}
 		
 		public static IList<T> ReadToList<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list = null) 
@@ -120,14 +133,21 @@ namespace Artisan.Orm
 			return list;
 		}
 
+
+		public static T[] ReadAsArray<T>(this SqlCommand cmd)
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(String))
+				return cmd.ReadToArray(DataReaderExtensions.GetValue<T>);
+
+			return cmd.ReadToArray(DataReaderExtensions.CreateEntity<T>);
+		}
+
 		public static T[] ReadToArray<T>(this SqlCommand cmd)
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToArray(DataReaderExtensions.GetValue<T>);
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return cmd.ReadToArray(createEntityFunc ?? DataReaderExtensions.CreateEntity<T>);
+			return cmd.ReadToArray(MappingManager.GetCreateEntityFunc<T>());
 		}
 
 		public static T[] ReadToArray<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
@@ -153,23 +173,33 @@ namespace Artisan.Orm
 			return list.ToArray();
 		}
 		
-		public static object[] ReadToRow(this SqlCommand cmd)
+		public static object[] ReadAsRow(this SqlCommand cmd)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
 
             using (var reader = cmd.ExecuteReader(readerFlags))
 			{
-				return reader.ReadToRow();
+				return reader.ReadAsRow();
 			}
 		}
 
-		public static Rows ReadToRows(this SqlCommand cmd)
+		public static object[] ReadToRow<T>(this SqlCommand cmd)
+		{
+			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
+
+            using (var reader = cmd.ExecuteReader(readerFlags))
+			{
+				return reader.ReadToRow<T>();
+			}
+		}
+
+		public static Rows ReadAsRows(this SqlCommand cmd)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
             using (var reader = cmd.ExecuteReader(readerFlags))
 			{
-				return reader.ReadToRows();
+				return reader.ReadAsRows();
 			}
 		}
 

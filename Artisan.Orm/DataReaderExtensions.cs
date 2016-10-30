@@ -14,14 +14,29 @@ namespace Artisan.Orm
 		#region [ Read ENTITY extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 		
 
+		public static void Read(this SqlDataReader dr, Action<SqlDataReader> action, bool getNextResult = true) 
+		{
+			if (dr != null && dr.Read()) 
+				action(dr);
+
+			if (dr != null && getNextResult) dr.NextResult();
+		}
+
+
+		public static T ReadAs<T>(this SqlDataReader dr, bool getNextResult = true) 
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(string))
+				return dr.ReadTo(GetValue<T>, getNextResult);
+
+			return dr.ReadTo(CreateEntity<T>, getNextResult);
+		}
+
 		public static T ReadTo<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(string))
 				return dr.ReadTo(GetValue<T>, getNextResult);
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return dr.ReadTo(createEntityFunc ?? CreateEntity<T>, getNextResult);
+			return dr.ReadTo(MappingManager.GetCreateEntityFunc<T>(), getNextResult);
 		}
 		
 		public static T ReadTo<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
@@ -32,15 +47,6 @@ namespace Artisan.Orm
 
 			return obj;
 		}
-
-		public static void Read(this SqlDataReader dr, Action<SqlDataReader> action, bool getNextResult = true) 
-		{
-			if (dr != null && dr.Read()) 
-				action(dr);
-
-			if (dr != null && getNextResult) dr.NextResult();
-		}
-
 		
 		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
 		{
@@ -66,11 +72,18 @@ namespace Artisan.Orm
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(string))
 				return dr.ReadToList(GetValue<T>, getNextResult);
-
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
 				
-			return dr.ReadToList(createEntityFunc ?? CreateEntity<T>, getNextResult);
+			return dr.ReadToList(MappingManager.GetCreateEntityFunc<T>(), getNextResult);
 		}
+
+		public static IList<T> ReadAsList<T>(this SqlDataReader dr,  bool getNextResult = true)
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(string))
+				return dr.ReadToList(GetValue<T>, getNextResult);
+				
+			return dr.ReadToList(CreateEntity<T>, getNextResult);
+		}
+
 
 		public static Dictionary<T1,T2> ReadToDictionary<T1,T2>(this SqlDataReader dr,  bool getNextResult = true)
 		{
@@ -117,9 +130,6 @@ namespace Artisan.Orm
 
 			return dictionary;
 		}
-
-
-
 		
 		public static void ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> listToReadTo, bool getNextResult = true) 
 		{
@@ -140,24 +150,22 @@ namespace Artisan.Orm
 	
 		public static void ReadToList<T>(this SqlDataReader dr, IList<T> listToReadTo, bool getNextResult = true)
 		{
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			dr.ReadToList(createEntityFunc ?? CreateEntity<T>, listToReadTo, getNextResult);
+			dr.ReadToList(MappingManager.GetCreateEntityFunc<T>(), listToReadTo, getNextResult);
 		}
 
 		public static T[] ReadToArray<T>(this SqlDataReader dr, bool getNextResult = true)
 		{
-			if (typeof(T).IsValueType || typeof(T) == typeof(String))
-				return dr.ReadToList(GetValue<T>, getNextResult).ToArray();
+			return dr.ReadToList<T>(getNextResult).ToArray();
+		}
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return dr.ReadToList(createEntityFunc ?? CreateEntity<T>, getNextResult).ToArray();
+		public static T[] ReadAsArray<T>(this SqlDataReader dr, bool getNextResult = true)
+		{
+			return dr.ReadAsList<T>(getNextResult).ToArray();
 		}
 		
 		public static T[] ReadToArray<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
 		{
-			return ReadToList<T>(dr, createFunc, getNextResult).ToArray();
+			return dr.ReadToList<T>(createFunc, getNextResult).ToArray();
 		}
 
 
@@ -173,7 +181,14 @@ namespace Artisan.Orm
 			return row;
 		}
 
-		public static object[] ReadToRow(this SqlDataReader dr, bool getNextResult = true) 
+		public static object[] ReadToRow<T>(this SqlDataReader dr, bool getNextResult = true) 
+		{
+			return dr.ReadToRow(MappingManager.GetCreateEntityRowFunc<T>(), getNextResult);
+		}
+
+
+
+		public static object[] ReadAsRow(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			object[] row = null;
 
@@ -211,17 +226,10 @@ namespace Artisan.Orm
 
 		public static Rows ReadToRows<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			var createEntityRowFunc =  MappingManager.GetCreateEntityRowFunc<T>();
-
-			if (createEntityRowFunc == null)
-			{
-				return dr.ReadToRows(getNextResult);
-			}
-			
-			return dr.ReadToRows(createEntityRowFunc, getNextResult);
+			return dr.ReadToRows(MappingManager.GetCreateEntityRowFunc<T>(), getNextResult);
 		}
 
-		public static Rows ReadToRows(this SqlDataReader dr, bool getNextResult = true) 
+		public static Rows ReadAsRows(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			var rows = new Rows();
 
@@ -242,8 +250,6 @@ namespace Artisan.Orm
 
 			return rows;
 		}
-
-
 
 		
 		internal static T GetValue<T>(SqlDataReader dr)
@@ -271,11 +277,11 @@ namespace Artisan.Orm
 
 					prop.SetValue(entity, value, null);
 				}
-				else
-				{
-					throw new DataException(
-						$"There is no property of name '{columnName}' in the object of type {typeof (T).FullName} or this property is readonly.");
-				}
+				//else
+				//{
+				//	throw new DataException(
+				//		$"There is no property of name '{columnName}' in the object of type {typeof (T).FullName} or this property is readonly.");
+				//}
 			}
 
 			return entity;

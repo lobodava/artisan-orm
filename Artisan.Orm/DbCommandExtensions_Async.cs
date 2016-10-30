@@ -66,14 +66,21 @@ namespace Artisan.Orm
 			return (int)returnValueParam.Value;
 		}
 
+		public static async Task<T> ReadAsAsync<T>(this SqlCommand cmd)
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(String))
+				return await cmd.ReadToAsync(DataReaderExtensions.GetValue<T>);
+
+			return await cmd.ReadToAsync(DataReaderExtensions.CreateEntity<T>);
+		}
+
+
 		public static async Task<T> ReadToAsync<T>(this SqlCommand cmd)
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToAsync(DataReaderExtensions.GetValue<T>);
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return await cmd.ReadToAsync(createEntityFunc ?? DataReaderExtensions.CreateEntity<T>);
+			return await cmd.ReadToAsync(MappingManager.GetCreateEntityFunc<T>());
 		}
 
 		public static async Task<T> ReadToAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, T> createFunc)
@@ -86,14 +93,20 @@ namespace Artisan.Orm
 			}
 		}
 
+		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd) 
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(String))
+				return await cmd.ReadToListAsync(DataReaderExtensions.GetValue<T>);
+
+			return await cmd.ReadToListAsync(DataReaderExtensions.CreateEntity<T>);
+		}
+
 		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd) 
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToListAsync(DataReaderExtensions.GetValue<T>);
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return await cmd.ReadToListAsync(createEntityFunc ?? DataReaderExtensions.CreateEntity<T>);
+			return await cmd.ReadToListAsync(MappingManager.GetCreateEntityFunc<T>());
 		}
 		
 		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list = null) 
@@ -120,14 +133,20 @@ namespace Artisan.Orm
 			return list;
 		}
 
+		public static async Task<T[]> ReadAsArrayAsync<T>(this SqlCommand cmd)
+		{
+			if (typeof(T).IsValueType || typeof(T) == typeof(String))
+				return await cmd.ReadToArrayAsync(DataReaderExtensions.GetValue<T>);
+
+			return await cmd.ReadToArrayAsync(DataReaderExtensions.CreateEntity<T>);
+		}
+
 		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd)
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToArrayAsync(DataReaderExtensions.GetValue<T>);
 
-			var createEntityFunc =  MappingManager.GetCreateEntityFunc<T>();
-
-			return await cmd.ReadToArrayAsync(createEntityFunc ?? DataReaderExtensions.CreateEntity<T>);
+			return await cmd.ReadToArrayAsync(MappingManager.GetCreateEntityFunc<T>());
 		}
 
 		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
@@ -153,23 +172,34 @@ namespace Artisan.Orm
 			return list.ToArray();
 		}
 		
-		public static async Task<object[]> ReadToRowAsync(this SqlCommand cmd)
+		public static async Task<object[]> ReadAsRowAsync(this SqlCommand cmd)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
             using (var reader = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return reader.ReadToRow();
+				return reader.ReadAsRow();
 			}
 		}
 
-		public static async Task<Rows> ReadToRowsAsync(this SqlCommand cmd)
+		public static async Task<object[]> ReadToRowAsync<T>(this SqlCommand cmd)
+		{
+			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
+
+            using (var reader = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			{
+				return reader.ReadToRow<T>();
+			}
+		}
+
+
+		public static async Task<Rows> ReadAsRowsAsync(this SqlCommand cmd)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
             using (var reader = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return reader.ReadToRows();
+				return reader.ReadAsRows();
 			}
 		}
 
@@ -192,7 +222,6 @@ namespace Artisan.Orm
 				return reader.ReadToDictionary<TKey, TValue>();
 			}
 		}
-
 
 	}
 }

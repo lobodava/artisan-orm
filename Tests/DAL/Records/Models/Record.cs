@@ -5,7 +5,7 @@ using Artisan.Orm;
 
 namespace Tests.DAL.Records.Models
 {
-	public class Record : IEntity
+	public class Record 
 	{
 		public Int32 Id { get; set; }
 

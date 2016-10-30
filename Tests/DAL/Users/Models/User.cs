@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Tests.DAL.Users.Models
 {
-	public class User : IEntity
+	public class User 
 	{
 		public Int32 Id { get; set; }
 

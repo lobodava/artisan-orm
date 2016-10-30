@@ -71,6 +71,28 @@ namespace Tests
 		}
 		
 
+		[TestMethod]
+		public void GetUserByIdWithSql()
+		{
+			User user = null;
+
+			var sw = new Stopwatch();
+			sw.Start();
+			
+			for (var i = 1; i <= 14; i++)
+			{
+				user = _repository.GetUserByIdWithSql(i);
+
+				Assert.IsTrue(user.Id == i || user == null);
+			}
+
+			sw.Stop();
+
+			Console.WriteLine($"GetUserByIdWithSql reads 14 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 14).ToString("0.##")} ms for one read" );
+			Console.Write(JsonConvert.SerializeObject(user));
+		}
+
+
 
 		[TestMethod]
 		public void GetUsers()
@@ -422,16 +444,6 @@ namespace Tests
 				Assert.Fail();
 			}
 		}
-
-
-		//[TestMethod]
-		//public async Task DeleteUserAsyncException()
-		//{
-		//	await _repository.DeleteUserAsyncException(1);
-		//}
-
-
-
 
 		private User CreateNewUser()
 		{

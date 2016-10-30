@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace Tests.DAL.GrandRecords.Models
 {
-	public class Record : IEntity
+	public class Record
 	{
 		public Int32 Id { get; set; }
 

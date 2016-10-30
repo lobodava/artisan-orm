@@ -46,8 +46,7 @@
     <Compile Include="DbCommandExtensions_Async.cs" />
     <Compile Include="DbCommandExtensions_Parameters.cs" />
     <Compile Include="DbCommandExtensions_Sync.cs" />
-    <Compile Include="EntityExtensions.cs" />
-    <Compile Include="IEntity.cs" />
+    <Compile Include="DataTableHelpers.cs" />
     <Compile Include="MapperForAttribute.cs" />
     <Compile Include="MappingManager.cs" />
     <Compile Include="NegativeIdentity.cs" />

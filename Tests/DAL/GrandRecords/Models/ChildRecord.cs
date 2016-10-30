@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Tests.DAL.GrandRecords.Models
 {
-	public class ChildRecord : IEntity
+	public class ChildRecord
 	{
 		public Int32 Id { get; set; }
 

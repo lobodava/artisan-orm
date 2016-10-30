@@ -4,7 +4,7 @@
 
 //namespace Tests.DAL.Users.Models
 //{
-//	public class Role : IEntity
+//	public class Role
 //	{
 //		public Byte Id { get; set; }
 

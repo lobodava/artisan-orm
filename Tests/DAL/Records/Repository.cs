@@ -24,6 +24,32 @@ namespace Tests.DAL.Records
 		}
 
 
+		public Record GetRecordByIdWithMapper(int id)
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecordById");
+
+				cmd.AddIntParam("@Id", id);
+
+				return cmd.ReadTo<Record>();
+			});
+		}
+
+		public Record GetRecordByIdWithReflection(int id)
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecordById");
+
+				cmd.AddIntParam("@Id", id);
+
+				return cmd.ReadAs<Record>();
+			});
+		}
+
+
+
 		public async Task<Record> GetRecordByIdAsync(int id)
 		{
 			return await GetByCommandAsync(cmd =>
@@ -101,7 +127,7 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.SaveRecords");
 
-				cmd.AddTableParam("@Records", record.ToDataTable());
+				cmd.AddTableParam("@Records", record);
 
 				return cmd.ReadTo<Record>();
 			});
@@ -113,7 +139,7 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.SaveRecords");
 
-				cmd.AddTableParam("@Records", record.ToDataTable());
+				cmd.AddTableParam("@Records", record);
 
 				return cmd.ReadToAsync<Record>();
 			});
@@ -131,7 +157,7 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.SaveRecords");
 
-				cmd.AddTableParam("@Records", records.ToDataTable<Record>());
+				cmd.AddTableParam("@Records", records);
 
 				return cmd.ReadToList<Record>();
 			});
@@ -143,7 +169,7 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.SaveRecords");
 
-				cmd.AddTableParam("@Records", records.ToDataTable<Record>());
+				cmd.AddTableParam("@Records", records);
 
 				return cmd.ReadToListAsync<Record>();
 			});

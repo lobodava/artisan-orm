@@ -217,7 +217,7 @@ using Artisan;
 
 namespace %s.%s.Models
 {
-	public class %s : IEntity
+	public class %s
 	{'
 ,0,1, @NameSpacePrefix, @PluralName, @EntityName);
 

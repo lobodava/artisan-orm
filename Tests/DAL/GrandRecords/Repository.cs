@@ -157,11 +157,11 @@ namespace Tests.DAL.GrandRecords
 			{
 				cmd.UseProcedure("dbo.SaveGrandRecords");
 
-				cmd.AddTableParam("@GrandRecords", grandRecords.ToDataTable<GrandRecord>());
+				cmd.AddTableParam("@GrandRecords", grandRecords);
 
-				cmd.AddTableParam("@Records", records.ToDataTable<Record>());
+				cmd.AddTableParam("@Records", records);
 
-				cmd.AddTableParam("@ChildRecords", childRecords.ToDataTable<ChildRecord>());
+				cmd.AddTableParam("@ChildRecords", childRecords);
 
 				return cmd.GetByReader(ReadGrandRecords);
 			});
@@ -176,11 +176,11 @@ namespace Tests.DAL.GrandRecords
 			{
 				cmd.UseProcedure("dbo.SaveGrandRecords");
 
-				cmd.AddTableParam("@GrandRecords", grandRecords.ToDataTable<GrandRecord>());
+				cmd.AddTableParam("@GrandRecords", grandRecords);
 
-				cmd.AddTableParam("@Records", records.ToDataTable<Record>());
+				cmd.AddTableParam("@Records", records);
 
-				cmd.AddTableParam("@ChildRecords", childRecords.ToDataTable<ChildRecord>());
+				cmd.AddTableParam("@ChildRecords", childRecords);
 
 				return cmd.GetByReaderAsync(ReadGrandRecords);
 			});

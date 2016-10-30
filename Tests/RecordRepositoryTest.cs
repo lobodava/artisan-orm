@@ -28,7 +28,7 @@ namespace Tests
 		}
 
 		[TestMethod]
-		public void GetRecordById()
+		public void GetRecordByIdWithMapper()
 		{
 			Record record = null;
 
@@ -37,7 +37,7 @@ namespace Tests
 			
 			for (var i = 1; i <= 676; i++)
 			{
-				record = _repository.GetRecordById(i);
+				record = _repository.GetRecordByIdWithMapper(i);
 
 				Assert.IsTrue(record.Id == i || record == null);
 			}
@@ -46,7 +46,30 @@ namespace Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetRecordById reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
+			Console.WriteLine($"GetRecordById With Mapper reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
+			Console.Write(JsonConvert.SerializeObject(record));
+		}
+
+		[TestMethod]
+		public void GetRecordByIdWithReflection()
+		{
+			Record record = null;
+
+			var sw = new Stopwatch();
+			sw.Start();
+			
+			for (var i = 1; i <= 676; i++)
+			{
+				record = _repository.GetRecordByIdWithReflection(i);
+
+				Assert.IsTrue(record.Id == i || record == null);
+			}
+
+			Assert.IsNotNull(record);
+
+			sw.Stop();
+
+			Console.WriteLine($"GetRecordById With Reflection reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
 			Console.Write(JsonConvert.SerializeObject(record));
 		}
 
@@ -286,10 +309,7 @@ namespace Tests
 			Console.WriteLine();
 			Console.Write(JsonConvert.SerializeObject(savedRecords.Take(10)));
 		}
-
-
-
-
+		
 
 
 		private static Record CreateNewRecord(string suffix = "")
