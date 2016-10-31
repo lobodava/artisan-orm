@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Data;
 using System.Diagnostics;
-using System.Linq;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
+using Tests.DAL.Records.Models;
 
 namespace Tests
 {
@@ -447,6 +447,58 @@ namespace Tests
 			});
 
 		}
+		
+
+		[TestMethod]
+		public void GetDataTableFor()
+		{
+			var record = new Record
+			{
+				Id				=	0				,
+				GrandRecordId	=	1				,
+				Name			=	"AAA"			,
+				RecordTypeId	=	1				,
+				Number			=	123				,
+				Date			=	DateTime.Now	,
+				Amount			=	1000			,
+				IsActive		=	true			,
+				Comment			=	"Lorem ipsum"
+			};
+
+			DataTable dataTable = DataTableHelpers.GetDataTableFor(record);
+			dataTable = DataTableHelpers.GetDataTableFor(record, typeof(Tests.DAL.Records.Models.Record));
+
+
+			var sw = new Stopwatch();
+			sw.Start();
+
+			for (var i = 1; i <= 10000; i++)
+			{
+				dataTable = DataTableHelpers.GetDataTableFor<Record>(record);
+			}
+
+			sw.Stop();
+
+			Console.WriteLine($"GetDataTableFor<Record>(record) created 10,000 DataTables for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 10000).ToString("0.####")} ms for one DataTable" );
+			Console.WriteLine();
+
+			var type = typeof(Record);
+
+			sw.Restart();
+
+			for (var i = 1; i <= 10000; i++)
+			{
+				dataTable = DataTableHelpers.GetDataTableFor(record, type);
+			}
+
+			sw.Stop();
+
+			Console.WriteLine($"GetDataTableFor(record, type) created 10,000 DataTables for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 10000).ToString("0.####")} ms for one DataTable" );
+	
+
+		}
+
+
 
 		
 		[TestCleanup]

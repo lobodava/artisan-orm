@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
@@ -10,7 +9,7 @@ namespace Artisan.Orm
 	public static class DataTableHelpers
 	{
 
-		public static DataTable GetDataTableFrom<T>(T obj)
+		public static DataTable GetDataTableFor<T>(T obj)
 		{
 			if (obj == null) return null;
 
@@ -27,18 +26,18 @@ namespace Artisan.Orm
 			return table;
 		}
 
-		public static DataTable GetDataTableFrom(object obj, Type objType)
+		public static DataTable GetDataTableFor(object obj, Type objType)
 		{
-			var method = typeof (DataTableHelpers).GetMethod("GetDataTableFromObject", BindingFlags.Static | BindingFlags.NonPublic);
+			var method = typeof (DataTableHelpers).GetMethod("GetDataTableForObject", BindingFlags.Static | BindingFlags.NonPublic);
 			var generic = method.MakeGenericMethod(objType);
 			return (DataTable) generic.Invoke(null, new[] {obj});
 		}
-		private static DataTable GetDataTableFromObject<T>(T obj)
+		private static DataTable GetDataTableForObject<T>(T obj)
 		{
-			return GetDataTableFrom<T>(obj);
+			return GetDataTableFor<T>(obj);
 		}
 
-		public static DataTable GetDataTableFrom<T>(T obj, Func<DataTable> getDataTableFunc, Func<T, object[]> convertToRowFunc)
+		public static DataTable GetDataTableFor<T>(T obj, Func<DataTable> getDataTableFunc, Func<T, object[]> convertToRowFunc)
 		{
 			var table = getDataTableFunc();
 
@@ -48,7 +47,7 @@ namespace Artisan.Orm
 		}
 		
 		
-		public static DataTable GetDataTableFromList<T>(IEnumerable<T> list)
+		public static DataTable GetDataTableForList<T>(IEnumerable<T> list)
 		{
 			if (list == null) return null;
 
@@ -69,19 +68,19 @@ namespace Artisan.Orm
 			return table;
 		}
 
-		public static DataTable GetDataTableFromList(object list, Type itemType)
+		public static DataTable GetDataTableForList(object list, Type itemType)
 		{
-			var method = typeof (DataTableHelpers).GetMethod("GetDataTableFromListOfObjects", BindingFlags.Static | BindingFlags.NonPublic);
+			var method = typeof (DataTableHelpers).GetMethod("GetDataTableForListOfObjects", BindingFlags.Static | BindingFlags.NonPublic);
 			var generic = method.MakeGenericMethod(itemType);
 			return  (DataTable) generic.Invoke(null, new[] {list});
 		}
-		private static DataTable GetDataTableFromListOfObjects<T>(IEnumerable<T> list)
+		private static DataTable GetDataTableForListOfObjects<T>(IEnumerable<T> list)
 		{
-			return GetDataTableFromList<T>(list);
+			return GetDataTableForList<T>(list);
 		}
 
 		
-		public static DataTable GetDataTableFromList<T>(IEnumerable<T> list, Func<DataTable> getDataTableFunc, Func<T, object[]> convertToRowFunc)
+		public static DataTable GetDataTableForList<T>(IEnumerable<T> list, Func<DataTable> getDataTableFunc, Func<T, object[]> convertToRowFunc)
 		{
 			var table = getDataTableFunc();
 
@@ -94,10 +93,10 @@ namespace Artisan.Orm
 			return table;
 		}
 
-		public static DataTable GetIntIdDataTable(IEnumerable<int> ids, string dataTableName = "IntIdTableType", string idColumnName = "Id")
+		public static DataTable GetIntIdDataTable(IEnumerable<int> ids, string dataTableName = "IntIdTableType", string columnName = "Id")
 		{
 			var table = new DataTable(dataTableName);
-			table.Columns.Add( idColumnName, typeof( int ));
+			table.Columns.Add( columnName, typeof( int ));
 
 			if (ids != null)
 				foreach (var id in ids)
@@ -106,10 +105,10 @@ namespace Artisan.Orm
 			return table;
 		}
 
-		public static DataTable GetSmallIntIdDataTable(IEnumerable<short> ids, string dataTableName = "SmallIntIdTableType", string idColumnName = "Id")
+		public static DataTable GetSmallIntIdDataTable(IEnumerable<short> ids, string dataTableName = "SmallIntIdTableType", string columnName = "Id")
 		{
 			var table = new DataTable(dataTableName);
-			table.Columns.Add( idColumnName, typeof( short ));
+			table.Columns.Add( columnName, typeof( short ));
 
 			if (ids != null)
 				foreach (var id in ids)
@@ -118,10 +117,10 @@ namespace Artisan.Orm
 			return table;
 		}
 
-		public static DataTable GetTinyIntIdDataTable(IEnumerable<byte> ids, string dataTableName = "TinyIntIdTableType", string idColumnName = "Id" )
+		public static DataTable GetTinyIntIdDataTable(IEnumerable<byte> ids, string dataTableName = "TinyIntIdTableType", string columnName = "Id" )
 		{
 			var table = new DataTable(dataTableName);
-			table.Columns.Add( idColumnName, typeof( byte ));
+			table.Columns.Add( columnName, typeof( byte ));
 
 			if (ids != null)
 				foreach (var id in ids)

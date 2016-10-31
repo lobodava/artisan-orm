@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
-using System.Reflection;
 
 namespace Artisan.Orm
 {
@@ -705,7 +704,7 @@ namespace Artisan.Orm
 			});
 		}
 
-		public static void AddTableParamFrom<T>(this SqlCommand cmd, string parameterName, T obj)
+		public static void AddTableParamFor<T>(this SqlCommand cmd, string parameterName, T obj)
 		{
 			var param = CreateInputParam(parameterName, SqlDbType.Structured);
 
@@ -713,7 +712,7 @@ namespace Artisan.Orm
 				param.Value = DBNull.Value;
 			else
 			{ 
-				var dataTable = DataTableHelpers.GetDataTableFrom(obj);
+				var dataTable = DataTableHelpers.GetDataTableFor(obj);
 
 				param.TypeName = dataTable.TableName;
 				param.Value = dataTable;
@@ -722,7 +721,7 @@ namespace Artisan.Orm
 			cmd.Parameters.Add(param);
 		}
 
-		public static void AddTableParamFrom<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list)
+		public static void AddTableParamFor<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list)
 		{
 			var param = CreateInputParam(parameterName, SqlDbType.Structured);
 
@@ -735,7 +734,7 @@ namespace Artisan.Orm
 				if (typeof(T).IsValueType)
 					dataTable = DataTableHelpers.GetValueTypeDataTable(list);
 				else
-					dataTable = DataTableHelpers.GetDataTableFromList(list);
+					dataTable = DataTableHelpers.GetDataTableForList(list);
 
 				param.TypeName = dataTable.TableName;
 				param.Value = dataTable;
@@ -765,7 +764,7 @@ namespace Artisan.Orm
 						var itemType = obj.GetType().GetGenericArguments()[0];
 
 						if (!itemType.IsValueType)
-							dataTable = DataTableHelpers.GetDataTableFromList(obj, itemType);
+							dataTable = DataTableHelpers.GetDataTableForList(obj, itemType);
 						else
 							dataTable = DataTableHelpers.GetValueTypeDataTable(obj);
 					}
@@ -778,7 +777,7 @@ namespace Artisan.Orm
 
 					if (dataTable == null)
 					{
-						dataTable =  DataTableHelpers.GetDataTableFrom(obj, objType);
+						dataTable =  DataTableHelpers.GetDataTableFor(obj, objType);
 					}
 				}
 
