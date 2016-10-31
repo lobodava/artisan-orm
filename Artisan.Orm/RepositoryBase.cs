@@ -71,7 +71,10 @@ namespace Artisan.Orm
 		/// </summary>
 		public T GetByCommand<T>(Func<SqlCommand, T> func)
 		{
-			return func(CreateCommand());
+			using (var cmd = CreateCommand())
+			{
+				return func(cmd);
+			}
 		}
 
 		/// <summary> 
@@ -80,7 +83,10 @@ namespace Artisan.Orm
 		/// </summary>
 		public async Task<T> GetByCommandAsync<T>(Func<SqlCommand, Task<T>> funcAsync )
 		{
-			return await funcAsync(CreateCommand()).ConfigureAwait(false);
+			using (var cmd = CreateCommand())
+			{
+				return await funcAsync(cmd).ConfigureAwait(false);
+			}
 		}
 		
 		/// <summary> 
@@ -91,25 +97,30 @@ namespace Artisan.Orm
 		/// </summary>
 		public Int32 ExecuteCommand (Action<SqlCommand> action)
 		{
-			var cmd = CreateCommand();
-
-			var returnValueParam = cmd.ReturnValueParam();
-
-			try
+			using (var cmd = CreateCommand())
 			{
-				action(cmd);
+				var returnValueParam = cmd.ReturnValueParam();
+				var isConnectionClosed = true;
 
-				if (cmd.Connection.State == ConnectionState.Closed)
-					cmd.Connection.Open();
+				try
+				{
+					action(cmd);
 
-				cmd.ExecuteNonQuery();
+					isConnectionClosed = cmd.Connection.State == ConnectionState.Closed;
+
+					if (isConnectionClosed)
+						cmd.Connection.Open();
+
+					cmd.ExecuteNonQuery();
+				}
+				finally
+				{
+					if (isConnectionClosed)
+						cmd.Connection.Close();
+				}
+
+				return (int)returnValueParam.Value;
 			}
-			finally
-			{
-				cmd.Connection.Close();
-			}
-
-			return (int)returnValueParam.Value;
 		}
 
 
@@ -121,36 +132,51 @@ namespace Artisan.Orm
 		/// </summary>
 		public async Task<Int32> ExecuteCommandAsync (Action<SqlCommand> action)
 		{
-			var cmd = CreateCommand();
+			using (var cmd = CreateCommand())
+			{
+				var returnValueParam = cmd.ReturnValueParam();
+				var isConnectionClosed = true;
 
-			var returnValueParam = cmd.ReturnValueParam();
+				try
+				{
+					action(cmd);
 
-			try
+					isConnectionClosed = cmd.Connection.State == ConnectionState.Closed;
+
+					if (isConnectionClosed)
+						cmd.Connection.Open();
+
+					await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+				}
+				finally
+				{
+					if (isConnectionClosed)
+						cmd.Connection.Close();
+				}
+
+				return (int)returnValueParam.Value;
+			}
+		}
+
+
+		public void RunCommand(Action<SqlCommand> action)
+		{
+			using (var cmd = CreateCommand())
 			{
 				action(cmd);
-
-				if (cmd.Connection.State == ConnectionState.Closed)
-					cmd.Connection.Open();
-
-				await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
 			}
-			finally
-			{
-				cmd.Connection.Close();
-			}
-
-			return (int)returnValueParam.Value;
-		}
-
-
-		public void RunCommand(Action<SqlCommand> funcAsync)
-		{
-			funcAsync(CreateCommand());
 		}
 		
-		public async Task RunCommandAsync(Action<SqlCommand> funcAsync)
+		public async Task RunCommandAsync(Action<SqlCommand> action)
 		{
-			await Task.Run(() => funcAsync(CreateCommand())).ConfigureAwait(false);
+			await Task.Run(() =>
+			{
+				using (var cmd = CreateCommand())
+				{
+					action(cmd);
+				}
+
+			}).ConfigureAwait(false);
 		}
 
 
