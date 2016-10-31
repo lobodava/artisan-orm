@@ -38,7 +38,7 @@ namespace Tests.DAL.GrandRecords.Models
 	[MapperFor(typeof(Record), RequiredMethod.All)]
 	public static class RecordMapper 
 	{
-		public static Record CreateEntity(SqlDataReader dr)
+		public static Record CreateObject(SqlDataReader dr)
 		{
 			var i = 0;
 			
@@ -54,13 +54,13 @@ namespace Tests.DAL.GrandRecords.Models
 				IsActive		=	dr.GetBooleanNullable(i++)	,
 				Comment			=	dr.GetStringNullable(i++)	,
 
-				RecordType		=	RecordTypeMapper.CreateEntity(dr, ref i),
+				RecordType		=	RecordTypeMapper.CreateObject(dr, ref i),
 
 				ChildRecords	=	new List<ChildRecord>()
 			};
 		}
 
-		public static Object[] CreateEntityRow(SqlDataReader dr)
+		public static Object[] CreateObjectRow(SqlDataReader dr)
 		{
 			var i = 0;
 
@@ -96,32 +96,32 @@ namespace Tests.DAL.GrandRecords.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(Record entity)
+		public static Object[] CreateDataRow(Record obj)
 		{
-			if (entity.Id == 0) 
-				entity.Id = Int32NegativeIdentity.Next;
+			if (obj.Id == 0) 
+				obj.Id = Int32NegativeIdentity.Next;
 
-			if (entity.GrandRecordId == 0 && entity.GrandRecord != null)
-				entity.GrandRecordId = entity.GrandRecord.Id;
+			if (obj.GrandRecordId == 0 && obj.GrandRecord != null)
+				obj.GrandRecordId = obj.GrandRecord.Id;
 
-			if (entity.RecordTypeId == null && entity.RecordType != null)
-				entity.RecordTypeId = entity.RecordType.Id;
+			if (obj.RecordTypeId == null && obj.RecordType != null)
+				obj.RecordTypeId = obj.RecordType.Id;
 
-			foreach (var childRecord in entity.ChildRecords)
-				childRecord.RecordId = entity.Id;
+			foreach (var childRecord in obj.ChildRecords)
+				childRecord.RecordId = obj.Id;
 
 
 			return new object[]
 			{
-				entity.Id				,
-				entity.GrandRecordId	,
-				entity.Name				,
-				entity.RecordTypeId		,
-				entity.Number			,
-				entity.Date				,
-				entity.Amount			,
-				entity.IsActive			,
-				entity.Comment			
+				obj.Id				,
+				obj.GrandRecordId	,
+				obj.Name			,
+				obj.RecordTypeId	,
+				obj.Number			,
+				obj.Date			,
+				obj.Amount			,
+				obj.IsActive		,
+				obj.Comment			
 			};
 		}
 

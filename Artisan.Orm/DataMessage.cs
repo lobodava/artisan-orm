@@ -23,10 +23,10 @@ namespace Artisan.Orm
 		public int? SourceId;
 	}
 
-	[MapperFor( typeof(DataMessage), RequiredMethod.CreateEntity)]
+	[MapperFor( typeof(DataMessage), RequiredMethod.CreateObject)]
 	public static class DataMessageMapper 
 	{
-		public static DataMessage CreateEntity(SqlDataReader dr)
+		public static DataMessage CreateObject(SqlDataReader dr)
 		{
 			var index = 0;
 

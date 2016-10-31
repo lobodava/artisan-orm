@@ -71,7 +71,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToAsync(DataReaderExtensions.CreateEntity<T>);
+			return await cmd.ReadToAsync(DataReaderExtensions.CreateObject<T>);
 		}
 
 
@@ -80,7 +80,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToAsync(MappingManager.GetCreateEntityFunc<T>());
+			return await cmd.ReadToAsync(MappingManager.GetCreateObjectFunc<T>());
 		}
 
 		public static async Task<T> ReadToAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, T> createFunc)
@@ -98,7 +98,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToListAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToListAsync(DataReaderExtensions.CreateEntity<T>);
+			return await cmd.ReadToListAsync(DataReaderExtensions.CreateObject<T>);
 		}
 
 		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd) 
@@ -106,7 +106,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToListAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToListAsync(MappingManager.GetCreateEntityFunc<T>());
+			return await cmd.ReadToListAsync(MappingManager.GetCreateObjectFunc<T>());
 		}
 		
 		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list = null) 
@@ -138,7 +138,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToArrayAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToArrayAsync(DataReaderExtensions.CreateEntity<T>);
+			return await cmd.ReadToArrayAsync(DataReaderExtensions.CreateObject<T>);
 		}
 
 		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd)
@@ -146,7 +146,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToArrayAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToArrayAsync(MappingManager.GetCreateEntityFunc<T>());
+			return await cmd.ReadToArrayAsync(MappingManager.GetCreateObjectFunc<T>());
 		}
 
 		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)

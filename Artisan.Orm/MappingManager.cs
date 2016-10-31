@@ -9,9 +9,9 @@ namespace Artisan.Orm
 {
 	public static class MappingManager
 	{
-		private static readonly Dictionary<Type, object> CreateEntityFuncDictionary = new Dictionary<Type, object>();
+		private static readonly Dictionary<Type, object> CreateObjectFuncDictionary = new Dictionary<Type, object>();
 
-		private static readonly Dictionary<Type, object> CreateEntityRowFuncDictionary = new Dictionary<Type, object>();
+		private static readonly Dictionary<Type, object> CreateObjectRowFuncDictionary = new Dictionary<Type, object>();
 
 		private static readonly Dictionary<Type, Tuple<Func<DataTable>, Delegate>> CreateDataTableFuncsDictionary = new Dictionary<Type, Tuple<Func<DataTable>, Delegate>>();
 
@@ -26,35 +26,35 @@ namespace Artisan.Orm
 				foreach (var attribute in attributes.Cast<MapperForAttribute>())
 				{
 
-					var methodInfo = type.GetMethod("CreateEntity", new Type[] { typeof(SqlDataReader) });
+					var methodInfo = type.GetMethod("CreateObject", new Type[] { typeof(SqlDataReader) });
 
 					if (methodInfo == null)
 					{
-						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.AllMain, RequiredMethod.BothForEntity, RequiredMethod.CreateEntity}).Any())
-							throw new NullReferenceException($"Mapper {type.Name} does not contain required method CreateEntity");
+						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.AllMain, RequiredMethod.BothForObject, RequiredMethod.CreateObject}).Any())
+							throw new NullReferenceException($"Mapper {type.Name} does not contain required method CreateObject");
 					}
 					else
 					{
 						var funcType = typeof(Func<,>).MakeGenericType(typeof(SqlDataReader), attribute.MapperForType);
 						var del = Delegate.CreateDelegate(funcType, methodInfo);
 
-						CreateEntityFuncDictionary.Add(attribute.MapperForType, del);
+						CreateObjectFuncDictionary.Add(attribute.MapperForType, del);
 					}
 
 
-					methodInfo = type.GetMethod("CreateEntityRow", new Type[] { typeof(SqlDataReader) });
+					methodInfo = type.GetMethod("CreateObjectRow", new Type[] { typeof(SqlDataReader) });
 
 					if (methodInfo == null)
 					{
-						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.BothForEntity, RequiredMethod.CreateEntityRow}).Any())
-							throw new NullReferenceException($"Mapper {type.Name} does not contain required method CreateEntityRow");
+						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.BothForObject, RequiredMethod.CreateObjectRow}).Any())
+							throw new NullReferenceException($"Mapper {type.Name} does not contain required method CreateObjectRow");
 					}
 					else
 					{
 						var funcType = typeof(Func<,>).MakeGenericType(typeof(SqlDataReader), typeof(object[]));
-						var createEntityRowDelegate = Delegate.CreateDelegate(funcType, methodInfo);
+						var createObjectRowDelegate = Delegate.CreateDelegate(funcType, methodInfo);
 
-						CreateEntityRowFuncDictionary.Add(attribute.MapperForType, createEntityRowDelegate);
+						CreateObjectRowFuncDictionary.Add(attribute.MapperForType, createObjectRowDelegate);
 					}
 
 
@@ -95,21 +95,21 @@ namespace Artisan.Orm
 		}
 
 
-		public static Func<SqlDataReader, T> GetCreateEntityFunc<T>()
+		public static Func<SqlDataReader, T> GetCreateObjectFunc<T>()
 		{
 			object obj;
 
-			if (CreateEntityFuncDictionary.TryGetValue(typeof(T), out obj))
+			if (CreateObjectFuncDictionary.TryGetValue(typeof(T), out obj))
 				return (Func<SqlDataReader, T>)obj;
 
-			throw new NullReferenceException($"CreateEntity Func not found. Check if MapperFor {typeof(T).FullName} exists and CreateEntity exist.");
+			throw new NullReferenceException($"CreateObject Func not found. Check if MapperFor {typeof(T).FullName} exists and CreateObject exist.");
 		}
 
-		public static Func<SqlDataReader, object[]> GetCreateEntityRowFunc<T>()
+		public static Func<SqlDataReader, object[]> GetCreateObjectRowFunc<T>()
 		{
 			object obj;
 
-			if (CreateEntityRowFuncDictionary.TryGetValue(typeof(T), out obj))
+			if (CreateObjectRowFuncDictionary.TryGetValue(typeof(T), out obj))
 				return (Func<SqlDataReader, object[]>)obj;
 
 			throw new NullReferenceException($"CreateRow Func not found. Check if MapperFor {typeof(T).FullName} and CreateRow exist.");

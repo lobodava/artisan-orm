@@ -24,7 +24,7 @@ namespace Tests.DAL.Users.Models
 	[MapperFor(typeof(User), RequiredMethod.All)]
 	public static class UserMapper 
 	{
-		public static User CreateEntity(SqlDataReader dr)
+		public static User CreateObject(SqlDataReader dr)
 		{
 			var i = 0;
 			
@@ -38,7 +38,7 @@ namespace Tests.DAL.Users.Models
 			};
 		}
 
-		public static Object[] CreateEntityRow(SqlDataReader dr)
+		public static Object[] CreateObjectRow(SqlDataReader dr)
 		{
 			var i = 0;
 			
@@ -66,18 +66,18 @@ namespace Tests.DAL.Users.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(User entity)
+		public static Object[] CreateDataRow(User obj)
 		{
-			if (entity.Id == 0) 
-				entity.Id = Int32NegativeIdentity.Next;
+			if (obj.Id == 0) 
+				obj.Id = Int32NegativeIdentity.Next;
 
 			return new object[]
 			{
-				entity.Id		,
-				entity.Login	,
-				entity.Name		,
-				entity.Email	,
-				entity.RoleIds == null ? null : String.Join(",", entity.RoleIds)
+				obj.Id		,
+				obj.Login	,
+				obj.Name	,
+				obj.Email	,
+				obj.RoleIds == null ? null : String.Join(",", obj.RoleIds)
 			};
 		}
 

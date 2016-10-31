@@ -71,7 +71,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadTo(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadTo(DataReaderExtensions.CreateEntity<T>);
+			return cmd.ReadTo(DataReaderExtensions.CreateObject<T>);
 		}
 		
 		public static T ReadTo<T>(this SqlCommand cmd)
@@ -79,7 +79,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadTo(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadTo(MappingManager.GetCreateEntityFunc<T>());
+			return cmd.ReadTo(MappingManager.GetCreateObjectFunc<T>());
 		}
 
 		public static T ReadTo<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
@@ -98,7 +98,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToList(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadToList(DataReaderExtensions.CreateEntity<T>);
+			return cmd.ReadToList(DataReaderExtensions.CreateObject<T>);
 		}
 
 		public static IList<T> ReadToList<T>(this SqlCommand cmd) 
@@ -106,7 +106,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToList(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadToList(MappingManager.GetCreateEntityFunc<T>());
+			return cmd.ReadToList(MappingManager.GetCreateObjectFunc<T>());
 		}
 		
 		public static IList<T> ReadToList<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list = null) 
@@ -139,7 +139,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToArray(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadToArray(DataReaderExtensions.CreateEntity<T>);
+			return cmd.ReadToArray(DataReaderExtensions.CreateObject<T>);
 		}
 
 		public static T[] ReadToArray<T>(this SqlCommand cmd)
@@ -147,7 +147,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToArray(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadToArray(MappingManager.GetCreateEntityFunc<T>());
+			return cmd.ReadToArray(MappingManager.GetCreateObjectFunc<T>());
 		}
 
 		public static T[] ReadToArray<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)

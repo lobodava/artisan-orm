@@ -21,7 +21,7 @@ namespace Tests.DAL.GrandRecords.Models
 	public static class GrandRecordMapper 
 	{
 
-		public static GrandRecord CreateEntity(SqlDataReader dr)
+		public static GrandRecord CreateObject(SqlDataReader dr)
 		{
 			int i = 0;
 			
@@ -44,19 +44,19 @@ namespace Tests.DAL.GrandRecords.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(GrandRecord entity)
+		public static Object[] CreateDataRow(GrandRecord obj)
 		{
-			if (entity.Id == 0) 
-				entity.Id = Int32NegativeIdentity.Next;
+			if (obj.Id == 0) 
+				obj.Id = Int32NegativeIdentity.Next;
 
-			foreach (var record in entity.Records)
-				record.GrandRecordId = entity.Id;
+			foreach (var record in obj.Records)
+				record.GrandRecordId = obj.Id;
 
 
 			return new object[]
 			{
-				entity.Id		,
-				entity.Name		
+				obj.Id		,
+				obj.Name		
 			};
 		}
 

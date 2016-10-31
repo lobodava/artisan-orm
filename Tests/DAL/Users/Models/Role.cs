@@ -14,10 +14,10 @@
 //	}
 
 
-//	[MapperFor(typeof(Role), RequiredMethod.CreateEntity)]
+//	[MapperFor(typeof(Role), RequiredMethod.CreateObject)]
 //	public static class RoleMapper 
 //	{
-//		public static Role CreateEntity(SqlDataReader dr)
+//		public static Role CreateObject(SqlDataReader dr)
 //		{
 //			var index = 0;
 

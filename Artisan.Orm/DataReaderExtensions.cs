@@ -27,7 +27,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(string))
 				return dr.ReadTo(GetValue<T>, getNextResult);
 
-			return dr.ReadTo(CreateEntity<T>, getNextResult);
+			return dr.ReadTo(CreateObject<T>, getNextResult);
 		}
 
 		public static T ReadTo<T>(this SqlDataReader dr, bool getNextResult = true) 
@@ -35,7 +35,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(string))
 				return dr.ReadTo(GetValue<T>, getNextResult);
 
-			return dr.ReadTo(MappingManager.GetCreateEntityFunc<T>(), getNextResult);
+			return dr.ReadTo(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
 		}
 		
 		public static T ReadTo<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
@@ -72,7 +72,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(string))
 				return dr.ReadToList(GetValue<T>, getNextResult);
 				
-			return dr.ReadToList(MappingManager.GetCreateEntityFunc<T>(), getNextResult);
+			return dr.ReadToList(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
 		}
 
 		public static IList<T> ReadAsList<T>(this SqlDataReader dr,  bool getNextResult = true)
@@ -80,7 +80,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(string))
 				return dr.ReadToList(GetValue<T>, getNextResult);
 				
-			return dr.ReadToList(CreateEntity<T>, getNextResult);
+			return dr.ReadToList(CreateObject<T>, getNextResult);
 		}
 
 
@@ -149,7 +149,7 @@ namespace Artisan.Orm
 	
 		public static void ReadToList<T>(this SqlDataReader dr, IList<T> listToReadTo, bool getNextResult = true)
 		{
-			dr.ReadToList(MappingManager.GetCreateEntityFunc<T>(), listToReadTo, getNextResult);
+			dr.ReadToList(MappingManager.GetCreateObjectFunc<T>(), listToReadTo, getNextResult);
 		}
 
 		public static T[] ReadToArray<T>(this SqlDataReader dr, bool getNextResult = true)
@@ -182,7 +182,7 @@ namespace Artisan.Orm
 
 		public static object[] ReadToRow<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			return dr.ReadToRow(MappingManager.GetCreateEntityRowFunc<T>(), getNextResult);
+			return dr.ReadToRow(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
 		}
 
 
@@ -225,7 +225,7 @@ namespace Artisan.Orm
 
 		public static Rows ReadToRows<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			return dr.ReadToRows(MappingManager.GetCreateEntityRowFunc<T>(), getNextResult);
+			return dr.ReadToRows(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
 		}
 
 		public static Rows ReadAsRows(this SqlDataReader dr, bool getNextResult = true) 
@@ -258,15 +258,15 @@ namespace Artisan.Orm
 			return (T)Convert.ChangeType(dr.GetValue(0), type);
 		}
 
-		internal static T CreateEntity<T>(SqlDataReader dr)
+		internal static T CreateObject<T>(SqlDataReader dr)
 		{
-			var entity = Activator.CreateInstance<T>();
+			var obj = Activator.CreateInstance<T>();
 			
 			for (var i = 0; i < dr.FieldCount; i++)
 			{
 				var columnName = dr.GetName(i);
 
-				var prop = entity.GetType().GetProperty(columnName, BindingFlags.Public | BindingFlags.Instance);
+				var prop = obj.GetType().GetProperty(columnName, BindingFlags.Public | BindingFlags.Instance);
 
 				if (prop != null && prop.CanWrite)
 				{
@@ -274,7 +274,7 @@ namespace Artisan.Orm
 
 					var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), t);
 
-					prop.SetValue(entity, value, null);
+					prop.SetValue(obj, value, null);
 				}
 				//else
 				//{
@@ -283,7 +283,7 @@ namespace Artisan.Orm
 				//}
 			}
 
-			return entity;
+			return obj;
 		}
 		
 

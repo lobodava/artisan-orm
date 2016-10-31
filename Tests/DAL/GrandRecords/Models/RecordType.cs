@@ -14,16 +14,16 @@ namespace Tests.DAL.GrandRecords.Models
 	}
 
 
-	[MapperFor(typeof(RecordType), RequiredMethod.CreateEntity)]
+	[MapperFor(typeof(RecordType), RequiredMethod.CreateObject)]
 	public static class RecordTypeMapper 
 	{
-		public static RecordType CreateEntity(SqlDataReader dr)
+		public static RecordType CreateObject(SqlDataReader dr)
 		{
 			var index = 0;
-			return CreateEntity(dr, ref index);
+			return CreateObject(dr, ref index);
 		}
 
-		public static RecordType CreateEntity(SqlDataReader dr, ref int index)
+		public static RecordType CreateObject(SqlDataReader dr, ref int index)
 		{
 			if (dr.IsDBNull(index))
 			{

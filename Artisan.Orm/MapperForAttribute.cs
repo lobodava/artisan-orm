@@ -7,19 +7,19 @@ namespace Artisan.Orm
 	{
 
 		/// <summary>
-		/// Check if all four methods exists: CreateEntity, CreateEntityRow, CreateDataTable and CreateDataRow.
+		/// Check if all four methods exists: CreateObject, CreateObjectRow, CreateDataTable and CreateDataRow.
 		/// </summary>
 		All,
 
 		/// <summary>
-		/// Check if all three main methods exists: CreateEntity, CreateEntityRow and CreateDataTable.
+		/// Check if all three main methods exists: CreateObject, CreateObjectRow and CreateDataTable.
 		/// </summary>
 		AllMain,
 
 		/// <summary>
-		/// Check if both CreateEntity and CreateEntityRow methods exist.
+		/// Check if both CreateObject and CreateObjectRow methods exist.
 		/// </summary>
-		BothForEntity,
+		BothForObject,
 
 		/// <summary>
 		/// Check if CreateDataTable and CreateDataRow methods exist.
@@ -27,14 +27,14 @@ namespace Artisan.Orm
 		BothForDataTable,
 
 		/// <summary>
-		/// Check if CreateEntity method exists.
+		/// Check if CreateObject method exists.
 		/// </summary>
-		CreateEntity,
+		CreateObject,
 
 		/// <summary>
-		/// Check if CreateEntityRow method exists.
+		/// Check if CreateObjectRow method exists.
 		/// </summary>
-		CreateEntityRow,
+		CreateObjectRow,
 
 		//CreateDataTable,
 		//CreateDataRow,

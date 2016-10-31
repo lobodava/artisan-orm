@@ -4,7 +4,7 @@ declare @Schema			 sysname = N'dbo';
 
 declare @TableName		 sysname = N'Records';
 
-declare @EntityName		 sysname = N'Record';
+declare @ObjectName		 sysname = N'Record';
 
 declare @PluralName		 sysname = @TableName;
 
@@ -46,8 +46,8 @@ begin -- декларация переменных
 		Constrain		varchar(30)		,
 		Comma			varchar(1)		,
 		ClassPropLine	nvarchar(4000)	,
-		ToEntityLine	nvarchar(4000)	,
-		ToEntityRowLine	nvarchar(4000)	,
+		ToObjLine	nvarchar(4000)	,
+		ToObjRowLine	nvarchar(4000)	,
 		DataTableLine	nvarchar(4000)	,
 		TableTypeLine	nvarchar(4000)	,
 		ToObjectLine	nvarchar(4000)	,
@@ -178,13 +178,13 @@ begin -- составление строк
 			+ case when IsNullable = 'null' and C#Type <> 'String'  then '?' else '' end
 			+ ' ' + ColumnName + ' { get; set; }',
 
-		ToEntityLine = @4Tabs
+		ToObjLine = @4Tabs
 			+ ColumnName + replicate ( @Tab , (@ColumnTabCount - len(ColumnName) / 4 ) )
 			+ '=	'
 			+ Method + replicate ( @Tab , (@MethodTabCount - len(Method) / 4 ) )
 			+ ',',
 
-		ToEntityRowLine = @4Tabs
+		ToObjRowLine = @4Tabs
 			+ '/*' + @Tab + ColumnName + replicate ( @Tab , (@ColumnTabCount - len(ColumnName) / 4 ) ) +  cast(ColumnNo - 1 as varchar(2)) + @Tab +  '*/' + @Tab 
 			+ Method + replicate ( @Tab , (@MethodTabCount - len(Method) / 4 ) )
 			+ ',',
@@ -202,7 +202,7 @@ begin -- составление строк
 			+ ',	typeof( ' + C#Type + replicate ( @Tab , (@C#TypeTabCount + 2 - (len(C#Type) + 8 ) / 4 ) ) + '));',
 
 		ToObjectLine = @4Tabs
-			+ 'entity.' + ColumnName + replicate ( @Tab , (@ColumnTabCount + 2 - (len('entity.' + ColumnName) ) / 4 ) ) + Comma,
+			+ 'obj.' + ColumnName + replicate ( @Tab , (@ColumnTabCount + 2 - (len('obj.' + ColumnName) ) / 4 ) ) + Comma,
 			
 		FunctionLine = @2Tabs
 			+ ColumnName + replicate ( @Tab , (@ColumnTabCount - len(ColumnName) / 4 ) ) + Comma;
@@ -219,7 +219,7 @@ namespace %s.%s.Models
 {
 	public class %s
 	{'
-,0,1, @NameSpacePrefix, @PluralName, @EntityName);
+,0,1, @NameSpacePrefix, @PluralName, @ObjectName);
 
 
 set @n = 1;
@@ -244,19 +244,19 @@ raiserror(	-- MapperFor
 	[MapperFor(typeof(%s), RequiredMethod.All)]
 	public static class %sMapper 
 	{
-		public static %s CreateEntity(SqlDataReader dr)
+		public static %s CreateObject(SqlDataReader dr)
 		{
 			var i = 0;
 			
 			return new %s 
 			{
 '
-,0,1, @EntityName, @EntityName, @EntityName, @EntityName);
+,0,1, @ObjectName, @ObjectName, @ObjectName, @ObjectName);
 
 set @n = 1;
 while (1=1)
 begin
-	select @ToPrint = ToEntityLine, @n = @n + 1 from @LineSource where ColumnNo = @n;
+	select @ToPrint = ToObjLine, @n = @n + 1 from @LineSource where ColumnNo = @n;
 	if @@rowcount = 0 break; 	
 	raiserror (@ToPrint,0,1);
 end;	
@@ -269,9 +269,9 @@ raiserror(
 
 
 
-raiserror(	-- CreateEntityRow
+raiserror(	-- CreateObjectRow
 '
-		public static Object[] CreateEntityRow(SqlDataReader dr)
+		public static Object[] CreateObjectRow(SqlDataReader dr)
 		{
 			var i = 0;
 			
@@ -283,7 +283,7 @@ raiserror(	-- CreateEntityRow
 set @n = 1;
 while (1=1)
 begin
-	select @ToPrint = ToEntityRowLine, @n = @n + 1 from @LineSource where ColumnNo = @n;
+	select @ToPrint = ToObjRowLine, @n = @n + 1 from @LineSource where ColumnNo = @n;
 	if @@rowcount = 0 break; 	
 	raiserror (@ToPrint,0,1);
 end;	
@@ -303,7 +303,7 @@ raiserror(	-- Additional Create and  CreateDataTable header
 			var table = new DataTable("%sTableType");
 			
 '
-,0,1, @EntityName, @EntityName);
+,0,1, @ObjectName, @ObjectName);
 
 set @n = 1;
 while (1=1)
@@ -318,11 +318,11 @@ raiserror(	-- CreateDataRow
 			return table;
 		}
 
-		public static Object[] CreateDataRow(%s entity)
+		public static Object[] CreateDataRow(%s obj)
 		{
 			return new object[]
 			{'
-,0,1, @EntityName); 
+,0,1, @ObjectName); 
 
 set @n = 1;
 while (1=1)
@@ -350,7 +350,7 @@ raiserror(
 create type %s.%sTableType as table
 (
 '
-,0,1, @Schema, @EntityName)
+,0,1, @Schema, @ObjectName)
 
 
 set @n = 1;

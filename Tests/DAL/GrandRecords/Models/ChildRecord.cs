@@ -22,7 +22,7 @@ namespace Tests.DAL.GrandRecords.Models
 	[MapperFor(typeof(ChildRecord), RequiredMethod.AllMain)]
 	public static class ChildRecordMapper 
 	{
-		public static ChildRecord CreateEntity(SqlDataReader dr)
+		public static ChildRecord CreateObject(SqlDataReader dr)
 		{
 			var i = 0;
 			
@@ -45,20 +45,20 @@ namespace Tests.DAL.GrandRecords.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(ChildRecord entity)
+		public static Object[] CreateDataRow(ChildRecord obj)
 		{
-			if (entity.Id == 0) 
-				entity.Id = Int32NegativeIdentity.Next;
+			if (obj.Id == 0) 
+				obj.Id = Int32NegativeIdentity.Next;
 
-			if (entity.RecordId == 0 && entity.Record != null)
-				entity.RecordId = entity.Record.Id;
+			if (obj.RecordId == 0 && obj.Record != null)
+				obj.RecordId = obj.Record.Id;
 
 
 			return new object[]
 			{
-				entity.Id			,
-				entity.RecordId		,
-				entity.Name			
+				obj.Id			,
+				obj.RecordId	,
+				obj.Name			
 			};
 		}
 
