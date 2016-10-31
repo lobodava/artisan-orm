@@ -253,3 +253,4 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+Artisan.Orm/1. How-to-publish-NuGet-package.txt
