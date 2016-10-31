@@ -10,9 +10,9 @@ To achieve these goals Artisan ORM uses:
 * the *SqlDataReader* as the fastest method of data reading;
 * a bunch of its own *extensions to ADO.NET methods*, both synchronous and asynchronous;
 * strictly structured static *Mappers*;
-* *User Defined Table Types* as a mean of entity saving;
+* *User Defined Table Types* as a mean of object saving;
 * *unique negative identities* as a flag of new entities;
-* a special approach to writing stored procedures for entity reading and saving.
+* a special approach to writing stored procedures for object reading and saving.
 
 Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
 
@@ -61,8 +61,8 @@ In order to read and save the *User* data in Artisan ORM way it is required to c
 * Stored Procedures (TSQL)
 
 *Mapper Static Class* (C#) is decorated with *MapperFor* attribute and consists of four *static* methods with reserved names:
-* CreateEntity
-* CreateEntityRow
+* CreateObject
+* CreateObjectRow
 * CreateDataTable
 * CreateDataRow
 
@@ -70,7 +70,7 @@ In order to read and save the *User* data in Artisan ORM way it is required to c
 [MapperFor(typeof(User)]
 public static class UserMapper 
 {
-    public static User CreateEntity(SqlDataReader dr)
+    public static User CreateObject(SqlDataReader dr)
     {
         var i = 0;
 
@@ -83,7 +83,7 @@ public static class UserMapper
         };
     }
 
-    public static Object[] CreateEntityRow(SqlDataReader dr)
+    public static Object[] CreateObjectRow(SqlDataReader dr)
     {
         var i = 0;
 
@@ -108,17 +108,17 @@ public static class UserMapper
         return table;
     }
 
-    public static Object[] CreateDataRow(User entity)
+    public static Object[] CreateDataRow(User obj)
     {
-        if (entity.Id == 0) 
-            entity.Id = Int32NegativeIdentity.Next;
+        if (obj.Id == 0) 
+            obj.Id = Int32NegativeIdentity.Next;
 
         return new object[]
         {
-            entity.Id     ,
-            entity.Login  ,
-            entity.Name   ,
-            entity.Email
+            obj.Id     ,
+            obj.Login  ,
+            obj.Name   ,
+            obj.Email
         };
     }
 }
