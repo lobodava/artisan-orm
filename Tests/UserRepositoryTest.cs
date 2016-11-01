@@ -445,6 +445,29 @@ namespace Tests
 			}
 		}
 
+
+		[TestMethod]
+		public void GetAllUserWithRoles()
+		{
+			var sw = new Stopwatch();
+			sw.Start();
+			
+
+			var users = _repository.GetUsersWithRoles();
+
+			sw.Stop();
+
+			Assert.IsTrue(users.Count > 0);
+
+			Console.WriteLine($"GetUsersWithRoles reads {users.Count} Users with their Roles for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms" );
+			Console.Write(JsonConvert.SerializeObject(users));
+		}
+
+
+
+
+
+
 		private User CreateNewUser()
 		{
 			var user = _repository.GetUserById(1);

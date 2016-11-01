@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 using Artisan.Orm;
 using Tests.DAL.Users.Models;
@@ -103,6 +104,38 @@ namespace Tests.DAL.Users
 				return cmd.ReadToRowsAsync<User>();
 			});
 		}
+
+
+		public IList<User> GetUsersWithRoles()
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseSql( "select * from dbo.vwUsers; " +
+							"select UserId, RoleId from dbo.UserRoles;" +
+							"select Id, Code, Name from dbo.Roles");
+
+				return cmd.GetByReader(reader =>
+				{
+					var users = reader.ReadToList<User>();
+					var userRoles = reader.ReadToList(r => new {UserId = r.GetInt32(0), RoleId = r.GetByte(1)});
+					var roles = reader.ReadAsList<Role>();
+				
+					reader.Close();
+
+					foreach (var user in users)
+					{
+						user.Roles = new List<Role>();
+
+						foreach (var role in roles)
+							if (userRoles.Any(ur => ur.UserId == user.Id && ur.RoleId == role.Id))
+								user.Roles.Add(role);
+					}
+
+					return users;
+				});
+			});
+		}
+
 
 
 		#endregion

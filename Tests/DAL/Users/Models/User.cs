@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using Artisan.Orm;
@@ -18,6 +20,9 @@ namespace Tests.DAL.Users.Models
 
 		[JsonConverter(typeof(ByteArrayConverter))]
 		public Byte[] RoleIds { get; set; }
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		public IList<Role> Roles { get; set; }
 	}
 
 
