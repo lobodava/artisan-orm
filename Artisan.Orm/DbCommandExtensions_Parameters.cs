@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Linq;
 
 namespace Artisan.Orm
 {
@@ -761,7 +762,7 @@ namespace Artisan.Orm
 				{
 					if (objType.IsGenericType)
 					{
-						var itemType = obj.GetType().GetGenericArguments()[0];
+						var itemType = obj.GetType().GetGenericArguments().Last();
 
 						if (!itemType.IsValueType)
 							dataTable = DataTableHelpers.GetDataTableForList(obj, itemType);

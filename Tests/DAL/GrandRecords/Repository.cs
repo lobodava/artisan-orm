@@ -150,8 +150,8 @@ namespace Tests.DAL.GrandRecords
 
 		public IList<GrandRecord> SaveGrandRecords(IList<GrandRecord> grandRecords)
 		{
-			var records = grandRecords.SelectMany(gr => gr.Records).ToList();
-			var childRecords = records.SelectMany(r => r.ChildRecords).ToList();
+			var records = grandRecords.SelectMany(gr => gr.Records);
+			var childRecords = records.SelectMany(r => r.ChildRecords);
 
 			return GetByCommand(cmd =>
 			{
@@ -169,8 +169,8 @@ namespace Tests.DAL.GrandRecords
 
 		public async Task<IList<GrandRecord>> SaveGrandRecordsAsync(IList<GrandRecord> grandRecords)
 		{
-			var records = grandRecords.SelectMany(gr => gr.Records).ToList();
-			var childRecords = records.SelectMany(r => r.ChildRecords).ToList();
+			var records = grandRecords.SelectMany(gr => gr.Records);
+			var childRecords = records.SelectMany(r => r.ChildRecords);
 
 			return await GetByCommandAsync(cmd =>
 			{
