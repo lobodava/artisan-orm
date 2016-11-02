@@ -12,7 +12,7 @@ To achieve these goals Artisan ORM uses:
 * strictly structured static [Mappers](https://github.com/lobodava/artisan-orm/wiki/Mappers);
 * [User Defined Table Types](https://github.com/lobodava/artisan-orm/wiki/User-Defined-Table-Types) as a mean of object saving;
 * [unique negative identities](https://github.com/lobodava/artisan-orm/blob/master/Artisan.Orm/NegativeIdentity.cs) as a flag of new entities;
-* a [special approach](https://github.com/lobodava/artisan-orm/wiki/Negative-identities-and-complex-graphs-saving) to writing stored procedures for object reading and saving.
+* a [special approach](https://github.com/lobodava/artisan-orm/wiki/Negative-identities-and-object-graph-saving) to writing stored procedures for object reading and saving.
 
 Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
 
