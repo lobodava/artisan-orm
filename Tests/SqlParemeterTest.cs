@@ -447,56 +447,125 @@ namespace Tests
 			});
 
 		}
-		
 
 		[TestMethod]
-		public void GetDataTableFor()
+		public void ToTinyIntIdTableType()
 		{
-			var record = new Record
+			var numbers = new byte [] {1,2,3 };
+
+			_repository.RunCommand(cmd =>
 			{
-				Id				=	0				,
-				GrandRecordId	=	1				,
-				Name			=	"AAA"			,
-				RecordTypeId	=	1				,
-				Number			=	123				,
-				Date			=	DateTime.Now	,
-				Amount			=	1000			,
-				IsActive		=	true			,
-				Comment			=	"Lorem ipsum"
-			};
+				cmd.UseSql("select Id from @Numbers;");
+				
+				cmd.AddTableParam("@Numbers", numbers);
 
-			DataTable dataTable = DataTableHelpers.GetDataTableFor(record);
-			dataTable = DataTableHelpers.GetDataTableFor(record, typeof(Tests.DAL.Records.Models.Record));
+				var readNumbers = cmd.ReadToArray<Byte>();
+				
+				CollectionAssert.AreEqual(numbers, readNumbers);
+			});
 
-
-			var sw = new Stopwatch();
-			sw.Start();
-
-			for (var i = 1; i <= 10000; i++)
+			_repository.RunCommand(cmd =>
 			{
-				dataTable = DataTableHelpers.GetDataTableFor<Record>(record);
-			}
+				cmd.UseSql("select Id from @Numbers;");
+				
+				cmd.AddTableParam("@Numbers", numbers, "TinyIntIdTableType", "Id");
 
-			sw.Stop();
+				var readNumbers = cmd.ReadToArray<Byte>();
+				
+				CollectionAssert.AreEqual(numbers, readNumbers);
+			});
 
-			Console.WriteLine($"GetDataTableFor<Record>(record) created 10,000 DataTables for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 10000).ToString("0.####")} ms for one DataTable" );
-			Console.WriteLine();
-
-			var type = typeof(Record);
-
-			sw.Restart();
-
-			for (var i = 1; i <= 10000; i++)
+			_repository.RunCommand(cmd =>
 			{
-				dataTable = DataTableHelpers.GetDataTableFor(record, type);
-			}
+				cmd.UseSql("select Id from @Numbers;");
 
-			sw.Stop();
-
-			Console.WriteLine($"GetDataTableFor(record, type) created 10,000 DataTables for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 10000).ToString("0.####")} ms for one DataTable" );
-	
-
+				cmd.AddTableRowParam("@Numbers", (Byte)123);
+				
+				Assert.AreEqual(cmd.ReadTo<Byte>(), 123);
+			});
 		}
+
+		[TestMethod]
+		public void ToSmallIntIdTableType()
+		{
+			var numbers = new short [] {1,2,3 };
+
+			_repository.RunCommand(cmd =>
+			{
+				cmd.UseSql("select Id from @Numbers;");
+
+				cmd.AddTableParam("@Numbers", numbers);
+
+				var readNumbers = cmd.ReadToArray<Int16>();
+				
+				CollectionAssert.AreEqual(numbers, readNumbers);
+			});
+
+			_repository.RunCommand(cmd =>
+			{
+				cmd.UseSql("select Id from @Numbers;");
+
+				cmd.AddTableParam("@Numbers", numbers, "SmallIntIdTableType", "Id");
+
+				var readNumbers = cmd.ReadToArray<Int16>();
+				
+				CollectionAssert.AreEqual(numbers, readNumbers);
+			});
+
+			_repository.RunCommand(cmd =>
+			{
+				cmd.UseSql("select Id from @Numbers;");
+
+				cmd.AddTableRowParam("@Numbers", (Int16)123);
+				
+				Assert.AreEqual(cmd.ReadTo<Int16>(), 123);
+			});
+		}
+
+
+
+
+		[TestMethod]
+		public void ToIntIdTableType()
+		{
+			var numbers = new int [] {1,2,3 };
+
+			_repository.RunCommand(cmd =>
+			{
+				cmd.UseSql("select Id from @Numbers;");
+
+				cmd.AddTableParam("@Numbers", numbers);
+
+				var readNumbers = cmd.ReadToArray<Int32>();
+				
+				CollectionAssert.AreEqual(numbers, readNumbers);
+			});
+
+			_repository.RunCommand(cmd =>
+			{
+				cmd.UseSql("select Id from @Numbers;");
+
+				cmd.AddTableParam("@Numbers", numbers, "IntIdTableType", "Id");
+
+				var readNumbers = cmd.ReadToArray<Int32>();
+				
+				CollectionAssert.AreEqual(numbers, readNumbers);
+			});
+
+			_repository.RunCommand(cmd =>
+			{
+				cmd.UseSql("select Id from @Numbers;");
+
+				cmd.AddTableRowParam("@Numbers", 123);
+				
+				Assert.AreEqual(cmd.ReadTo<Int32>(), 123);
+			});
+		}
+
+
+
+
+
 
 
 

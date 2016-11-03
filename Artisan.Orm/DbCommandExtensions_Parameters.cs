@@ -705,16 +705,15 @@ namespace Artisan.Orm
 			});
 		}
 
-		public static void AddTableParamFor<T>(this SqlCommand cmd, string parameterName, T obj)
+
+		public static void AddTableParam(this SqlCommand cmd, string parameterName, DataTable dataTable)
 		{
 			var param = CreateInputParam(parameterName, SqlDbType.Structured);
 
-			if (obj == null)
+			if (dataTable == null)
 				param.Value = DBNull.Value;
 			else
 			{ 
-				var dataTable = DataTableHelpers.GetDataTableFor(obj);
-
 				param.TypeName = dataTable.TableName;
 				param.Value = dataTable;
 			}
@@ -722,74 +721,74 @@ namespace Artisan.Orm
 			cmd.Parameters.Add(param);
 		}
 
-		public static void AddTableParamFor<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list)
+		public static void AddTableParam(this SqlCommand cmd, string parameterName, IEnumerable<byte> ids)
 		{
-			var param = CreateInputParam(parameterName, SqlDbType.Structured);
+			cmd.AddTableParam(parameterName, ids?.ToTinyIntIdDataTable());
+		}
 
-			if (list == null)
-				param.Value = DBNull.Value;
-			else
-			{ 
-				DataTable dataTable;
+		public static void AddTableParam(this SqlCommand cmd, string parameterName, IEnumerable<short> ids)
+		{
+			cmd.AddTableParam(parameterName, ids.ToSmallIntIdDataTable());
+		}
 
-				if (typeof(T).IsValueType)
-					dataTable = DataTableHelpers.GetValueTypeDataTable(list);
-				else
-					dataTable = DataTableHelpers.GetDataTableForList(list);
+		/// <summary>
+		/// <para>Convert <see cref="ids"/> param to DataTable with name <c>ToIntIdDataTable</c> and <c>Id</c> column</para>
+		/// <para>and add <see cref="parameterName"/> SqlParameter to the <see cref="cmd"/> SqlCommand</para>
+		/// <para>Database must have the following user-defined table type:</para>
+		/// <para><c>create type IntIdTableType as table (Id int not null primary key clustered)</c></para>
+		/// </summary>
+		/// <param name="cmd">SqlCommand</param>
+		/// <param name="parameterName">The name of parameter in stored procedure or in SQL text</param>
+		/// <param name="ids">Collection of int Ids</param>
+		public static void AddTableParam(this SqlCommand cmd, string parameterName, IEnumerable<int> ids)
+		{
+			cmd.AddTableParam(parameterName, ids?.ToIntIdDataTable());
+		}
 
-				param.TypeName = dataTable.TableName;
-				param.Value = dataTable;
-			}
+		public static void AddTableParam<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list)
+		{
+			cmd.AddTableParam(parameterName, list?.ToDataTable<T>());
+		}
 
-			cmd.Parameters.Add(param);
+		public static void AddTableParam<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list, string tableName, string columnNames)
+		{
+			cmd.AddTableParam(parameterName, list?.AsDataTable(tableName, columnNames));
+		}
+
+		public static void AddTableRowParam(this SqlCommand cmd, string parameterName, byte id)
+		{
+			var array = new byte[] { id };
+			cmd.AddTableParam(parameterName, array);
+		}
+
+		public static void AddTableRowParam(this SqlCommand cmd, string parameterName, short id)
+		{
+			var array = new short[] { id };
+			cmd.AddTableParam(parameterName, array);
+		}
+
+		public static void AddTableRowParam(this SqlCommand cmd, string parameterName, int id)
+		{
+			var array = new int[] { id };
+			cmd.AddTableParam(parameterName, array);
 		}
 
 
-		public static void AddTableParam(this SqlCommand cmd, string parameterName, object obj)
+		public static void AddTableRowParam<T>(this SqlCommand cmd, string parameterName, T obj)
 		{
-			var param = CreateInputParam(parameterName, SqlDbType.Structured);
-			
-			if (obj == null)
-			{
-				param.Value = DBNull.Value;
-			}
-			else
-			{
-				DataTable dataTable;
-				var objType = obj.GetType();
-			
-				if (obj is IEnumerable)
-				{
-					if (objType.IsGenericType)
-					{
-						var itemType = obj.GetType().GetGenericArguments().Last();
+			var array = new T[] { obj };
 
-						if (!itemType.IsValueType)
-							dataTable = DataTableHelpers.GetDataTableForList(obj, itemType);
-						else
-							dataTable = DataTableHelpers.GetValueTypeDataTable(obj);
-					}
-					else
-						dataTable = DataTableHelpers.GetValueTypeDataTable(obj);;
-				}
-				else
-				{
-					dataTable =  obj as DataTable;
+			cmd.AddTableParam(parameterName, array);
+		}
 
-					if (dataTable == null)
-					{
-						dataTable =  DataTableHelpers.GetDataTableFor(obj, objType);
-					}
-				}
+		public static void AddTableRowParam<T>(this SqlCommand cmd, string parameterName, T obj, string tableName, string columnNames)
+		{
+			if (typeof(IEnumerable).IsAssignableFrom(typeof(T)))
+				throw new ArgumentException("Type T for AddTableRowParam must not implement IEnumerable interface.");
 
-				if (dataTable == null)
-					throw new NullReferenceException($"No mapping function found to create DataTable and DataRow for type {objType.FullName}");
+			var array = new T[] { obj };
 
-				param.TypeName = dataTable.TableName;
-				param.Value = dataTable;
-			}
-
-			cmd.Parameters.Add(param);
+			cmd.AddTableParam(parameterName, array.AsDataTable(tableName, columnNames));
 		}
 
 

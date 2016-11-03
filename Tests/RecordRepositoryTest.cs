@@ -167,6 +167,23 @@ namespace Tests
 			Console.Write(JsonConvert.SerializeObject(records));
 		}
 
+		[TestMethod]
+		public void GetRecordsWithReflection()
+		{
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var records  = _repository.GetRecordsWithReflection();
+	
+			sw.Stop();
+
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 0);
+
+			Console.WriteLine($"GetRecordsWithReflection reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.Write(JsonConvert.SerializeObject(records));
+		}
+
 
 		[TestMethod]
 		public async Task GetRecordsAsync()
@@ -182,6 +199,24 @@ namespace Tests
 			Assert.IsTrue(records.Count > 0);
 
 			Console.WriteLine($"GetRecordsAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.Write(JsonConvert.SerializeObject(records));
+		}
+
+
+		[TestMethod]
+		public async Task GetRecordsWithReflectionAsync()
+		{
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var records  = await _repository.GetRecordsWithReflectionAsync();
+	
+			sw.Stop();
+
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 0);
+
+			Console.WriteLine($"GetRecordsWithReflectionAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
 		}
 

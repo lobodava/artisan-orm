@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 
 
 namespace Artisan.Orm
@@ -98,7 +99,8 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToList(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadToList(DataReaderExtensions.CreateObject<T>);
+			return cmd.ReadAsList<T>(null);
+
 		}
 
 		public static IList<T> ReadToList<T>(this SqlCommand cmd) 
@@ -134,12 +136,28 @@ namespace Artisan.Orm
 		}
 
 
+		public static IList<T> ReadAsList<T>(this SqlCommand cmd, IList<T> list) 
+		{
+			if (list == null)
+				list = new List<T>();
+
+			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
+
+            using (var dr = cmd.ExecuteReader(readerFlags))
+			{
+				dr.ReadAsList<T>(list, false);
+			}
+
+			return list;
+		}
+
+
 		public static T[] ReadAsArray<T>(this SqlCommand cmd)
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return cmd.ReadToArray(DataReaderExtensions.GetValue<T>);
 
-			return cmd.ReadToArray(DataReaderExtensions.CreateObject<T>);
+			return cmd.ReadAsList<T>(null).ToArray();
 		}
 
 		public static T[] ReadToArray<T>(this SqlCommand cmd)

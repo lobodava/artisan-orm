@@ -79,6 +79,16 @@ namespace Tests.DAL.Records
 			});
 		}
 
+		public IList<Record> GetRecordsWithReflection()
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecords");
+
+				return cmd.ReadAsList<Record>();
+			});
+		}
+
 		public async Task<IList<Record>> GetRecordsAsync()
 		{
 			return await GetByCommandAsync(cmd =>
@@ -86,6 +96,16 @@ namespace Tests.DAL.Records
 				cmd.UseProcedure("dbo.GetRecords");
 
 				return cmd.ReadToListAsync<Record>();
+			});
+		}
+
+		public async Task<IList<Record>> GetRecordsWithReflectionAsync()
+		{
+			return await GetByCommandAsync(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecords");
+
+				return cmd.ReadAsListAsync<Record>();
 			});
 		}
 
@@ -127,7 +147,7 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.SaveRecords");
 
-				cmd.AddTableParam("@Records", record);
+				cmd.AddTableRowParam("@Records", record);
 
 				return cmd.ReadTo<Record>();
 			});
@@ -139,7 +159,7 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.SaveRecords");
 
-				cmd.AddTableParam("@Records", record);
+				cmd.AddTableRowParam("@Records", record);
 
 				return cmd.ReadToAsync<Record>();
 			});
@@ -169,7 +189,7 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.SaveRecords");
 
-				cmd.AddTableParam("@Records", records);
+				cmd.AddTableParam("@Records", records.ToDataTable());
 
 				return cmd.ReadToListAsync<Record>();
 			});

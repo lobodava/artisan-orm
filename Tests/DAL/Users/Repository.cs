@@ -151,7 +151,7 @@ namespace Tests.DAL.Users
 			{
 				cmd.UseProcedure("dbo.SaveUser");
 
-				cmd.AddTableParam("@User", user);
+				cmd.AddTableRowParam("@User", user);
 
 				cmd.AddTableParam("@RoleIds", user.RoleIds);
 
@@ -175,7 +175,7 @@ namespace Tests.DAL.Users
 			{
 				cmd.UseProcedure("dbo.SaveUser");
 
-				cmd.AddTableParam("@User", user);
+				cmd.AddTableRowParam("@User", user);
 
 				cmd.AddTableParam("@RoleIds", user.RoleIds);
 

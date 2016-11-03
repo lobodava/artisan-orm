@@ -24,7 +24,7 @@ namespace Artisan.Orm
 
 		public static T ReadAs<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			if (typeof(T).IsValueType || typeof(T) == typeof(string))
+			if (typeof(T).IsSimpleType())
 				return dr.ReadTo(GetValue<T>, getNextResult);
 
 			return dr.ReadTo(CreateObject<T>, getNextResult);
@@ -32,7 +32,7 @@ namespace Artisan.Orm
 
 		public static T ReadTo<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			if (typeof(T).IsValueType || typeof(T) == typeof(string))
+			if (typeof(T).IsSimpleType())
 				return dr.ReadTo(GetValue<T>, getNextResult);
 
 			return dr.ReadTo(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
@@ -69,7 +69,7 @@ namespace Artisan.Orm
 
 		public static IList<T> ReadToList<T>(this SqlDataReader dr,  bool getNextResult = true)
 		{
-			if (typeof(T).IsValueType || typeof(T) == typeof(string))
+			if (typeof(T).IsSimpleType())
 				return dr.ReadToList(GetValue<T>, getNextResult);
 				
 			return dr.ReadToList(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
@@ -77,12 +77,62 @@ namespace Artisan.Orm
 
 		public static IList<T> ReadAsList<T>(this SqlDataReader dr,  bool getNextResult = true)
 		{
-			if (typeof(T).IsValueType || typeof(T) == typeof(string))
+			if (typeof(T).IsSimpleType())
 				return dr.ReadToList(GetValue<T>, getNextResult);
 				
-			return dr.ReadToList(CreateObject<T>, getNextResult);
+			return dr.ReadAsList<T>(null, getNextResult);
 		}
 
+		public static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
+		{
+			if (list == null) 
+				list = new List<T>();
+
+			if (typeof(T).IsSimpleType())
+			{
+				dr.ReadToList<T>(GetValue<T>, list, getNextResult);
+				return list;
+			}
+
+			var dict = new Dictionary<string, Tuple<PropertyInfo, Type>>();
+
+			var properties = typeof(T)
+				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+				.Where(p => p.CanWrite && p.PropertyType.IsSimpleType()).ToList();
+
+			foreach (var property in properties)
+			{
+				var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+				dict.Add(property.Name, new Tuple<PropertyInfo, Type>(property, type));
+			}
+
+			if (dr != null)
+				while (dr.Read())
+				{
+					var item = Activator.CreateInstance<T>();
+					
+					for (var i = 0; i < dr.FieldCount; i++)
+					{
+						var columnName = dr.GetName(i);
+
+						Tuple<PropertyInfo, Type> propTuple;
+
+						if (dict.TryGetValue(columnName, out propTuple))
+						{
+							var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), propTuple.Item2);
+
+							propTuple.Item1.SetValue(item, value, null);
+						}
+					}
+
+					list.Add(item);
+				}
+
+			if (dr != null && getNextResult) dr.NextResult();
+
+			return list;
+		}
+		
 
 		public static Dictionary<T1,T2> ReadToDictionary<T1,T2>(this SqlDataReader dr,  bool getNextResult = true)
 		{
@@ -159,7 +209,7 @@ namespace Artisan.Orm
 
 		public static T[] ReadAsArray<T>(this SqlDataReader dr, bool getNextResult = true)
 		{
-			return dr.ReadAsList<T>(getNextResult).ToArray();
+			return dr.ReadAsList<T>(null, getNextResult).ToArray();
 		}
 		
 		public static T[] ReadToArray<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
@@ -276,16 +326,12 @@ namespace Artisan.Orm
 
 					prop.SetValue(obj, value, null);
 				}
-				//else
-				//{
-				//	throw new DataException(
-				//		$"There is no property of name '{columnName}' in the object of type {typeof (T).FullName} or this property is readonly.");
-				//}
 			}
 
 			return obj;
 		}
 		
+
 
 		#endregion
 

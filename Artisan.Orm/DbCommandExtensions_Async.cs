@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Artisan.Orm
@@ -98,7 +99,7 @@ namespace Artisan.Orm
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToListAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToListAsync(DataReaderExtensions.CreateObject<T>);
+			return await cmd.ReadAsListAsync<T>(null);
 		}
 
 		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd) 
@@ -133,12 +134,29 @@ namespace Artisan.Orm
 			return list;
 		}
 
+		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd, IList<T> list) 
+		{
+			if (list == null)
+				list = new List<T>();
+
+			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
+
+            using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			{
+				dr.ReadAsList<T>(list, false);
+			}
+
+			return list;
+		}
+		
+
 		public static async Task<T[]> ReadAsArrayAsync<T>(this SqlCommand cmd)
 		{
 			if (typeof(T).IsValueType || typeof(T) == typeof(String))
 				return await cmd.ReadToArrayAsync(DataReaderExtensions.GetValue<T>);
 
-			return await cmd.ReadToArrayAsync(DataReaderExtensions.CreateObject<T>);
+			var list = await cmd.ReadAsListAsync<T>(null);
+			return list.ToArray();
 		}
 
 		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd)
