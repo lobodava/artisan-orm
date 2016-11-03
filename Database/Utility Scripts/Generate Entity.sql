@@ -1,12 +1,11 @@
-﻿
- /*    Code Generation via SQL! :)
+/*		Code Generation via SQL!  :)
  
-	1. Open the script in Sql Server Management Studio or Visual Studio.
-	2. Change the declared variables with the values you need.
-	3. Boldly execute the script - it changes nothing!
-	4. The generated code should appear in the message panel below.
-	5. After a short revision the code can be used in the real case. 
- */ 
+	1.	Open the script in Sql Server Management Studio or Visual Studio.
+	2.	Change the declared variables with the values you need.
+	3.	Boldly execute the script - it changes nothing!
+	4.	The generated code should appear in the message panel below.
+	5.	After a short revision the code can be used in the real case. 
+*/ 
  
 declare @NameSpacePrefix sysname = N'Tests.DAL';
 declare @Schema			 sysname = N'dbo';
@@ -18,7 +17,6 @@ declare @ObjectName		 sysname = N'Record';
 declare @PluralName		 sysname = @TableName;
 
 set nocount on;
-
 
 
 begin -- декларация переменных 
