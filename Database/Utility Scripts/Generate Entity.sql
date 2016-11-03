@@ -1,8 +1,17 @@
 ﻿
+ /*    Code Generation via SQL! :)
+ 
+	1. Open the script in Sql Server Management Studio or Visual Studio.
+	2. Change the declared variables with the values you need.
+	3. Boldly execute the script - it changes nothing!
+	4. The generated code should appear in the message panel below.
+	5. After a short revision the code can be used in the real case. 
+ */ 
+ 
 declare @NameSpacePrefix sysname = N'Tests.DAL';
 declare @Schema			 sysname = N'dbo';
 
-declare @TableName		 sysname = N'Records';
+declare @TableName		 sysname = N'Records';	 -- existing table ov view name
 
 declare @ObjectName		 sysname = N'Record';
 
