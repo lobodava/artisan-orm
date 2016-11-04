@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Linq;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Records.Models;
@@ -562,8 +564,37 @@ namespace Tests
 			});
 		}
 
+		private class A
+		{
+			public int Id {get; set; }
+			public string Name {get; set; }
+		}
 
 
+		[TestMethod]
+		public void AsDataTable()
+		{
+			List<A> aList = new List<A>
+			{
+				new A {Id = 1, Name ="A" },
+				new A {Id = 2, Name ="AA" },
+			};
+
+			DataTable dt = aList.AsDataTable("ATable", "Id, Name");
+
+			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
+			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
+			
+			dt = aList.AsDataTable("ATable");
+
+			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
+			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
+
+		}
 
 
 

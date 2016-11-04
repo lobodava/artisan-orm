@@ -8,8 +8,15 @@ using Tests.DAL.Users.Models;
 
 namespace Tests.DAL.Users
 {
+
+
 	public class Repository: RepositoryBase
 	{
+		//#if DEBUG
+		//	public Repository () : base ("AnotherConnection", "Debug") {}
+		//#else
+		//	public Repository () : base ("AnotherConnection", "Release") {}
+		//#endif
 
 		#region [ GetUserById ]
 

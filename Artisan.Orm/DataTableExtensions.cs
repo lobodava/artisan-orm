@@ -45,7 +45,7 @@ namespace Artisan.Orm
 			var isSimpleType = typeof(T).IsSimpleType();
 
 			if (tableName == null)
-				 tableName = baseType.Name;
+				 throw new NullReferenceException("Parameter 'tableName' is required for AsDataTable<T> method.");
 
 			var table = new DataTable(tableName); 
 
