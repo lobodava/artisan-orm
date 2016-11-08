@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -93,10 +94,38 @@ namespace Tests
 
 		}
 
-
-
-
+		//[TestMethod]
+		//public void GetNumb()
+		//{
+		//	_repositoryBase.Connection.Open();
+			
+		//	var sw = new Stopwatch();
+		//	sw.Start();
 		
+		//	for (var i = 1; i <= 100000; i++)
+		//	{
+		//		_repositoryBase.RunCommand(cmd =>
+		//		{
+		//			cmd.UseSql("select Numb = cast(0 as int);");
+
+		//			var numb = cmd.GetByReader(reader => 
+		//			{
+		//				return reader.ReadTo(r => r.GetInt32Nullable(0));
+		//			});
+
+		//		});
+				
+		//	}
+
+		//	sw.Stop();
+
+		//	_repositoryBase.Connection.Close();
+
+		//	Console.WriteLine($"Numb {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms ");
+
+		//}
+
+	
 		[TestCleanup]
 		public void Dispose()
 		{

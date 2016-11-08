@@ -44,6 +44,7 @@ namespace Artisan.Orm
 			Transaction = Connection.BeginTransaction();
 			return Transaction;
 		}
+
 		public void CommitTransaction() {
 			Transaction.Commit();
 			Connection.Close();
@@ -53,6 +54,44 @@ namespace Artisan.Orm
 			Transaction.Rollback();
 			Connection.Close();
 		}
+
+		public void BeginTransaction(IsolationLevel isolationLevel, Action<SqlTransaction> action)
+		{
+			var isConnectionClosed = Connection.State == ConnectionState.Closed;
+
+			if (isConnectionClosed) 
+				Connection.Open();
+
+			Transaction = Connection.BeginTransaction(isolationLevel);
+
+			try
+			{
+				action(Transaction);
+			}
+			catch 
+			{
+				Transaction.Rollback();
+				throw;
+			}
+			finally
+			{
+				Transaction?.Dispose();
+				Transaction = null;
+
+				if(isConnectionClosed)
+					Connection.Close();
+			}
+
+		}
+
+		public void BeginTransaction(Action<SqlTransaction> action)
+		{
+			BeginTransaction(IsolationLevel.Unspecified, action);
+		}
+
+
+
+
 
 		public SqlCommand CreateCommand()
 		{

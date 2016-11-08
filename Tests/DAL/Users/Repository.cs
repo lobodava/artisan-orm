@@ -289,8 +289,26 @@ namespace Tests.DAL.Users
 			return true;
 		}
 
+		public void DeleteTwoUsers(Int32 userId1, Int32 userId2)
+		{
+			BeginTransaction(tran =>
+			{
+				ExecuteCommand(cmd =>
+				{
+					cmd.UseProcedure("dbo.DeleteUser");
+					cmd.AddIntParam("@UserId", userId1);
+				});
 
+				ExecuteCommand(cmd =>
+				{
+					cmd.UseProcedure("dbo.DeleteUser");
+					cmd.AddIntParam("@UserId", userId2);
+				});
 
+				tran.Commit();
+			});
+	
+		}
 
 		//	if to call this method like
 		//		await _repository.DeleteUserAsyncException(1);

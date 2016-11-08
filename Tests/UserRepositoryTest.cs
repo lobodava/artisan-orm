@@ -464,6 +464,77 @@ namespace Tests
 		}
 
 
+		[TestMethod]
+		public void TransactionTest()
+		{
+
+			var user1 = CreateNewUser();
+			user1 = _repository.SaveUser(user1);
+			var id = user1.Id;
+
+			_repository.BeginTransaction(tran =>
+			{
+				_repository.ExecuteCommand(cmd =>
+				{
+					cmd.UseSql($"delete from Users where Id = {id}");
+
+				});
+
+				//tran.Rollback();
+			});
+			
+			user1 = _repository.GetUserById(user1.Id);
+			
+			Assert.IsNotNull(user1);
+			Assert.AreEqual(user1.Id, id);
+
+
+			var user2 = CreateNewUser();
+			user2 = _repository.SaveUser(user2);
+			var id2 = user2.Id;
+
+
+			_repository.BeginTransaction(tran =>
+			{
+				_repository.ExecuteCommand(cmd =>
+				{
+					cmd.UseSql($"delete from Users where Id = {id}");
+
+				});
+
+				_repository.DeleteUser(id2);
+
+
+				tran.Rollback();
+			});
+
+			user1 = _repository.GetUserById(user1.Id);
+			
+			Assert.IsNotNull(user1);
+			Assert.AreEqual(user1.Id, id);
+
+			user2 = _repository.GetUserById(user2.Id);
+			
+			Assert.IsNotNull(user2);
+			Assert.AreEqual(user2.Id, id2);
+
+
+
+
+			_repository.DeleteTwoUsers(user1.Id, user2.Id);
+
+			user1 = _repository.GetUserById(user1.Id);
+			Assert.IsNull(user1);
+
+			user2 = _repository.GetUserById(user2.Id);
+			Assert.IsNull(user2);
+		}
+
+
+
+
+
+
 
 
 

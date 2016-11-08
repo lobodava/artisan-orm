@@ -345,7 +345,7 @@ namespace Tests
 			Console.Write(JsonConvert.SerializeObject(savedRecords.Take(10)));
 		}
 		
-
+		
 
 		private static Record CreateNewRecord(string suffix = "")
 		{

@@ -595,11 +595,6 @@ namespace Tests
 			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
 
 		}
-
-
-
-
-
 		
 		[TestCleanup]
 		public void Dispose()
