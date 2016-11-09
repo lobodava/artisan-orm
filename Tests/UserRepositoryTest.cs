@@ -531,11 +531,14 @@ namespace Tests
 		}
 
 
+		
+		//[TestMethod]
+		//public void CheckRuleForUser()
+		//{
 
+		//	_repository.CheckRuleForUser(4);
 
-
-
-
+		//}
 
 
 

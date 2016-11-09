@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
@@ -309,6 +310,41 @@ namespace Tests.DAL.Users
 			});
 	
 		}
+
+
+		public void CheckRuleForUser(Int32 userId)
+		{
+			BeginTransaction(IsolationLevel.RepeatableRead, tran =>
+			{
+				var user = GetByCommand(cmd =>
+				{
+					cmd.UseProcedure("dbo.GetUserById");
+					cmd.AddIntParam("@Id", userId);
+
+					return cmd.ReadTo<User>();
+				});
+
+				if (Array.IndexOf(user.RoleIds, 2) > -1 && Array.IndexOf(user.RoleIds, 3) == -1)
+				{
+					var newRoleIds = user.RoleIds.ToList();
+					newRoleIds.Add(3);
+					user.RoleIds = newRoleIds.ToArray();
+				}
+				
+				ExecuteCommand(cmd =>
+				{
+					cmd.UseProcedure("dbo.SaveUser");
+
+					cmd.AddTableRowParam("@User", user);
+					cmd.AddTableParam("@RoleIds", user.RoleIds);
+				});
+
+
+				tran.Commit();
+			});
+		}
+
+
 
 		//	if to call this method like
 		//		await _repository.DeleteUserAsyncException(1);

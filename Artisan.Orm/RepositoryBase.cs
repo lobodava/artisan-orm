@@ -35,25 +35,6 @@ namespace Artisan.Orm
 
 			Transaction = transaction;
 		}
-		
-
-		public SqlTransaction BeginTransaction() {
-			if (Connection.State == ConnectionState.Closed) 
-				Connection.Open();
-
-			Transaction = Connection.BeginTransaction();
-			return Transaction;
-		}
-
-		public void CommitTransaction() {
-			Transaction.Commit();
-			Connection.Close();
-		}
-
-		public void RollbackTransaction() {
-			Transaction.Rollback();
-			Connection.Close();
-		}
 
 		public void BeginTransaction(IsolationLevel isolationLevel, Action<SqlTransaction> action)
 		{
@@ -63,6 +44,7 @@ namespace Artisan.Orm
 				Connection.Open();
 
 			Transaction = Connection.BeginTransaction(isolationLevel);
+
 
 			try
 			{
@@ -88,9 +70,6 @@ namespace Artisan.Orm
 		{
 			BeginTransaction(IsolationLevel.Unspecified, action);
 		}
-
-
-
 
 
 		public SqlCommand CreateCommand()
@@ -223,8 +202,7 @@ namespace Artisan.Orm
 
 			if (String.IsNullOrWhiteSpace(dataStatusCode))
 				return null;
-				//throw new InvalidEnumArgumentException("Cannot cast empty string to DataStatus Enum");
-			
+		
 				if (!Enum.IsDefined(typeof(DataStatus), dataStatusCode))
 				throw new InvalidCastException($"Cannot cast string '{dataStatusCode}' to DataStatus Enum");
 
