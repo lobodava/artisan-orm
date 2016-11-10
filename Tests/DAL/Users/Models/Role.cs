@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Data.SqlClient;
-using Artisan.Orm;
 
 namespace Tests.DAL.Users.Models
 {

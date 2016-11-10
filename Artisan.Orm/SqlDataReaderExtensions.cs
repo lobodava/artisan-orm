@@ -7,81 +7,156 @@ using System.Reflection;
 
 namespace Artisan.Orm
 {
-	public static class DataReaderExtensions
+	public static class SqlDataReaderExtensions
 	{
 		
 		#region [ Read ENTITY extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 		
+		
 
 		public static void Read(this SqlDataReader dr, Action<SqlDataReader> action, bool getNextResult = true) 
 		{
-			if (dr != null && dr.Read()) 
+			if (dr.Read()) 
 				action(dr);
 
-			if (dr != null && getNextResult) dr.NextResult();
+			if (getNextResult) dr.NextResult();
+		}
+
+
+		#region [ ReadTo, ReadAs ]
+
+		private static T ReadToValue<T>(this SqlDataReader dr, bool getNextResult = true)
+		{
+			T obj;
+
+			if (dr.Read())
+				if (typeof(T).IsNullableValueType() && dr.IsDBNull(0))
+					obj = default(T);
+				else
+					obj = GetValue<T>(dr);
+			else
+				obj = default(T);
+
+			if (getNextResult) dr.NextResult();
+
+			return obj;
+		}
+
+
+		public static T ReadTo<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
+		{
+			var obj = dr.Read() ? createFunc(dr) : default(T);
+
+			if (getNextResult) dr.NextResult();
+
+			return obj;
+		}
+
+		public static T ReadTo<T>(this SqlDataReader dr, bool getNextResult = true) 
+		{
+			if (typeof(T).IsSimpleType())
+				return dr.ReadToValue<T>(getNextResult);
+
+			return dr.ReadTo(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
 		}
 
 
 		public static T ReadAs<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			if (typeof(T).IsSimpleType())
-				return dr.ReadTo(GetValue<T>, getNextResult);
+				return dr.ReadToValue<T>(getNextResult);
 
 			return dr.ReadTo(CreateObject<T>, getNextResult);
 		}
 
-		public static T ReadTo<T>(this SqlDataReader dr, bool getNextResult = true) 
-		{
-			if (typeof(T).IsSimpleType())
-				return dr.ReadTo(GetValue<T>, getNextResult);
-
-			return dr.ReadTo(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
-		}
+		#endregion
 		
-		public static T ReadTo<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
-		{
-			var obj =  (dr != null && dr.Read()) ? createFunc(dr) : default(T);
 
-			if (dr != null && getNextResult) dr.NextResult();
-
-			return obj;
-		}
+		#region [ ReadToList, ReadAsList, ReadToArray, ReadAsArray ]
 		
+		private static IList<T> ReadToListOfValues<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
+		{
+			if (list == null)
+				list = new List<T>();
+
+			var type = typeof(T);
+			var isNullableValueType = type.IsNullableValueType();
+			
+			if (isNullableValueType)
+			{
+				var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+				while (dr.Read())
+					list.Add(dr.IsDBNull(0) ? default(T) : GetValue<T>(dr, underlyingType));
+			}
+			else
+			{
+				while (dr.Read())
+					list.Add(GetValue<T>(dr, type));
+			}
+
+			if (getNextResult) dr.NextResult();
+
+			return list;
+		}
+
+		private static IList<T> ReadToListOfObjects<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true)
+		{
+			if (list == null)
+				list = new List<T>();
+			
+			while (dr.Read()) 
+				list.Add(createFunc(dr));
+
+			if (getNextResult) dr.NextResult();
+
+			return list;
+		}
+	
+
+		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true) 
+		{
+			if (list == null)
+				list = new List<T>();
+
+			var isNullableValueType = typeof(T).IsNullableValueType();
+
+			while (dr.Read())
+			{
+				if (isNullableValueType && dr.IsDBNull(0))
+					list.Add(default(T));
+				else 
+					list.Add(createFunc(dr));
+			}
+
+			if (getNextResult) dr.NextResult();
+
+			return list;
+		}
+
 		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
 		{
-			var list = new List<T>();
-			var type = typeof(T);
-			var isNullableScalar = type.IsValueType && Nullable.GetUnderlyingType(type) != null || type == typeof(String);
+			if (typeof(T).IsSimpleType())
+				return dr.ReadToListOfValues<T>(null, getNextResult);
 
-			if (dr != null)
-				while (dr.Read()) 
-				{
-					if (isNullableScalar && dr.IsDBNull(0))
-						list.Add(default(T));
-					else if (!dr.IsDBNull(0))
-						list.Add(createFunc(dr));
-				}
+			return dr.ReadToListOfObjects<T>(createFunc, null, getNextResult);
+		}
 
-			if (dr != null && getNextResult) dr.NextResult();
-		
-			return list;
+		public static IList<T> ReadToList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
+		{
+			if (typeof(T).IsSimpleType())
+				return dr.ReadToListOfValues<T>(list, getNextResult);
+
+			return dr.ReadToListOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), list, getNextResult);
 		}
 
 		public static IList<T> ReadToList<T>(this SqlDataReader dr,  bool getNextResult = true)
 		{
 			if (typeof(T).IsSimpleType())
-				return dr.ReadToList(GetValue<T>, getNextResult);
-				
-			return dr.ReadToList(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
+				return dr.ReadToListOfValues<T>(null, getNextResult);
+
+			return dr.ReadToListOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), null, getNextResult);
 		}
 
-		public static IList<T> ReadAsList<T>(this SqlDataReader dr,  bool getNextResult = true)
-		{
-			if (typeof(T).IsSimpleType())
-				return dr.ReadToList(GetValue<T>, getNextResult);
-				
-			return dr.ReadAsList<T>(null, getNextResult);
-		}
 
 		public static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
 		{
@@ -89,10 +164,8 @@ namespace Artisan.Orm
 				list = new List<T>();
 
 			if (typeof(T).IsSimpleType())
-			{
-				dr.ReadToList<T>(GetValue<T>, list, getNextResult);
-				return list;
-			}
+				return dr.ReadToListOfValues<T>(list, getNextResult);
+
 
 			var dict = new Dictionary<string, Tuple<PropertyInfo, Type>>();
 
@@ -106,100 +179,45 @@ namespace Artisan.Orm
 				dict.Add(property.Name, new Tuple<PropertyInfo, Type>(property, type));
 			}
 
-			if (dr != null)
-				while (dr.Read())
-				{
-					var item = Activator.CreateInstance<T>();
+	
+			while (dr.Read())
+			{
+				var item = Activator.CreateInstance<T>();
 					
-					for (var i = 0; i < dr.FieldCount; i++)
+				for (var i = 0; i < dr.FieldCount; i++)
+				{
+					var columnName = dr.GetName(i);
+
+					Tuple<PropertyInfo, Type> propTuple;
+
+					if (dict.TryGetValue(columnName, out propTuple))
 					{
-						var columnName = dr.GetName(i);
+						var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), propTuple.Item2);
 
-						Tuple<PropertyInfo, Type> propTuple;
-
-						if (dict.TryGetValue(columnName, out propTuple))
-						{
-							var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), propTuple.Item2);
-
-							propTuple.Item1.SetValue(item, value, null);
-						}
+						propTuple.Item1.SetValue(item, value, null);
 					}
-
-					list.Add(item);
 				}
 
-			if (dr != null && getNextResult) dr.NextResult();
+				list.Add(item);
+			}
+
+			if (getNextResult) dr.NextResult();
 
 			return list;
 		}
-		
 
-		public static Dictionary<T1,T2> ReadToDictionary<T1,T2>(this SqlDataReader dr,  bool getNextResult = true)
+		public static IList<T> ReadAsList<T>(this SqlDataReader dr,  bool getNextResult = true)
 		{
-			var dictionary = new Dictionary<T1,T2>();
-
-			var type1 = typeof(T1);
-			var type2 = Nullable.GetUnderlyingType(typeof(T2)) ?? typeof(T2);
-
-
-			if (dr != null)
-				while (dr.Read()) 
-				{
-					if (!dr.IsDBNull(0)) {
-						var key = (T1)Convert.ChangeType(dr.GetValue(0), type1);
-						var value = (T2)(dr.IsDBNull(1) ? null : Convert.ChangeType(dr.GetValue(1), type2));
-						dictionary.Add(key, value);
-					}
-	
-				}
-
-			if (dr != null && getNextResult) dr.NextResult();
-
-			return dictionary;
+			if (typeof(T).IsSimpleType())
+				return dr.ReadToListOfValues<T>(null, getNextResult);
+				
+			return dr.ReadAsList<T>(null, getNextResult);
 		}
 
-		public static Dictionary<T1,T2> ReadToDictionary<T1,T2>(this SqlDataReader dr, Func<SqlDataReader, T2> createFunc,  bool getNextResult = true)
+
+		public static T[] ReadToArray<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
 		{
-			var dictionary = new Dictionary<T1,T2>();
-
-			var type1 = typeof(T1);
-
-			if (dr != null)
-				while (dr.Read()) 
-				{
-					if (!dr.IsDBNull(0)) {
-						var key = (T1)Convert.ChangeType(dr.GetValue(0), type1);
-						var value = createFunc(dr);
-						dictionary.Add(key, value);
-					}
-	
-				}
-
-			if (dr != null && getNextResult) dr.NextResult();
-
-			return dictionary;
-		}
-		
-		public static void ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> listToReadTo, bool getNextResult = true) 
-		{
-			var type = typeof(T);
-			var isNullableScalar = type.IsValueType && Nullable.GetUnderlyingType(type) != null || type == typeof(String);
-
-			if (dr != null)
-				while (dr.Read())
-				{
-					if (isNullableScalar && dr.IsDBNull(0))
-						listToReadTo.Add(default(T));
-					else if (!dr.IsDBNull(0))
-						listToReadTo.Add(createFunc(dr));
-				}
-
-			if (dr != null && getNextResult) dr.NextResult();
-		}
-	
-		public static void ReadToList<T>(this SqlDataReader dr, IList<T> listToReadTo, bool getNextResult = true)
-		{
-			dr.ReadToList(MappingManager.GetCreateObjectFunc<T>(), listToReadTo, getNextResult);
+			return dr.ReadToList<T>(createFunc, getNextResult).ToArray();
 		}
 
 		public static T[] ReadToArray<T>(this SqlDataReader dr, bool getNextResult = true)
@@ -209,23 +227,20 @@ namespace Artisan.Orm
 
 		public static T[] ReadAsArray<T>(this SqlDataReader dr, bool getNextResult = true)
 		{
-			return dr.ReadAsList<T>(null, getNextResult).ToArray();
+			return dr.ReadAsList<T>(getNextResult).ToArray();
 		}
 		
-		public static T[] ReadToArray<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
-		{
-			return dr.ReadToList<T>(createFunc, getNextResult).ToArray();
-		}
+		#endregion
 
+
+
+		#region [ ReadToRow(s), ReadAsRow(s) ]
 
 		public static object[] ReadToRow(this SqlDataReader dr, Func<SqlDataReader, object[]> createFunc, bool getNextResult = true) 
 		{
-			object[] row = null;
+			var row = dr.Read() ? createFunc(dr) : null;
 
-			if (dr != null && dr.Read())
-				row = createFunc(dr);
-
-			if (dr != null && getNextResult) dr.NextResult();
+			if (getNextResult) dr.NextResult();
 
 			return row;
 		}
@@ -234,79 +249,126 @@ namespace Artisan.Orm
 		{
 			return dr.ReadToRow(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
 		}
+		
 
+		public static Rows ReadToRows(this SqlDataReader dr, Func<SqlDataReader, object[]> createFunc, bool getNextResult = true) 
+		{
+			var rows = new Rows();
+
+			while (dr.Read())
+				rows.Add(createFunc(dr));
+
+			if (getNextResult) dr.NextResult();
+
+			return rows;
+		}
+		
+		public static Rows ReadToRows<T>(this SqlDataReader dr, bool getNextResult = true) 
+		{
+			return dr.ReadToRows(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
+		}
 
 
 		public static object[] ReadAsRow(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			object[] row = null;
 
-			if (dr != null && dr.Read())
+			if (dr.Read())
 			{
 				row = new object[dr.FieldCount];
 
-				for (int i = 0; i < dr.FieldCount; i++)
-				{
+				for (var i = 0; i < dr.FieldCount; i++)
 					row[i] = dr.GetValue(i);
-				}
 			}
 
-			if (dr != null && getNextResult) dr.NextResult();
+			if (getNextResult) dr.NextResult();
 
 			return row;
-		}
-
-
-		public static Rows ReadToRows(this SqlDataReader dr, Func<SqlDataReader, object[]> createFunc, bool getNextResult = true) 
-		{
-			var rows = new Rows();
-
-			if (dr != null)
-				while (dr.Read())
-				{
-					rows.Add(createFunc(dr));
-				}
-
-			if (dr != null && getNextResult) dr.NextResult();
-
-			return rows;
-		}
-
-
-		public static Rows ReadToRows<T>(this SqlDataReader dr, bool getNextResult = true) 
-		{
-			return dr.ReadToRows(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
 		}
 
 		public static Rows ReadAsRows(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			var rows = new Rows();
+		
+			while (dr.Read())
+			{
+				var row = new object[dr.FieldCount];
 
-			if (dr != null)
-				while (dr.Read())
-				{
-					var row = new object[dr.FieldCount];
-
-					for (int i = 0; i < dr.FieldCount; i++)
-					{
-						row[i] = dr.GetValue(i);
-					}
+				for (var i = 0; i < dr.FieldCount; i++)
+					row[i] = dr.GetValue(i);
 				
-					rows.Add(row);
-				}
+				rows.Add(row);
+			}
 
-			if (dr != null && getNextResult) dr.NextResult();
+			if (getNextResult) dr.NextResult();
 
 			return rows;
 		}
+		
+		#endregion
 
+		#region [ ReadToDictionary ]
+
+		public static Dictionary<TKey, TValue> ReadToDictionary<TKey,TValue>(this SqlDataReader dr,  bool getNextResult = true)
+		{
+			var dictionary = new Dictionary<TKey,TValue>();
+
+			var type1 = typeof(TKey);
+			var type2 = Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TValue);
+			
+			while (dr.Read()) 
+			{
+				if (!dr.IsDBNull(0)) {
+					var key = (TKey)Convert.ChangeType(dr.GetValue(0), type1);
+					var value = (TValue)(dr.IsDBNull(1) ? null : Convert.ChangeType(dr.GetValue(1), type2));
+					dictionary.Add(key, value);
+				}
+	
+			}
+
+			if (getNextResult) dr.NextResult();
+
+			return dictionary;
+		}
+
+		public static Dictionary<TKey,TValue> ReadToDictionary<TKey,TValue>(this SqlDataReader dr, Func<SqlDataReader, TValue> createFunc,  bool getNextResult = true)
+		{
+			var dictionary = new Dictionary<TKey,TValue>();
+
+			var type1 = typeof(TKey);
+
+			while (dr.Read()) 
+			{
+				if (!dr.IsDBNull(0)) {
+					var key = (TKey)Convert.ChangeType(dr.GetValue(0), type1);
+					var value = createFunc(dr);
+					dictionary.Add(key, value);
+				}
+	
+			}
+
+			if (getNextResult) dr.NextResult();
+
+			return dictionary;
+		}
+		
+		#endregion 
+		
+
+		#region [ GetValue, CreateObject ]
 		
 		internal static T GetValue<T>(SqlDataReader dr)
 		{
-			var type = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+			var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
 			
-			return (T)Convert.ChangeType(dr.GetValue(0), type);
+			return (T)Convert.ChangeType(dr.GetValue(0), underlyingType);
 		}
+
+		internal static T GetValue<T>(SqlDataReader dr, Type underlyingType)
+		{
+			return (T)Convert.ChangeType(dr.GetValue(0), underlyingType);
+		}
+
 
 		internal static T CreateObject<T>(SqlDataReader dr)
 		{
@@ -331,6 +393,7 @@ namespace Artisan.Orm
 			return obj;
 		}
 		
+		#endregion 
 
 
 		#endregion

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data.SqlClient;
 using System.Diagnostics;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

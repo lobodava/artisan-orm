@@ -109,6 +109,17 @@ namespace Tests.DAL.Records
 			});
 		}
 
+		public IEnumerable<Record> GetRecordsAsEnumerable()
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecords");
+
+				return cmd.ReadToEnumerable<Record>();
+			});
+		}
+
+
 
 		#endregion
 

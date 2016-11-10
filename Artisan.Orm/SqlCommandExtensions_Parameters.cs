@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
-using System.Linq;
 
 namespace Artisan.Orm
 {
-	public static partial class DbCommandExtensions
+	public static partial class SqlCommandExtensions
 	{
 
 		public static void UseProcedure(this SqlCommand cmd, string procedureName)

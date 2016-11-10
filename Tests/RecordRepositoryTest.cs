@@ -222,6 +222,42 @@ namespace Tests
 
 
 		[TestMethod]
+		public void GetRecordsAsEnumerable()
+		{
+			var recordList = _repository.GetRecords();
+			var json = JsonConvert.SerializeObject(recordList);
+			
+			var recordEnumerable  = _repository.GetRecordsAsEnumerable();
+			json = JsonConvert.SerializeObject(recordEnumerable);
+			
+
+			var sw = new Stopwatch();
+			sw.Start();
+			
+			recordEnumerable  = _repository.GetRecordsAsEnumerable();
+			json = JsonConvert.SerializeObject(recordEnumerable);
+			
+			sw.Stop();
+
+			Assert.IsNotNull(json);
+
+			Console.WriteLine($"GetRecordsAsEnumerable reads records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+
+
+			sw.Restart();
+			
+			recordList = _repository.GetRecords();
+			json = JsonConvert.SerializeObject(recordList);
+			
+			sw.Stop();
+
+			Assert.IsNotNull(json);
+
+			Console.WriteLine($"GetRecords reads records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+		}
+
+
+		[TestMethod]
 		public void GetRecordRows()
 		{
 			var sw = new Stopwatch();

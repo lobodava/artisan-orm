@@ -176,7 +176,10 @@ namespace Artisan.Orm
 			}
 		}
 
-
+		/// <summary>
+		/// <para>Creates SqlCommand, passes it to Action argument as SqlCommand parameter, returns nothing.</para>
+		/// <para>See GitHub Wiki about this method: <a href="https://github.com/lobodava/artisan-orm/wiki/RepositoryBase-methods-for-SqlCommand-initialization#runcommand">https://github.com/lobodava/artisan-orm/wiki/RepositoryBase-methods-for-SqlCommand-initialization#runcommand</a></para>
+		/// </summary>
 		public void RunCommand(Action<SqlCommand> action)
 		{
 			using (var cmd = CreateCommand())

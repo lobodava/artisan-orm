@@ -13,7 +13,7 @@ namespace Artisan.Orm
 		{
 			var types = new[] 
 			{
-				typeof (Enum),
+				//typeof (Enum),
 				typeof (String),
 				typeof (Char),
 				typeof (Guid),
@@ -53,6 +53,15 @@ namespace Artisan.Orm
 			var nut = Nullable.GetUnderlyingType(type);
 			return nut != null && nut.IsEnum;
 		}
+
+		internal static bool IsNullableValueType(this Type type)
+		{
+			//type.IsValueType && Nullable.GetUnderlyingType(type) != null || type == typeof(String)
+
+			return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)
+				|| type == typeof(String);
+		}
+
 
 	}
 }
