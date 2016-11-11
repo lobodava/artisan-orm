@@ -54,21 +54,30 @@ namespace Tests.DAL.GrandRecords
 			// the following code allows joining two collections for a single pass
 			// it works only if these collections are sorted by RecordId  (!)
 
-			var childRecordEnumerator = childRecords.GetEnumerator();
-			var childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
+			grandRecord.Records.MergeJoin(
+			    r => { r.GrandRecord = grandRecord; },
+			    childRecords, 
+			    (r, cr) => r.Id == cr.RecordId,
+			    (r, cr) => {cr.Record = r; r.ChildRecords.Add(cr);}
+			);
 			
-			foreach (var record in grandRecord.Records)
-			{
-				while (childRecord != null && childRecord.RecordId == record.Id)
-				{
-					childRecord.Record = record;
-					record.ChildRecords.Add(childRecord);
+			//var childRecordEnumerator = childRecords.GetEnumerator();
+			//var childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
+			
+			//foreach (var record in grandRecord.Records)
+			//{
+			//	record.GrandRecord = grandRecord;
 
-					childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
-				}
+			//	while (childRecord != null && childRecord.RecordId == record.Id)
+			//	{
+			//		childRecord.Record = record;
+			//		record.ChildRecords.Add(childRecord);
 
-				record.GrandRecord = grandRecord;
-			}
+			//		childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
+			//	}
+
+			//	record.GrandRecord = grandRecord;
+			//}
 
 			return grandRecord;
 		}
@@ -99,48 +108,6 @@ namespace Tests.DAL.GrandRecords
 				return cmd.GetByReaderAsync(ReadGrandRecords);
 			});
 		}
-
-
-		private static IList<GrandRecord> ReadGrandRecords(SqlDataReader reader)
-		{
-			var grandRecords = reader.ReadToList<GrandRecord>();
-
-			var records = reader.ReadToList<Record>();
-
-			var childRecords = reader.ReadToList<ChildRecord>();
-
-			reader.Close();
-
-
-			var recordEnumerator = records.GetEnumerator();
-			var record = recordEnumerator.MoveNext() ? recordEnumerator.Current : null;
-
-			var childRecordEnumerator = childRecords.GetEnumerator();
-			var childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
-
-
-			foreach (var grandRecord in grandRecords)
-			{
-				while (record != null && record.GrandRecordId == grandRecord.Id)
-				{
-					while (childRecord != null && childRecord.RecordId == record.Id)
-					{
-						childRecord.Record = record;
-						record.ChildRecords.Add(childRecord);
-
-						childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
-					}
-
-					record.GrandRecord = grandRecord;
-					grandRecord.Records.Add(record);
-
-					record = recordEnumerator.MoveNext() ? recordEnumerator.Current : null;
-				}
-			}
-
-			return grandRecords;
-		}
-
 
 		#endregion
 
@@ -189,37 +156,56 @@ namespace Tests.DAL.GrandRecords
 		#endregion
 
 
-		//#region [ GetRecordDataRows ]
+		private static IList<GrandRecord> ReadGrandRecords(SqlDataReader reader)
+		{
+			var grandRecords = reader.ReadToList<GrandRecord>();
+
+			var records = reader.ReadToList<Record>();
+
+			var childRecords = reader.ReadToList<ChildRecord>();
+
+			reader.Close();
+
+			grandRecords.MergeJoin(
+				records, 
+				(gr, r) => gr.Id == r.GrandRecordId,
+				(gr, r) => { r.GrandRecord = gr; gr.Records.Add(r); },
+
+				childRecords,
+				(r, cr) => r.Id == cr.RecordId,
+				(r, cr) => { cr.Record = r; r.ChildRecords.Add(cr); }
+			);
+
+			// THE MergeJoin CODE ABOVE IS THE REPLACEMENT FOR THE COMMENTED CODE BELOW :)
+
+			//var recordEnumerator = records.GetEnumerator();
+			//var record = recordEnumerator.MoveNext() ? recordEnumerator.Current : null;
+
+			//var childRecordEnumerator = childRecords.GetEnumerator();
+			//var childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
 
 
-		//public Record SaveRecord(Record record)
-		//{
-		//	return GetByCommand(cmd =>
-		//	{
-		//		cmd.UseProcedure("dbo.SaveRecords");
+			//foreach (var grandRecord in grandRecords)
+			//{
+			//	while (record != null && record.GrandRecordId == grandRecord.Id)
+			//	{
+			//		while (childRecord != null && childRecord.RecordId == record.Id)
+			//		{
+			//			childRecord.Record = record;
+			//			record.ChildRecords.Add(childRecord);
 
-		//		cmd.AddTableParam("@Records", record.ToDataTable());
+			//			childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
+			//		}
 
-		//		return cmd.ReadTo<Record>();
-		//	});
-		//}
+			//		record.GrandRecord = grandRecord;
+			//		grandRecord.Records.Add(record);
 
-		//public async Task<Record> SaveRecordAsync(Record record)
-		//{
-		//	return await GetByCommandAsync(cmd =>
-		//	{
-		//		cmd.UseProcedure("dbo.SaveRecords");
+			//		record = recordEnumerator.MoveNext() ? recordEnumerator.Current : null;
+			//	}
+			//}
 
-		//		cmd.AddTableParam("@Records", record.ToDataTable());
-
-		//		return cmd.ReadToAsync<Record>();
-		//	});
-		//}
-
-
-		//#endregion
-
-
+			return grandRecords;
+		}
 
 	}
 }
