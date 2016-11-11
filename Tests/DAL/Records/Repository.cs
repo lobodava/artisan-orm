@@ -123,26 +123,26 @@ namespace Tests.DAL.Records
 
 		#endregion
 
-		#region [ GetRecordDataRows ]
+		#region [ GetRecordRows ]
 
 
-		public Rows GetRecordDataRows()
+		public ObjectRows GetRecordRows()
 		{
 			return GetByCommand(cmd =>
 			{
 				cmd.UseProcedure("dbo.GetRecords");
 
-				return cmd.ReadToRows<Record>();
+				return cmd.ReadToObjectRows<Record>();
 			});
 		}
 
-		public async Task<Rows> GetRecordDataRowsAsync()
+		public async Task<ObjectRows> GetRecordRowsAsync()
 		{
 			return await GetByCommandAsync(cmd =>
 			{
 				cmd.UseProcedure("dbo.GetRecords");
 
-				return cmd.ReadToRowsAsync<Record>();
+				return cmd.ReadToObjectRowsAsync<Record>();
 			});
 		}
 

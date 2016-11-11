@@ -48,11 +48,11 @@ namespace Tests.DAL.Records.Models
 			};
 		}
 
-		public static Object[] CreateObjectRow(SqlDataReader dr)
+		public static ObjectRow CreateObjectRow(SqlDataReader dr)
 		{
 			var i = 0;
 
-			return new Object[]
+			return new ObjectRow(9)
 			{
 				/*	0 - Id				=	*/	dr.GetInt32(i++)			,
 				/*	1 - GrandRecordId	=	*/	dr.GetInt32(i++)			,
@@ -84,7 +84,7 @@ namespace Tests.DAL.Records.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(Record obj)
+		public static object[] CreateDataRow(Record obj)
 		{
 			if (obj.Id == 0) 
 				obj.Id = Int32NegativeIdentity.Next;

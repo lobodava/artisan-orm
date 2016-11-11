@@ -60,21 +60,21 @@ namespace Tests.DAL.GrandRecords.Models
 			};
 		}
 
-		public static Object[] CreateObjectRow(SqlDataReader dr)
+		public static ObjectRow CreateObjectRow(SqlDataReader dr)
 		{
 			var i = 0;
 
-			return new Object[]
+			return new ObjectRow(9)
 			{
-				/*	Id				=	*/	dr.GetInt32(i++)			,
-				/*	GrandRecordId	=	*/	dr.GetInt32(i++)			,
-				/*	Name			=	*/	dr.GetString(i++)			,
-				/*	RecordTypeId	=	*/	dr.GetByteNullable(i++)		,
-				/*	Number			=	*/	dr.GetInt16Nullable(i++)	,
-				/*	Date			=	*/	dr.GetDateTimeNullable(i++)	,
-				/*	Amount			=	*/	dr.GetDecimalNullable(i++)	,
-				/*	IsActive		=	*/	dr.GetBooleanNullable(i++)	,
-				/*	Comment			=	*/	dr.GetStringNullable(i++)	,
+				/*	0 - Id				=	*/	dr.GetInt32(i++)			,
+				/*	1 - GrandRecordId	=	*/	dr.GetInt32(i++)			,
+				/*	2 - Name			=	*/	dr.GetString(i++)			,
+				/*	3 - RecordTypeId	=	*/	dr.GetByteNullable(i++)		,
+				/*	4 - Number			=	*/	dr.GetInt16Nullable(i++)	,
+				/*	5 - Date			=	*/	dr.GetDateTimeNullable(i++)	,
+				/*	6 - Amount			=	*/	dr.GetDecimalNullable(i++)	,
+				/*	7 - IsActive		=	*/	dr.GetBooleanNullable(i++)	,
+				/*	8 - Comment			=	*/	dr.GetStringNullable(i++)	,
 			};
 		}
 
@@ -96,7 +96,7 @@ namespace Tests.DAL.GrandRecords.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(Record obj)
+		public static object[] CreateDataRow(Record obj)
 		{
 			if (obj.Id == 0) 
 				obj.Id = Int32NegativeIdentity.Next;

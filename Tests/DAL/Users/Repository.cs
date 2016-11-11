@@ -93,23 +93,23 @@ namespace Tests.DAL.Users
 		#region [ GetUsers ]
 
 
-		public Rows GetUserRows()
+		public ObjectRows GetUserRows()
 		{
 			return GetByCommand(cmd =>
 			{
 				cmd.UseProcedure("dbo.GetUsers");
 
-				return cmd.ReadToRows<User>();
+				return cmd.ReadToObjectRows<User>();
 			});
 		}
 
-		public async Task<Rows> GetUserRowsAsync()
+		public async Task<ObjectRows> GetUserRowsAsync()
 		{
 			return await GetByCommandAsync(cmd =>
 			{
 				cmd.UseProcedure("dbo.GetUsers");
 
-				return cmd.ReadToRowsAsync<User>();
+				return cmd.ReadToObjectRowsAsync<User>();
 			});
 		}
 

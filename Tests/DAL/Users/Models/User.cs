@@ -42,11 +42,11 @@ namespace Tests.DAL.Users.Models
 			};
 		}
 
-		public static Object[] CreateObjectRow(SqlDataReader dr)
+		public static ObjectRow CreateObjectRow(SqlDataReader dr)
 		{
 			var i = 0;
 			
-			return new Object[]
+			return new ObjectRow(5)
 			{
 				/* 0 - Id		=	*/	dr.GetInt32(i++)	,
 				/* 1 - Login	=	*/	dr.GetString(i++)	,
@@ -70,7 +70,7 @@ namespace Tests.DAL.Users.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(User obj)
+		public static object[] CreateDataRow(User obj)
 		{
 			if (obj.Id == 0) 
 				obj.Id = Int32NegativeIdentity.Next;

@@ -27,13 +27,13 @@ namespace Artisan.Orm
 			return table;
 		}
 
-		public static DataTable ToDataTable<T>(this IEnumerable<T> list, Func<DataTable> getDataTableFunc, Func<T, object[]> convertToRowFunc) 
+		public static DataTable ToDataTable<T>(this IEnumerable<T> list, Func<DataTable> getDataTableFunc, Func<T, object[]> convertToDataRowFunc) 
 		{
 			var table = getDataTableFunc();
 
 			foreach (var entity in list.Where(entity => entity != null))
 			{
-				table.Rows.Add(convertToRowFunc(entity));
+				table.Rows.Add(convertToDataRowFunc(entity));
 			}
 
 			return table;

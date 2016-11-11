@@ -263,7 +263,7 @@ namespace Tests
 			var sw = new Stopwatch();
 			sw.Start();
 
-			var records  = _repository.GetRecordDataRows();
+			var records  = _repository.GetRecordRows();
 	
 			sw.Stop();
 

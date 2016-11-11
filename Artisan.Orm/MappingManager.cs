@@ -51,7 +51,7 @@ namespace Artisan.Orm
 					}
 					else
 					{
-						var funcType = typeof(Func<,>).MakeGenericType(typeof(SqlDataReader), typeof(object[]));
+						var funcType = typeof(Func<,>).MakeGenericType(typeof(SqlDataReader), typeof(ObjectRow));
 						var createObjectRowDelegate = Delegate.CreateDelegate(funcType, methodInfo);
 
 						CreateObjectRowFuncDictionary.Add(attribute.MapperForType, createObjectRowDelegate);
@@ -105,12 +105,12 @@ namespace Artisan.Orm
 			throw new NullReferenceException($"CreateObject Func not found. Check if MapperFor {typeof(T).FullName} exists and CreateObject exist.");
 		}
 
-		public static Func<SqlDataReader, object[]> GetCreateObjectRowFunc<T>()
+		public static Func<SqlDataReader, ObjectRow> GetCreateObjectRowFunc<T>()
 		{
 			object obj;
 
 			if (CreateObjectRowFuncDictionary.TryGetValue(typeof(T), out obj))
-				return (Func<SqlDataReader, object[]>)obj;
+				return (Func<SqlDataReader, ObjectRow>)obj;
 
 			throw new NullReferenceException($"CreateRow Func not found. Check if MapperFor {typeof(T).FullName} and CreateRow exist.");
 		}

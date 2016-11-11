@@ -234,75 +234,75 @@ namespace Artisan.Orm
 
 
 
-		#region [ ReadToRow(s), ReadAsRow(s) ]
+		#region [ ReadToObjectRow(s), ReadAsObjectRow(s) ]
 
-		public static object[] ReadToRow(this SqlDataReader dr, Func<SqlDataReader, object[]> createFunc, bool getNextResult = true) 
+		public static ObjectRow ReadToObjectRow(this SqlDataReader dr, Func<SqlDataReader, ObjectRow> createFunc, bool getNextResult = true) 
 		{
-			var row = dr.Read() ? createFunc(dr) : null;
+			var objectRow = dr.Read() ? createFunc(dr) : null;
 
 			if (getNextResult) dr.NextResult();
 
-			return row;
+			return objectRow;
 		}
 
-		public static object[] ReadToRow<T>(this SqlDataReader dr, bool getNextResult = true) 
+		public static ObjectRow ReadToObjectRow<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			return dr.ReadToRow(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
+			return dr.ReadToObjectRow(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
 		}
 		
 
-		public static Rows ReadToRows(this SqlDataReader dr, Func<SqlDataReader, object[]> createFunc, bool getNextResult = true) 
+		public static ObjectRows ReadToObjectRows(this SqlDataReader dr, Func<SqlDataReader, ObjectRow> createFunc, bool getNextResult = true) 
 		{
-			var rows = new Rows();
+			var objectRows = new ObjectRows();
 
 			while (dr.Read())
-				rows.Add(createFunc(dr));
+				objectRows.Add(createFunc(dr));
 
 			if (getNextResult) dr.NextResult();
 
-			return rows;
+			return objectRows;
 		}
 		
-		public static Rows ReadToRows<T>(this SqlDataReader dr, bool getNextResult = true) 
+		public static ObjectRows ReadToObjectRows<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			return dr.ReadToRows(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
+			return dr.ReadToObjectRows(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
 		}
 
 
-		public static object[] ReadAsRow(this SqlDataReader dr, bool getNextResult = true) 
+		public static ObjectRow ReadAsObjectRow(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			object[] row = null;
+			ObjectRow objectRow = null;
 
 			if (dr.Read())
 			{
-				row = new object[dr.FieldCount];
+				objectRow = new ObjectRow(dr.FieldCount);
 
 				for (var i = 0; i < dr.FieldCount; i++)
-					row[i] = dr.GetValue(i);
+					objectRow.Add(dr.GetValue(i));
 			}
 
 			if (getNextResult) dr.NextResult();
 
-			return row;
+			return objectRow;
 		}
 
-		public static Rows ReadAsRows(this SqlDataReader dr, bool getNextResult = true) 
+		public static ObjectRows ReadAsObjectRows(this SqlDataReader dr, bool getNextResult = true) 
 		{
-			var rows = new Rows();
+			var objectRows = new ObjectRows();
 		
 			while (dr.Read())
 			{
-				var row = new object[dr.FieldCount];
+				var objectRow = new ObjectRow(dr.FieldCount);
 
 				for (var i = 0; i < dr.FieldCount; i++)
-					row[i] = dr.GetValue(i);
+					objectRow.Add(dr.GetValue(i));
 				
-				rows.Add(row);
+				objectRows.Add(objectRow);
 			}
 
 			if (getNextResult) dr.NextResult();
 
-			return rows;
+			return objectRows;
 		}
 		
 		#endregion

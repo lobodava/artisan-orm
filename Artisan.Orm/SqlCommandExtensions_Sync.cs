@@ -341,67 +341,67 @@ namespace Artisan.Orm
 		#endregion
 
 
-		#region [ ReadToRow(s), ReadAsRow(s) ]
+		#region [ ReadToObjectRow(s), ReadAsObjectRow(s) ]
 
-		public static object[] ReadToRow(this SqlCommand cmd, Func<SqlDataReader, object[]> createFunc)
+		public static ObjectRow ReadToObjectRow(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
 
 			using (var dr = cmd.ExecuteReader(readerFlags))
 			{
-				return dr.ReadToRow(createFunc, false);
+				return dr.ReadToObjectRow(createFunc, false);
 			}
 		}
 
-		public static object[] ReadToRow<T>(this SqlCommand cmd)
+		public static ObjectRow ReadToObjectRow<T>(this SqlCommand cmd)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
 
 			using (var dr = cmd.ExecuteReader(readerFlags))
 			{
-				return dr.ReadToRow<T>();
+				return dr.ReadToObjectRow<T>();
 			}
 		}
 
 
-		public static Rows ReadToRows(this SqlCommand cmd, Func<SqlDataReader, object[]> createFunc)
+		public static ObjectRows ReadToObjectRows(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
 
 			using (var dr = cmd.ExecuteReader(readerFlags))
 			{
-				return dr.ReadToRows(createFunc, false);
+				return dr.ReadToObjectRows(createFunc, false);
 			}
 		}
 
-		public static Rows ReadToRows<T>(this SqlCommand cmd)
+		public static ObjectRows ReadToObjectRows<T>(this SqlCommand cmd)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
             using (var dr = cmd.ExecuteReader(readerFlags))
 			{
-				return dr.ReadToRows<T>();
+				return dr.ReadToObjectRows<T>();
 			}
 		}
 
 		
-		public static object[] ReadAsRow(this SqlCommand cmd)
+		public static ObjectRow ReadAsObjectRow(this SqlCommand cmd)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
 
             using (var dr = cmd.ExecuteReader(readerFlags))
 			{
-				return dr.ReadAsRow();
+				return dr.ReadAsObjectRow();
 			}
 		}
 		
-		public static Rows ReadAsRows(this SqlCommand cmd)
+		public static ObjectRows ReadAsObjectRows(this SqlCommand cmd)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
             using (var dr = cmd.ExecuteReader(readerFlags))
 			{
-				return dr.ReadAsRows();
+				return dr.ReadAsObjectRows();
 			}
 		}
 

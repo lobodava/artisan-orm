@@ -78,7 +78,7 @@
     <None Include="6. Post-Deployment\RecordTypes.sql" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Utility Scripts\Generate Entity.sql" />
+    <None Include="Utility Scripts\Artisan Code Generation.sql" />
     <None Include="Utility Scripts\Generate MERGE SQL.sql" />
     <Build Include="4. Types\RecordTableType.sql" />
     <Build Include="4. Types\GrandRecordTableType.sql" />

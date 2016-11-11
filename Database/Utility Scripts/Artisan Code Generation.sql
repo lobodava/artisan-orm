@@ -278,11 +278,11 @@ raiserror(
 
 raiserror(	-- CreateObjectRow
 '
-		public static Object[] CreateObjectRow(SqlDataReader dr)
+		public static ObjectRow CreateObjectRow(SqlDataReader dr)
 		{
 			var i = 0;
 			
-			return new Object[] 
+			return new ObjectRow 
 			{
 '
 ,0,1);

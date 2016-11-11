@@ -44,7 +44,7 @@ namespace Tests.DAL.GrandRecords.Models
 			return table;
 		}
 
-		public static Object[] CreateDataRow(GrandRecord obj)
+		public static object[] CreateDataRow(GrandRecord obj)
 		{
 			if (obj.Id == 0) 
 				obj.Id = Int32NegativeIdentity.Next;

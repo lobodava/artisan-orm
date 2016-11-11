@@ -267,67 +267,67 @@ namespace Artisan.Orm
 		#endregion
 
 		
-		#region [ ReadToRow(s)Async, ReadAsRow(s)Async ]
+		#region [ ReadToObjectRow(s)Async, ReadAsObjectRow(s)Async ]
 
-		public static async Task<object[]> ReadToRowAsync(this SqlCommand cmd, Func<SqlDataReader, object[]> createFunc)
+		public static async Task<ObjectRow> ReadToObjectRowAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return dr.ReadToRow(createFunc, false);
+				return dr.ReadToObjectRow(createFunc, false);
 			}
 		}
 
-		public static async Task<object[]> ReadToRowAsync<T>(this SqlCommand cmd)
+		public static async Task<ObjectRow> ReadToObjectRowAsync<T>(this SqlCommand cmd)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return dr.ReadToRow<T>();
+				return dr.ReadToObjectRow<T>();
 			}
 		}
 
 
-		public static async Task<Rows> ReadToRowsAsync(this SqlCommand cmd, Func<SqlDataReader, object[]> createFunc)
+		public static async Task<ObjectRows> ReadToObjectRowsAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return dr.ReadToRows(createFunc, false);
+				return dr.ReadToObjectRows(createFunc, false);
 			}
 		}
 
-		public static async Task<Rows> ReadAsRowsAsync(this SqlCommand cmd)
+		public static async Task<ObjectRows> ReadAsObjectRowsAsync(this SqlCommand cmd)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return dr.ReadAsRows();
+				return dr.ReadAsObjectRows();
 			}
 		}
 
 
-		public static async Task<object[]> ReadAsRowAsync(this SqlCommand cmd)
+		public static async Task<ObjectRow> ReadAsObjectRowAsync(this SqlCommand cmd)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return dr.ReadAsRow();
+				return dr.ReadAsObjectRow();
 			}
 		}
 
-		public static async Task<Rows> ReadToRowsAsync<T>(this SqlCommand cmd)
+		public static async Task<ObjectRows> ReadToObjectRowsAsync<T>(this SqlCommand cmd)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return dr.ReadToRows<T>();
+				return dr.ReadToObjectRows<T>();
 			}
 		}
 		
