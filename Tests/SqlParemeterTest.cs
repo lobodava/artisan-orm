@@ -430,8 +430,8 @@ namespace Tests
 			  CollectionAssert.AreEqual( r.GetBytesFromRowVersion(i++)			,	rowVersionNull			,	"rowVersionNull"			);
 						
 						Assert.AreEqual( r.GetInt64FromRowVersion(i++)			,	rowVersionInt64			,	"rowVersionInt64"			);
-						Assert.AreEqual( r.GetInt64NullableFromRowVersion(i++)	,	rowVersionInt64Null		,	"rowVersionInt64Null"		);
-						Assert.AreEqual( r.GetInt64NullableFromRowVersion(i++)	,	rowVersionInt64Nullable	,	"rowVersionInt64Nullable"	);
+						Assert.AreEqual( r.GetInt64FromRowVersionNullable(i++)	,	rowVersionInt64Null		,	"rowVersionInt64Null"		);
+						Assert.AreEqual( r.GetInt64FromRowVersionNullable(i++)	,	rowVersionInt64Nullable	,	"rowVersionInt64Nullable"	);
 						
 						Assert.AreEqual( r.GetBase64StringFromRowVersion(i++)	,	rowVersionBase64		,	"rowVersionBase64"			);
 						Assert.AreEqual( r.GetBase64StringFromRowVersion(i++)	,	rowVersionBase64Null	,	"rowVersionBase64Null"		);

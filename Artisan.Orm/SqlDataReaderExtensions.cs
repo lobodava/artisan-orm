@@ -10,7 +10,7 @@ namespace Artisan.Orm
 	public static class SqlDataReaderExtensions
 	{
 		
-		#region [ Read ENTITY extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+		#region [ Read extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 		
 		
 
@@ -399,29 +399,63 @@ namespace Artisan.Orm
 		#endregion
 
 
-		#region [ Get scalar property extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+		#region [ Get extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
+		public static bool? GetBooleanNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (bool?)null : reader.GetBoolean(ordinal);
+		}
+
+		public static bool GetBoolean(this SqlDataReader reader, int ordinal, bool defaultValue)
+		{
+			return reader.IsDBNull(ordinal) ? defaultValue : reader.GetBoolean(ordinal);
+		}
+
+		public static byte? GetByteNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (byte?)null : reader.GetByte(ordinal);
+		}
+
+		public static short? GetInt16Nullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (short?)null : reader.GetInt16(ordinal);
+		}
 		
-
-		public static Guid? GetGuidNullableFromString(this SqlDataReader reader, int ordinal)
+		public static int? GetInt32Nullable(this SqlDataReader reader, int ordinal)
 		{
-			return reader.IsDBNull(ordinal) ? null : (Guid?)Guid.Parse(reader.GetString(ordinal));
-		}
-
-		public static Guid GetGuidFromString(this SqlDataReader reader, int ordinal, Guid defaultValue)
-		{
-			return reader.IsDBNull(ordinal) ? defaultValue : Guid.Parse(reader.GetString(ordinal));
-		}
-
-		public static Guid GetGuidFromString(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? Guid.Empty : Guid.Parse(reader.GetString(ordinal));
-		}
-
-		public static Guid? GetGuidNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? null : (Guid?)reader.GetGuid(ordinal);
+			return reader.IsDBNull(ordinal) ? (int?)null : reader.GetInt32(ordinal);
 		}
 		
+		public static long? GetInt64Nullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (long?)null : reader.GetInt64(ordinal);
+		}
+
+		public static float? GetFloatNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (float?)null : reader.GetFloat(ordinal);
+		}
+
+		public static double? GetDoubleNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (double?)null : reader.GetDouble(ordinal);
+		}
+
+		public static decimal? GetDecimalNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetDecimal(ordinal);
+		}
+
+		public static decimal GetBigDecimal(this SqlDataReader reader, int ordinal)
+		{
+			return decimal.Parse(reader.GetSqlDecimal(ordinal).ToString(), CultureInfo.InvariantCulture);
+		}
+
+		public static decimal? GetBigDecimalNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetBigDecimal(ordinal);
+		}
+
 		public static Char GetCharacter(this SqlDataReader reader, int ordinal)
 		{
 			var buffer = new char[1];
@@ -440,66 +474,6 @@ namespace Artisan.Orm
 		public static string GetStringNullable(this SqlDataReader reader, int ordinal)
 		{
 			return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
-		}
-
-		public static int? GetInt32Nullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (int?)null : reader.GetInt32(ordinal);
-		}
-
-		public static short? GetInt16Nullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (short?)null : reader.GetInt16(ordinal);
-		}
-
-		public static long? GetInt64Nullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (long?)null : reader.GetInt64(ordinal);
-		}
-
-		public static byte? GetByteNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (byte?)null : reader.GetByte(ordinal);
-		}
-
-		public static bool? GetBooleanNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (bool?)null : reader.GetBoolean(ordinal);
-		}
-
-		public static Guid GetGuid(this SqlDataReader reader, int ordinal, Guid defaultValue)
-		{
-			return reader.IsDBNull(ordinal) ? defaultValue : reader.GetGuid(ordinal);
-		}
-
-		public static bool GetBoolean(this SqlDataReader reader, int ordinal, bool defaultValue)
-		{
-			return reader.IsDBNull(ordinal) ? defaultValue : reader.GetBoolean(ordinal);
-		}
-		
-		public static decimal? GetDecimalNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetDecimal(ordinal);
-		}
-
-		public static decimal GetBigDecimal(this SqlDataReader reader, int ordinal)
-		{
-			return decimal.Parse(reader.GetSqlDecimal(ordinal).ToString(), CultureInfo.InvariantCulture);
-		}
-
-		public static decimal? GetBigDecimalNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetBigDecimal(ordinal);
-		}
-
-		public static float? GetFloatNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (float?)null : reader.GetFloat(ordinal);
-		}
-
-		public static double? GetDoubleNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (double?)null : reader.GetDouble(ordinal);
 		}
 
 		public static DateTime? GetDateTimeNullable(this SqlDataReader reader, int ordinal)
@@ -522,6 +496,31 @@ namespace Artisan.Orm
 			return reader.IsDBNull(ordinal) ? (TimeSpan?)null : reader.GetTimeSpan(ordinal);
 		}
 		
+		public static Guid GetGuidFromString(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? Guid.Empty : Guid.Parse(reader.GetString(ordinal));
+		}
+
+		public static Guid? GetGuidFromStringNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? null : (Guid?)Guid.Parse(reader.GetString(ordinal));
+		}
+
+		public static Guid GetGuidFromString(this SqlDataReader reader, int ordinal, Guid defaultValue)
+		{
+			return reader.IsDBNull(ordinal) ? defaultValue : Guid.Parse(reader.GetString(ordinal));
+		}
+		
+		public static Guid? GetGuidNullable(this SqlDataReader reader, int ordinal)
+		{
+			return reader.IsDBNull(ordinal) ? null : (Guid?)reader.GetGuid(ordinal);
+		}
+		
+		public static Guid GetGuid(this SqlDataReader reader, int ordinal, Guid defaultValue)
+		{
+			return reader.IsDBNull(ordinal) ? defaultValue : reader.GetGuid(ordinal);
+		}
+
 		public static byte[] GetBytesFromRowVersion(this SqlDataReader reader, int ordinal)
 		{
 			if (reader.IsDBNull(ordinal))
@@ -530,21 +529,18 @@ namespace Artisan.Orm
 			return (byte[])reader.GetValue(ordinal);
 		}
 
-
 		public static long GetInt64FromRowVersion(this SqlDataReader reader, int ordinal)
 		{
 			return BitConverter.ToInt64((byte[])reader.GetValue(ordinal), 0);
 		}
 
-
-		public static long? GetInt64NullableFromRowVersion(this SqlDataReader reader, int ordinal)
+		public static long? GetInt64FromRowVersionNullable(this SqlDataReader reader, int ordinal)
 		{
 			if (reader.IsDBNull(ordinal))
 				return null;
 			
 			return BitConverter.ToInt64((byte[])reader.GetValue(ordinal), 0);
 		}
-
 
 		public static string GetBase64StringFromRowVersion(this SqlDataReader reader, int ordinal)
 		{
@@ -553,7 +549,6 @@ namespace Artisan.Orm
 			
 			return (Convert.ToBase64String((byte[])reader.GetValue(ordinal)));
 		}
-		
 
 		public static byte[] GetBytesNullable(this SqlDataReader reader, int ordinal)
 		{
@@ -575,7 +570,6 @@ namespace Artisan.Orm
 
 			return ids.Split(',').Select(s => Convert.ToByte(s)).ToArray();
 		}
-
 
 		public static Int16[] GetInt16ArrayFromString(this SqlDataReader reader, int ordinal)
 		{
