@@ -85,11 +85,11 @@ public static class UserMapper
         };
     }
 
-    public static Object[] CreateObjectRow(SqlDataReader dr)
+    public static ObjectRow CreateObjectRow(SqlDataReader dr)
     {
         var i = 0;
 
-        return new Object[]
+        return new ObjectRow(4)
         {
             /* 0 - Id      =  */  dr.GetInt32(i++)  ,
             /* 1 - Login   =  */  dr.GetString(i++) ,
