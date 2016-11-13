@@ -61,6 +61,8 @@ namespace Tests.DAL.GrandRecords
 			    (r, cr) => {cr.Record = r; r.ChildRecords.Add(cr);}
 			);
 			
+			// THE MergeJoin CODE ABOVE IS THE REPLACEMENT FOR THE COMMENTED CODE BELOW :)
+
 			//var childRecordEnumerator = childRecords.GetEnumerator();
 			//var childRecord = childRecordEnumerator.MoveNext() ? childRecordEnumerator.Current : null;
 			
@@ -165,6 +167,9 @@ namespace Tests.DAL.GrandRecords
 			var childRecords = reader.ReadToList<ChildRecord>();
 
 			reader.Close();
+
+			// the following code allows joining two collections for a single pass
+			// it works only if these collections are sorted by RecordId  (!)
 
 			grandRecords.MergeJoin(
 				records, 

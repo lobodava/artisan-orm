@@ -27,9 +27,9 @@ namespace Artisan.Orm
 		/// </example>		
 		public static void MergeJoin<TMaster, TDetail>
 		( 
-			this IList<TMaster> masterList,
+			this IEnumerable<TMaster> masterList,
 
-			IList<TDetail> detailList,
+			IEnumerable<TDetail> detailList,
 			Func<TMaster, TDetail, bool> isMasterDetailLink,
 			Action<TMaster, TDetail> action
 		)	
@@ -63,10 +63,10 @@ namespace Artisan.Orm
 		/// </example>		
 		public static void MergeJoin<TMaster, TDetail>
 		( 
-			this IList<TMaster> masterList,
+			this IEnumerable<TMaster> masterList,
 			Action<TMaster> eachMasterAction,
 
-			IList<TDetail> detailList,
+			IEnumerable<TDetail> detailList,
 			Func<TMaster, TDetail, bool> isMasterDetailLink,
 			Action<TMaster, TDetail> joinedMasterDetailAction
 		)	
@@ -119,13 +119,13 @@ namespace Artisan.Orm
 		/// </example>	
 		public static void MergeJoin<TMaster, TFirstDetail, TSecondDetail>
 		( 
-			this IList<TMaster> masterList, 
+			this IEnumerable<TMaster> masterList, 
 
-			IList<TFirstDetail> firstDetailList, 
+			IEnumerable<TFirstDetail> firstDetailList, 
 			Func<TMaster, TFirstDetail, bool> isMasterFirstDetailLink,
 			Action<TMaster, TFirstDetail> masterFirstDetailAction,
 
-			IList<TSecondDetail> secondDetailList, 
+			IEnumerable<TSecondDetail> secondDetailList, 
 			Func<TMaster, TSecondDetail, bool> isMasterSecondDetailLink,
 			Action<TMaster, TSecondDetail> masterSecondDetailAction
 		)	
@@ -170,14 +170,14 @@ namespace Artisan.Orm
 		/// </example>	
 		public static void MergeJoin<TMaster, TFirstDetail, TSecondDetail>
 		( 
-			this IList<TMaster> masterList, 
+			this IEnumerable<TMaster> masterList, 
 			Action<TMaster> eachMasterAction,
 
-			IList<TFirstDetail> firstDetailList, 
+			IEnumerable<TFirstDetail> firstDetailList, 
 			Func<TMaster, TFirstDetail, bool> isMasterFirstDetailLink,
 			Action<TMaster, TFirstDetail> masterFirstDetailAction,
 
-			IList<TSecondDetail> secondDetailList, 
+			IEnumerable<TSecondDetail> secondDetailList, 
 			Func<TMaster, TSecondDetail, bool> isMasterSecondDetailLink,
 			Action<TMaster, TSecondDetail> masterSecondDetailAction
 		)	
@@ -242,13 +242,13 @@ namespace Artisan.Orm
 		/// </example>	
 		public static void MergeJoin<TMaster, TDetail, TSubDetail>
 		( 
-			this IList<TMaster> masterList, 
+			this IEnumerable<TMaster> masterList, 
 
-			IList<TDetail> detailList, 
+			IEnumerable<TDetail> detailList, 
 			Func<TMaster, TDetail, bool> isMasterDetailLink,
 			Action<TMaster, TDetail> detailAction,
 
-			IList<TSubDetail> subDetailList, 
+			IEnumerable<TSubDetail> subDetailList, 
 			Func<TDetail, TSubDetail, bool> isDetailSubDetailLink,
 			Action<TDetail, TSubDetail> subDetailAction
 		)	
@@ -292,14 +292,14 @@ namespace Artisan.Orm
 		/// </example>	
 		public static void MergeJoin<TMaster, TDetail, TSubDetail>
 		( 
-			this IList<TMaster> masterList, 
+			this IEnumerable<TMaster> masterList, 
 			Action<TMaster> eachMasterAction,
 
-			IList<TDetail> detailList, 
+			IEnumerable<TDetail> detailList, 
 			Func<TMaster, TDetail, bool> isMasterDetailLink,
 			Action<TMaster, TDetail> detailAction,
 
-			IList<TSubDetail> subDetailList, 
+			IEnumerable<TSubDetail> subDetailList, 
 			Func<TDetail, TSubDetail, bool> isDetailSubDetailLink,
 			Action<TDetail, TSubDetail> subDetailAction
 		)	
