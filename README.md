@@ -1,16 +1,16 @@
 # Artisan ORM &#8212; ADO.NET Micro-ORM to SQL Server
 
 Artisan ОRМ was created to meet the following requirements:
-* interactions with database should mostly be made through *Stored Procedures*;
-* all calls to database should be encapsulated into *Repository Methods*;
-* a Repository Method should be able to read or save a *complex object graph* with one Stored Procedure;
+* interactions with database should mostly be made through *stored procedures*;
+* all calls to database should be encapsulated into *repository methods*;
+* a *repository method* should be able to read or save a *complex object graph* with one *stored procedure*;
 * it should work with the highest possible performance, even at the expense of the convenience and development time.
 
 To achieve these goals Artisan ORM uses:
-* the *SqlDataReader* as the fastest method of data reading;
+* the `SqlDataReader` as the fastest method of data reading;
 * a bunch of its own extensions to ADO.NET [SqlCommand](https://github.com/lobodava/artisan-orm/wiki/SqlCommand-Extensions) and [SqlDataReader](https://github.com/lobodava/artisan-orm/wiki/SqlDataReader-extentions) methods, both synchronous and asynchronous;
 * strictly structured static [Mappers](https://github.com/lobodava/artisan-orm/wiki/Mappers);
-* [User Defined Table Types](https://github.com/lobodava/artisan-orm/wiki/User-Defined-Table-Types) as a mean of object saving;
+* [user-defined table types](https://github.com/lobodava/artisan-orm/wiki/User-Defined-Table-Types) as a mean of object saving;
 * [unique negative identities](https://github.com/lobodava/artisan-orm/blob/master/Artisan.Orm/NegativeIdentity.cs) as a flag of new entities;
 * a [special approach](https://github.com/lobodava/artisan-orm/wiki/Negative-identities-and-object-graph-saving) to writing stored procedures for object reading and saving.
 
@@ -18,11 +18,11 @@ Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Arti
 
 [![NuGet Logo](https://www.nuget.org/Content/Logos/nugetlogo.png)](http://www.nuget.org/packages/Artisan.ORM)
 
-More information is available in Artisan ORM documentation [Wiki](https://github.com/lobodava/artisan-orm/wiki).
+More information is available in Artisan ORM [documentation Wiki](https://github.com/lobodava/artisan-orm/wiki).
 
 ## Simple sample
 
-Let's say we have database tables *Users* and *UserRoles* (TSQL):
+Let's say we have database tables `Users` and `UserRoles` (TSQL):
 
 ```C#
 create table dbo.Users
@@ -44,7 +44,7 @@ create table dbo.UserRoles
 // The Roles table is just a dictionary or lookup table and users don't edit it.
 ```
 
-And we have a *User* class (C#):
+And we have a `User` class (C#):
 
 ```C#
 public class User
@@ -57,12 +57,12 @@ public class User
 }
 ```
 
-In order to read and save the *User* data in Artisan ORM way it is required to create:
-* Mapper Static Class (C#)
-* User Defined Table Type (TSQL)
-* Stored Procedures (TSQL)
+In order to read and save the `User` data in Artisan ORM way it is required to create:
+* mapper static vlass (C#)
+* user-defined table type (TSQL)
+* stored procedures (TSQL)
 
-*Mapper Static Class* (C#) is decorated with *MapperFor* attribute and consists of four *static* methods with reserved names:
+*Mapper static class* (C#) is decorated with *MapperFor* attribute and consists of four *static* methods with reserved names:
 * CreateObject
 * CreateObjectRow
 * CreateDataTable
@@ -126,7 +126,7 @@ public static class UserMapper
 }
 ```
 
-*User Defined Table Type* (TSQL):
+*User-defined table type* (TSQL):
 
 ```SQL
 create type dbo.UserTableType as table
@@ -138,7 +138,7 @@ create type dbo.UserTableType as table
 );
 ```
 
-*Stored Procedures* (TSQL):
+*Stored procedures* (TSQL):
 
 
 ```SQL
@@ -248,7 +248,7 @@ begin
 end;
 ```
 
-Having prepared *Mapper*, *User Defined Table Type* and *Stored Procedures* we can write the *Repository* (C#):
+Having prepared *mapper*, *user-defined table type* and *stored procedures* we can write the `UserRepository` (C#):
 
 ```C#
 public class UserRepository: Artisan.Orm.RepositoryBase
