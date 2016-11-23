@@ -33,7 +33,7 @@ namespace Tests.DAL.Records.Models
 		public static Record CreateObject(SqlDataReader dr)
 		{
 			var i = 0;
-	
+
 			return new Record 
 			{
 				Id				=	dr.GetInt32(i++)			,
@@ -46,6 +46,37 @@ namespace Tests.DAL.Records.Models
 				IsActive		=	dr.GetBooleanNullable(i++)	,
 				Comment			=	dr.GetStringNullable(i++)	,
 			};
+
+			//return new Record
+			//{
+			//	Id				= (Int32)dr.GetValue(i++)	,
+			//	GrandRecordId	= (Int32)dr.GetValue(i++)	,
+			//	Name			= (String)dr.GetValue(i++)	,
+			//	RecordTypeId	= dr.IsDBNull(i) ? default(Byte?)		: (Byte?)dr.GetValue(i++)	,
+			//	Number			= dr.IsDBNull(i) ? default(Int16?)		: (Int16?)dr.GetValue(i++)	,
+			//	Date			= dr.IsDBNull(i) ? default(DateTime?)	: (DateTime?)dr.GetValue(i++)	,
+			//	Amount			= dr.IsDBNull(i) ? default(Decimal?)	: (Decimal?)dr.GetValue(i++)	,
+			//	IsActive		= dr.IsDBNull(i) ? default(Boolean?)	: (Boolean?)dr.GetValue(i++)	,
+			//	Comment			= dr.IsDBNull(i) ? null					: (String)dr.GetValue(i++)	
+			//};
+
+
+			// cast with "as" is a fast way and a dangerous one
+			// if cast fails "as" returns <null> and not throw an exception
+
+			//return new Record 
+			//{
+			//	Id				=	(Int32)dr.GetValue(i++)			,
+			//	GrandRecordId	=	(Int32)dr.GetValue(i++) 		, 
+			//	Name			=	(String)dr.GetValue(i++) 		, 
+			//	RecordTypeId	=	dr.GetValue(i++) as Byte?		,
+			//	Number			=	dr.GetValue(i++) as Int16?		, 
+			//	Date			=	dr.GetValue(i++) as DateTime?	, 
+			//	Amount			=	dr.GetValue(i++) as Decimal?	, 
+			//	IsActive		=	dr.GetValue(i++) as Boolean?	, 
+			//	Comment			=	dr.GetValue(i) as String 
+			//};
+
 		}
 
 		public static ObjectRow CreateObjectRow(SqlDataReader dr)

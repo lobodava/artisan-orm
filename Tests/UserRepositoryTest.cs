@@ -97,10 +97,12 @@ namespace Tests
 		[TestMethod]
 		public void GetUsers()
 		{
+			var users  = _repository.GetUsers();
+
 			var sw = new Stopwatch();
 			sw.Start();
 
-			var users  = _repository.GetUsers();
+			users  = _repository.GetUsers();
 	
 			sw.Stop();
 
@@ -128,6 +130,27 @@ namespace Tests
 			Console.WriteLine($"GetUsersAsync reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(users));
 		}
+
+		
+		[TestMethod]
+		public void GetUsersWithAutoMapping()
+		{
+			var users  = _repository.GetUsersWithAutoMapping();
+
+			var sw = new Stopwatch();
+			sw.Start();
+
+			users  = _repository.GetUsersWithAutoMapping();
+	
+			sw.Stop();
+
+			Assert.IsNotNull(users);
+			Assert.IsTrue(users.Count > 0);
+
+			Console.WriteLine($"GetUsersWithAutoMapping reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.Write(JsonConvert.SerializeObject(users));
+		}
+
 
 
 		[TestMethod]

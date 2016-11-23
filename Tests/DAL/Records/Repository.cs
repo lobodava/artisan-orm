@@ -24,19 +24,7 @@ namespace Tests.DAL.Records
 		}
 
 
-		public Record GetRecordByIdWithMapper(int id)
-		{
-			return GetByCommand(cmd =>
-			{
-				cmd.UseProcedure("dbo.GetRecordById");
-
-				cmd.AddIntParam("@Id", id);
-
-				return cmd.ReadTo<Record>();
-			});
-		}
-
-		public Record GetRecordByIdWithReflection(int id)
+		public Record GetRecordByIdWithAutoMapping(int id)
 		{
 			return GetByCommand(cmd =>
 			{
@@ -47,8 +35,7 @@ namespace Tests.DAL.Records
 				return cmd.ReadAs<Record>();
 			});
 		}
-
-
+		
 
 		public async Task<Record> GetRecordByIdAsync(int id)
 		{
@@ -79,7 +66,7 @@ namespace Tests.DAL.Records
 			});
 		}
 
-		public IList<Record> GetRecordsWithReflection()
+		public IList<Record> GetRecordsWithAutoMapping()
 		{
 			return GetByCommand(cmd =>
 			{
@@ -99,7 +86,7 @@ namespace Tests.DAL.Records
 			});
 		}
 
-		public async Task<IList<Record>> GetRecordsWithReflectionAsync()
+		public async Task<IList<Record>> GetRecordsWithAutoMappingAsync()
 		{
 			return await GetByCommandAsync(cmd =>
 			{

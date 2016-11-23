@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Artisan.Orm
 {
-	public static class SqlDataReaderExtensions
+	public static partial class SqlDataReaderExtensions
 	{
-		
-		#region [ Read extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
-		
-		
 
 		public static void Read(this SqlDataReader dr, Action<SqlDataReader> action, bool getNextResult = true) 
 		{
@@ -165,40 +161,24 @@ namespace Artisan.Orm
 
 			if (typeof(T).IsSimpleType())
 				return dr.ReadToListOfValues<T>(list, getNextResult);
+			
+			var key = GetAutoMappingFuncKey<T>(dr);
 
+			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key); 
 
-			var dict = new Dictionary<string, Tuple<PropertyInfo, Type>>();
-
-			var properties = typeof(T)
-				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-				.Where(p => p.CanWrite && p.PropertyType.IsSimpleType()).ToList();
-
-			foreach (var property in properties)
+			if (dr.Read())
 			{
-				var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-				dict.Add(property.Name, new Tuple<PropertyInfo, Type>(property, type));
-			}
+				if (autoMappingFunc == null) {
+					autoMappingFunc = CreateAutoMappingFunc<T>(dr);
+					MappingManager.AddAutoMappingFunc(key, autoMappingFunc);
+				}
 
+				list.Add(autoMappingFunc(dr));
+			}
 	
 			while (dr.Read())
 			{
-				var item = Activator.CreateInstance<T>();
-					
-				for (var i = 0; i < dr.FieldCount; i++)
-				{
-					var columnName = dr.GetName(i);
-
-					Tuple<PropertyInfo, Type> propTuple;
-
-					if (dict.TryGetValue(columnName, out propTuple))
-					{
-						var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), propTuple.Item2);
-
-						propTuple.Item1.SetValue(item, value, null);
-					}
-				}
-
-				list.Add(item);
+				list.Add(autoMappingFunc(dr));
 			}
 
 			if (getNextResult) dr.NextResult();
@@ -231,8 +211,7 @@ namespace Artisan.Orm
 		}
 		
 		#endregion
-
-
+		
 
 		#region [ ReadToObjectRow(s), ReadAsObjectRow(s) ]
 
@@ -307,6 +286,7 @@ namespace Artisan.Orm
 		
 		#endregion
 
+
 		#region [ ReadToDictionary ]
 
 		public static Dictionary<TKey, TValue> ReadToDictionary<TKey,TValue>(this SqlDataReader dr,  bool getNextResult = true)
@@ -368,237 +348,238 @@ namespace Artisan.Orm
 		{
 			return (T)Convert.ChangeType(dr.GetValue(0), underlyingType);
 		}
-
-
+		
 		internal static T CreateObject<T>(SqlDataReader dr)
 		{
-			var obj = Activator.CreateInstance<T>();
+			var key = GetAutoMappingFuncKey<T>(dr);
+			
+			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key); 
+
+			if (autoMappingFunc == null) {
+				autoMappingFunc = CreateAutoMappingFunc<T>(dr);
+				MappingManager.AddAutoMappingFunc(key, autoMappingFunc);
+			}
+
+			return autoMappingFunc(dr);
+		}
+
+		#endregion
+
+		#region [ private members ] 
+
+		private static readonly PropertyInfo CommandProperty = typeof(SqlDataReader).GetProperties(BindingFlags.NonPublic | BindingFlags.Instance).First(p => p.Name == "Command");
+
+		private static string GetAutoMappingFuncKey<T>(SqlDataReader dr)
+		{
+			var command = (SqlCommand)CommandProperty.GetValue(dr);
+			return $"{command.CommandText}+{typeof(T).FullName}";
+		}
+		
+		private static MethodCallExpression GetMethodCall(string methodName, ParameterExpression sqlDataReaderParam, ConstantExpression indexConst)
+		{
+			return 
+				Expression.Call(
+					sqlDataReaderParam, 
+					typeof(SqlDataReader).GetMethod(methodName, new[] { typeof(int) }), 
+					indexConst
+				);
+		}
+
+		private static Func<SqlDataReader, T> CreateAutoMappingFunc<T>(SqlDataReader dr)
+		{ 
+			var properties = typeof(T)
+				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+				.Where(p => p.CanWrite && p.PropertyType.IsSimpleType()).ToList();
+
+
+			var memberBindings = new List<MemberBinding>();
+			var readerParam = Expression.Parameter(typeof(SqlDataReader), "reader");
+
+			for (var i = 0; i < dr.FieldCount; i++)
+			{
+				var columnName = dr.GetName(i);
+				var prop = properties.FirstOrDefault(p => p.Name == columnName);
+				
+				if (prop != null)
+				{
+					var indexConst = Expression.Constant(i, typeof(int));
+					var nonNullableType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+					var nonNullableTypeConst = Expression.Constant(nonNullableType, typeof(Type));
+					
+					MethodCallExpression getTypedValueExpCall;
+					var isDefaultMethod = false;
+					
+					if (nonNullableType == typeof(Boolean))
+						getTypedValueExpCall = GetMethodCall("GetBoolean", readerParam, indexConst);
+					else if (nonNullableType == typeof(Byte))
+						getTypedValueExpCall = GetMethodCall("GetByte", readerParam, indexConst);
+					else if (nonNullableType == typeof(Int16))
+						getTypedValueExpCall = GetMethodCall("GetInt16", readerParam, indexConst);
+					else if (nonNullableType == typeof(Int32))
+						getTypedValueExpCall = GetMethodCall("GetInt32", readerParam, indexConst);
+					else if (nonNullableType == typeof(Int64))
+						getTypedValueExpCall = GetMethodCall("GetInt64", readerParam, indexConst);
+					else if (nonNullableType == typeof(Single))
+						getTypedValueExpCall = GetMethodCall("GetFloat", readerParam, indexConst);
+					else if (nonNullableType == typeof(Double))
+						getTypedValueExpCall = GetMethodCall("GetDouble", readerParam, indexConst);
+					else if (nonNullableType == typeof(Decimal))
+						getTypedValueExpCall = GetMethodCall("GetDecimal", readerParam, indexConst);
+					else if (nonNullableType == typeof(String))
+						getTypedValueExpCall = GetMethodCall("GetString", readerParam, indexConst);
+					else if (nonNullableType == typeof(Char))
+						getTypedValueExpCall = Expression.Call(
+							null, 
+							typeof(SqlDataReaderExtensions).GetMethod("GetCharacter", new[] { typeof(SqlDataReader), typeof(int) }), 
+							readerParam,
+							indexConst
+						);
+					else if (nonNullableType == typeof(DateTime))
+						getTypedValueExpCall = GetMethodCall("GetDateTime", readerParam, indexConst);
+					else if (nonNullableType == typeof(DateTimeOffset))
+						getTypedValueExpCall = GetMethodCall("GetDateTimeOffset", readerParam, indexConst);
+					else if (nonNullableType == typeof(TimeSpan))
+						getTypedValueExpCall = GetMethodCall("GetTimeSpan", readerParam, indexConst);
+					else if (nonNullableType == typeof(Guid))
+						getTypedValueExpCall = GetMethodCall("GetGuid", readerParam, indexConst);
+					else
+					{
+						isDefaultMethod = true;
+
+						getTypedValueExpCall = Expression.Call(
+							readerParam,
+							typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) }),
+							indexConst
+						);
+					}
+
+
+					Expression getValueExp = null;
+
+					if (prop.PropertyType.IsNullableValueType())
+					{
+						getValueExp = Expression.Condition (
+							Expression.Call(
+								readerParam,
+								typeof(SqlDataReader).GetMethod("IsDBNull", new[] { typeof(int) }),
+								indexConst
+							),
+			
+							Expression.Default(prop.PropertyType),
+
+							Expression.Convert(getTypedValueExpCall, prop.PropertyType)
+						);
+					}
+					else if (isDefaultMethod)
+					{
+						getValueExp  = Expression.Convert(getTypedValueExpCall, prop.PropertyType);
+					}
+					else
+					{
+						getValueExp = getTypedValueExpCall;
+					}
+			
+					var binding = Expression.Bind(prop, getValueExp);
+					memberBindings.Add(binding);
+				}
+			}
+
+			var ctor = Expression.New(typeof(T));
+			var memberInit = Expression.MemberInit(ctor, memberBindings);
+
+			return Expression.Lambda<Func<SqlDataReader, T>>(memberInit, readerParam).Compile();
+		}
+		
+		#endregion
+	}
+}
+/* Old implementations with reflection:
+ 
+  
+	internal static T CreateObject<T>(SqlDataReader dr)
+	{
+		var obj = Activator.CreateInstance<T>();
+		
+		for (var i = 0; i < dr.FieldCount; i++)
+		{
+			var columnName = dr.GetName(i);
+
+			var prop = obj.GetType().GetProperty(columnName, BindingFlags.Public | BindingFlags.Instance);
+
+			if (prop != null && prop.CanWrite)
+			{
+				var t = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
+				var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), t);
+
+				prop.SetValue(obj, value, null);
+			}
+		}
+
+		return obj;
+	}
+
+	public static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
+	{
+		if (list == null) 
+			list = new List<T>();
+
+		if (typeof(T).IsSimpleType())
+			return dr.ReadToListOfValues<T>(list, getNextResult);
+
+
+		var dict = new Dictionary<string, Tuple<PropertyInfo, Type>>();
+
+		var properties = typeof(T)
+			.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+			.Where(p => p.CanWrite && p.PropertyType.IsSimpleType()).ToList();
+
+		foreach (var property in properties)
+		{
+			var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+			dict.Add(property.Name, new Tuple<PropertyInfo, Type>(property, type));
+		}
+
+
+		while (dr.Read())
+		{
+			var item = Activator.CreateInstance<T>();
 			
 			for (var i = 0; i < dr.FieldCount; i++)
 			{
 				var columnName = dr.GetName(i);
 
-				var prop = obj.GetType().GetProperty(columnName, BindingFlags.Public | BindingFlags.Instance);
+				Tuple<PropertyInfo, Type> propTuple;
 
-				if (prop != null && prop.CanWrite)
+				if (dict.TryGetValue(columnName, out propTuple))
 				{
-					var t = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+					var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), propTuple.Item2);
 
-					var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), t);
-
-					prop.SetValue(obj, value, null);
+					propTuple.Item1.SetValue(item, value, null);
 				}
 			}
 
-			return obj;
+			list.Add(item);
 		}
+
+		if (getNextResult) dr.NextResult();
+
+		return list;
+	}	
 		
-		#endregion 
+*/
+ 
 
-
-		#endregion
-
-
-		#region [ Get extensions ] = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
-		public static bool? GetBooleanNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (bool?)null : reader.GetBoolean(ordinal);
-		}
-
-		public static bool GetBoolean(this SqlDataReader reader, int ordinal, bool defaultValue)
-		{
-			return reader.IsDBNull(ordinal) ? defaultValue : reader.GetBoolean(ordinal);
-		}
-
-		public static byte? GetByteNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (byte?)null : reader.GetByte(ordinal);
-		}
-
-		public static short? GetInt16Nullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (short?)null : reader.GetInt16(ordinal);
-		}
-		
-		public static int? GetInt32Nullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (int?)null : reader.GetInt32(ordinal);
-		}
-		
-		public static long? GetInt64Nullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (long?)null : reader.GetInt64(ordinal);
-		}
-
-		public static float? GetFloatNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (float?)null : reader.GetFloat(ordinal);
-		}
-
-		public static double? GetDoubleNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (double?)null : reader.GetDouble(ordinal);
-		}
-
-		public static decimal? GetDecimalNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetDecimal(ordinal);
-		}
-
-		public static decimal GetBigDecimal(this SqlDataReader reader, int ordinal)
-		{
-			return decimal.Parse(reader.GetSqlDecimal(ordinal).ToString(), CultureInfo.InvariantCulture);
-		}
-
-		public static decimal? GetBigDecimalNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (decimal?)null : reader.GetBigDecimal(ordinal);
-		}
-
-		public static Char GetCharacter(this SqlDataReader reader, int ordinal)
-		{
-			var buffer = new char[1];
-			reader.GetChars(ordinal, 0, buffer, 0, 1);
-			return buffer[0];
-		}
-
-		public static Char? GetCharacterNullable(this SqlDataReader reader, int ordinal)
-		{	
-			if (reader.IsDBNull(ordinal))
-				return null;
-
-			return reader.GetCharacter(ordinal);
-		}
-
-		public static string GetStringNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
-		}
-
-		public static DateTime? GetDateTimeNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (DateTime?)null : reader.GetDateTime(ordinal);
-		}
-
-		public static DateTimeOffset? GetDateTimeOffsetNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (DateTimeOffset?)null : reader.GetDateTimeOffset(ordinal);
-		}
-
-		public static DateTime GetUtcDateTime(this SqlDataReader reader, int ordinal)
-		{
-			return DateTime.SpecifyKind(reader.GetDateTime(ordinal), DateTimeKind.Utc);
-		}
-
-		public static TimeSpan? GetTimeSpanNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? (TimeSpan?)null : reader.GetTimeSpan(ordinal);
-		}
-		
-		public static Guid GetGuidFromString(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? Guid.Empty : Guid.Parse(reader.GetString(ordinal));
-		}
-
-		public static Guid? GetGuidFromStringNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? null : (Guid?)Guid.Parse(reader.GetString(ordinal));
-		}
-
-		public static Guid GetGuidFromString(this SqlDataReader reader, int ordinal, Guid defaultValue)
-		{
-			return reader.IsDBNull(ordinal) ? defaultValue : Guid.Parse(reader.GetString(ordinal));
-		}
-		
-		public static Guid? GetGuidNullable(this SqlDataReader reader, int ordinal)
-		{
-			return reader.IsDBNull(ordinal) ? null : (Guid?)reader.GetGuid(ordinal);
-		}
-		
-		public static Guid GetGuid(this SqlDataReader reader, int ordinal, Guid defaultValue)
-		{
-			return reader.IsDBNull(ordinal) ? defaultValue : reader.GetGuid(ordinal);
-		}
-
-		public static byte[] GetBytesFromRowVersion(this SqlDataReader reader, int ordinal)
-		{
-			if (reader.IsDBNull(ordinal))
-				return null;
-			
-			return (byte[])reader.GetValue(ordinal);
-		}
-
-		public static long GetInt64FromRowVersion(this SqlDataReader reader, int ordinal)
-		{
-			return BitConverter.ToInt64((byte[])reader.GetValue(ordinal), 0);
-		}
-
-		public static long? GetInt64FromRowVersionNullable(this SqlDataReader reader, int ordinal)
-		{
-			if (reader.IsDBNull(ordinal))
-				return null;
-			
-			return BitConverter.ToInt64((byte[])reader.GetValue(ordinal), 0);
-		}
-
-		public static string GetBase64StringFromRowVersion(this SqlDataReader reader, int ordinal)
-		{
-			if (reader.IsDBNull(ordinal))
-				return null;
-			
-			return (Convert.ToBase64String((byte[])reader.GetValue(ordinal)));
-		}
-
-		public static byte[] GetBytesNullable(this SqlDataReader reader, int ordinal)
-		{
-			if (reader.IsDBNull(ordinal))
-				return null;
-			
-			return (byte[])reader.GetValue(ordinal);
-		}
-
-		public static Byte[] GetByteArrayFromString(this SqlDataReader reader, int ordinal)
-		{
-			if (reader.IsDBNull(ordinal))
-				return new Byte[] {};
-
-			var ids = reader.GetStringNullable(ordinal);
-
-			if (String.IsNullOrWhiteSpace(ids))
-				return new Byte[] {};
-
-			return ids.Split(',').Select(s => Convert.ToByte(s)).ToArray();
-		}
-
-		public static Int16[] GetInt16ArrayFromString(this SqlDataReader reader, int ordinal)
-		{
-			if (reader.IsDBNull(ordinal))
-				return new Int16[] {};
-
-			var ids = reader.GetString(ordinal);
-
-			if (String.IsNullOrWhiteSpace(ids))
-				return new Int16[] {};
-
-			return ids.Split(',').Select(s => Convert.ToInt16(s)).ToArray();
-		}
-
-		public static Int32[] GetInt32ArrayFromString(this SqlDataReader reader, int ordinal)
-		{
-			if (reader.IsDBNull(ordinal))
-				return new Int32[] {};
-
-			var ids = reader.GetString(ordinal);
-
-			if (String.IsNullOrWhiteSpace(ids))
-				return new Int32[] {};
-
-			return ids.Split(',').Select(s => Convert.ToInt32(s)).ToArray();
-		}
-		
-
-		#endregion
-
-	}
-}
+/*	ChangeType method
+ 
+	getTypedValueExpCall = Expression.Call(
+		null,
+		typeof(Convert).GetMethod("ChangeType", new[] { typeof(object), typeof(Type) }),
+		Expression.Call(
+			readerParam,
+			typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) }),
+			indexConst
+		),
+		nonNullableTypeConst
+	);
+*/

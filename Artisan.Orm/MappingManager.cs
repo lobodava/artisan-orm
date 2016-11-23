@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -14,6 +15,9 @@ namespace Artisan.Orm
 		private static readonly Dictionary<Type, object> CreateObjectRowFuncDictionary = new Dictionary<Type, object>();
 
 		private static readonly Dictionary<Type, Tuple<Func<DataTable>, Delegate>> CreateDataTableFuncsDictionary = new Dictionary<Type, Tuple<Func<DataTable>, Delegate>>();
+
+		private static readonly ConcurrentDictionary<string, object> AutoMappingFuncDictionary = new ConcurrentDictionary<string, object>();
+
 
 		static MappingManager()
 		{
@@ -104,7 +108,7 @@ namespace Artisan.Orm
 
 			throw new NullReferenceException($"CreateObject Func not found. Check if MapperFor {typeof(T).FullName} exists and CreateObject exist.");
 		}
-
+		
 		public static Func<SqlDataReader, ObjectRow> GetCreateObjectRowFunc<T>()
 		{
 			object obj;
@@ -172,6 +176,20 @@ namespace Artisan.Orm
 		}
 
 
+		public static bool AddAutoMappingFunc<T>(string key, Func<SqlDataReader, T> autoMappingFunc)
+		{
+			return AutoMappingFuncDictionary.TryAdd(key, autoMappingFunc);
+		}
+
+		public static Func<SqlDataReader, T> GetAutoMappingFunc<T>(string key)
+		{
+			object obj;
+
+			if (AutoMappingFuncDictionary.TryGetValue(key, out obj)) {
+				return (Func<SqlDataReader, T>)obj;
+			}
+			return null;
+		}
 
 
 		private static IEnumerable<Type> GetTypesWithMapperForAttribute() {
@@ -183,6 +201,5 @@ namespace Artisan.Orm
 				}
 			}
 		}
-
 	}
 }

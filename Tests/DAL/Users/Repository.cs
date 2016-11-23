@@ -87,6 +87,21 @@ namespace Tests.DAL.Users
 		}
 
 
+		public IList<User> GetUsersWithAutoMapping()
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetUsers");
+
+				return cmd.GetByReader(reader =>
+				{
+					return reader.ReadAsList<User>();
+				});
+			});
+		}
+
+
+
 		#endregion
 
 

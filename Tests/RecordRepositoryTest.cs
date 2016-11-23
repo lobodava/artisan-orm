@@ -28,16 +28,16 @@ namespace Tests
 		}
 
 		[TestMethod]
-		public void GetRecordByIdWithMapper()
+		public void GetRecordById()
 		{
-			Record record = null;
+			Record record = _repository.GetRecordById(1);
 
 			var sw = new Stopwatch();
 			sw.Start();
 			
 			for (var i = 1; i <= 676; i++)
 			{
-				record = _repository.GetRecordByIdWithMapper(i);
+				record = _repository.GetRecordById(i);
 
 				Assert.IsTrue(record.Id == i || record == null);
 			}
@@ -51,16 +51,16 @@ namespace Tests
 		}
 
 		[TestMethod]
-		public void GetRecordByIdWithReflection()
+		public void GetRecordByIdWithAutoMapping()
 		{
-			Record record = null;
+			Record record =_repository.GetRecordByIdWithAutoMapping(1);
 
 			var sw = new Stopwatch();
 			sw.Start();
 			
 			for (var i = 1; i <= 676; i++)
 			{
-				record = _repository.GetRecordByIdWithReflection(i);
+				record = _repository.GetRecordByIdWithAutoMapping(i);
 
 				Assert.IsTrue(record.Id == i || record == null);
 			}
@@ -69,7 +69,7 @@ namespace Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetRecordById With Reflection reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
+			Console.WriteLine($"GetRecordById With AutoMapping reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
 			Console.Write(JsonConvert.SerializeObject(record));
 		}
 
@@ -153,10 +153,12 @@ namespace Tests
 		[TestMethod]
 		public void GetRecords()
 		{
+			var records  = _repository.GetRecords();
+
 			var sw = new Stopwatch();
 			sw.Start();
 
-			var records  = _repository.GetRecords();
+			records  = _repository.GetRecords();
 	
 			sw.Stop();
 
@@ -168,19 +170,21 @@ namespace Tests
 		}
 
 		[TestMethod]
-		public void GetRecordsWithReflection()
+		public void GetRecordsWithAutoMapping()
 		{
+			var records  = _repository.GetRecordsWithAutoMapping();
+
 			var sw = new Stopwatch();
 			sw.Start();
 
-			var records  = _repository.GetRecordsWithReflection();
+			records  = _repository.GetRecordsWithAutoMapping();
 	
 			sw.Stop();
 
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 0);
 
-			Console.WriteLine($"GetRecordsWithReflection reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"GetRecordsWithAutoMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
 		}
 
@@ -188,10 +192,12 @@ namespace Tests
 		[TestMethod]
 		public async Task GetRecordsAsync()
 		{
+			var records  = await _repository.GetRecordsAsync();
+
 			var sw = new Stopwatch();
 			sw.Start();
 
-			var records  = await _repository.GetRecordsAsync();
+			records  = await _repository.GetRecordsAsync();
 	
 			sw.Stop();
 
@@ -204,19 +210,21 @@ namespace Tests
 
 
 		[TestMethod]
-		public async Task GetRecordsWithReflectionAsync()
+		public async Task GetRecordsWithAutoMappingAsync()
 		{
+			var records  = await _repository.GetRecordsWithAutoMappingAsync();
+
 			var sw = new Stopwatch();
 			sw.Start();
 
-			var records  = await _repository.GetRecordsWithReflectionAsync();
+			records  = await _repository.GetRecordsWithAutoMappingAsync();
 	
 			sw.Stop();
 
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 0);
 
-			Console.WriteLine($"GetRecordsWithReflectionAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"GetRecordsWithAutoMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
 		}
 
