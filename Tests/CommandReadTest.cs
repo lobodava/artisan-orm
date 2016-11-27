@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Tests.DAL.Users.Models;
 
 
 namespace Tests
@@ -19,7 +22,7 @@ namespace Tests
 
 
 		[TestMethod]
-		public void ReadTo()
+		public void ReadToValue()
 		{
 			_repository.Connection.Open();
 			
@@ -433,16 +436,168 @@ namespace Tests
 			
 			_repository.Connection.Close();
 		}
+		
 
 
+		[TestMethod]
+		public void ReadToUser()
+		{
+			User user = null; 
+
+			_repository.Connection.Open();
+			
+			_repository.RunCommand(cmd => {
+				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users where Id = 1");
+
+				user = cmd.ReadTo<User>();
+
+				Assert.AreEqual(user.Id, 1);
+			});
+			
+
+			var times = 1000;
+
+			var sw = new Stopwatch();
+			sw.Start();
+
+			for (int i = 0; i < times; i++)
+			{
+				_repository.RunCommand(cmd => {
+					cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users where Id = 1");
+					user = cmd.ReadTo<User>();
+				});
+			}
+
+			sw.Stop();
+
+			Assert.AreEqual(user.Id, 1);
+
+			Console.WriteLine($"ReadToUser done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine();
+
+			_repository.Connection.Close();
+		}
 
 
+		[TestMethod]
+		public void ReadToUsers()
+		{
+			IList<User> users = null; 
+
+			_repository.Connection.Open();
+			
+			_repository.RunCommand(cmd => {
+				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users");
+
+				users = cmd.ReadToList<User>();
+
+				Assert.IsTrue(users.Count > 1);
+			});
+			
+
+			var times = 1000;
+
+			var sw = new Stopwatch();
+			sw.Start();
+
+			for (int i = 0; i < times; i++)
+			{
+				_repository.RunCommand(cmd => {
+					cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users");
+					users = cmd.ReadToList<User>();
+				});
+			}
+
+			sw.Stop();
+
+			Assert.IsTrue(users.Count > 1);
+
+			Console.WriteLine($"ReadToUsers done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine();
+
+			_repository.Connection.Close();
+		}
 
 
+		[TestMethod]
+		public void ReadAsUser()
+		{
+			User user = null; 
+
+			_repository.Connection.Open();
+			
+			_repository.RunCommand(cmd => {
+				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users where Id = 1");
+
+				user = cmd.ReadTo<User>();
+
+				Assert.AreEqual(user.Id, 1);
+			});
+			
+
+			var times = 1000;
+
+			var sw = new Stopwatch();
+			sw.Start();
+
+			for (int i = 0; i < times; i++)
+			{
+				_repository.RunCommand(cmd => {
+					cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users where Id = 1");
+					user = cmd.ReadAs<User>();
+				});
+			}
+
+			sw.Stop();
+
+			Assert.AreEqual(user.Id, 1);
+
+			Console.WriteLine($"ReadToUser done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine();
+
+			_repository.Connection.Close();
+		}
 
 
+		[TestMethod]
+		public void ReadAsUsers()
+		{
+			IList<User> users = null; 
 
+			_repository.Connection.Open();
+			
+			_repository.RunCommand(cmd => {
+				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users");
 
+				users = cmd.ReadToList<User>();
+
+				Assert.IsTrue(users.Count > 1);
+			});
+			
+
+			var times = 1000;
+
+			var sw = new Stopwatch();
+			sw.Start();
+
+			for (int i = 0; i < times; i++)
+			{
+				_repository.RunCommand(cmd => {
+					cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users");
+					users = cmd.ReadAsList<User>();
+				});
+			}
+
+			sw.Stop();
+
+			Assert.IsTrue(users.Count > 1);
+
+			Console.WriteLine($"ReadToUsers done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine();
+
+			_repository.Connection.Close();
+		}
+		
 
 
 		

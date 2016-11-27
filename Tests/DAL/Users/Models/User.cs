@@ -38,7 +38,7 @@ namespace Tests.DAL.Users.Models
 				Login	=	dr.GetString(i++)	,
 				Name	=	dr.GetString(i++)	,
 				Email	=	dr.GetString(i++)	,
-				RoleIds	=	dr.GetByteArrayFromString(i++)
+				RoleIds	=	(i + 1 <= dr.FieldCount) ? dr.GetByteArrayFromString(i) : null
 			};
 		}
 

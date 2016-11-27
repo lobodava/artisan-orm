@@ -29,7 +29,7 @@ namespace Artisan.Orm
 				if (typeof(T).IsNullableValueType() && dr.IsDBNull(0))
 					obj = default(T);
 				else
-					obj = GetValue<T>(dr);
+					obj = dr.GetValue<T>();
 			else
 				obj = default(T);
 
@@ -156,32 +156,39 @@ namespace Artisan.Orm
 
 		public static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
 		{
-			if (list == null) 
-				list = new List<T>();
-
 			if (typeof(T).IsSimpleType())
 				return dr.ReadToListOfValues<T>(list, getNextResult);
 			
 			var key = GetAutoMappingFuncKey<T>(dr);
-
 			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key); 
+
+			list = dr.ReadAsList(list, autoMappingFunc, key);
+
+			if (getNextResult) dr.NextResult();
+
+			return list;
+		}
+
+		internal static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, Func<SqlDataReader, T> autoMappingFunc, string key)
+		{
+			if (list == null) 
+				list = new List<T>();
 
 			if (dr.Read())
 			{
-				if (autoMappingFunc == null) {
+				if (autoMappingFunc == null)
+				{
 					autoMappingFunc = CreateAutoMappingFunc<T>(dr);
 					MappingManager.AddAutoMappingFunc(key, autoMappingFunc);
 				}
 
 				list.Add(autoMappingFunc(dr));
 			}
-	
+
 			while (dr.Read())
 			{
 				list.Add(autoMappingFunc(dr));
 			}
-
-			if (getNextResult) dr.NextResult();
 
 			return list;
 		}
@@ -337,7 +344,7 @@ namespace Artisan.Orm
 
 		#region [ GetValue, CreateObject ]
 		
-		internal static T GetValue<T>(SqlDataReader dr)
+		public static T GetValue<T>(this SqlDataReader dr)
 		{
 			var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
 			
@@ -349,13 +356,19 @@ namespace Artisan.Orm
 			return (T)Convert.ChangeType(dr.GetValue(0), underlyingType);
 		}
 		
-		internal static T CreateObject<T>(SqlDataReader dr)
+		public static T CreateObject<T>(this SqlDataReader dr)
 		{
 			var key = GetAutoMappingFuncKey<T>(dr);
 			
 			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key); 
 
-			if (autoMappingFunc == null) {
+			return CreateObject(dr, autoMappingFunc, key);
+		}
+
+		internal static T CreateObject<T>(this SqlDataReader dr, Func<SqlDataReader, T> autoMappingFunc, string key)
+		{
+			if (autoMappingFunc == null)
+			{
 				autoMappingFunc = CreateAutoMappingFunc<T>(dr);
 				MappingManager.AddAutoMappingFunc(key, autoMappingFunc);
 			}
@@ -372,20 +385,75 @@ namespace Artisan.Orm
 		private static string GetAutoMappingFuncKey<T>(SqlDataReader dr)
 		{
 			var command = (SqlCommand)CommandProperty.GetValue(dr);
-			return $"{command.CommandText}+{typeof(T).FullName}";
+			return GetAutoMappingFuncKey<T>(command.CommandText);
+		}
+
+		internal static string GetAutoMappingFuncKey<T>(string commandText)
+		{
+			return $"{commandText}+{typeof(T).FullName}";
 		}
 		
-		private static MethodCallExpression GetMethodCall(string methodName, ParameterExpression sqlDataReaderParam, ConstantExpression indexConst)
+		private static readonly Dictionary<Type, string> ReaderGetMethodNames = new Dictionary<Type, string>
 		{
-			return 
-				Expression.Call(
+			{ typeof(Boolean)		 , "GetBoolean"			},
+			{ typeof(Byte)			 , "GetByte"			},
+			{ typeof(Int16)			 , "GetInt16"			},
+			{ typeof(Int32)			 , "GetInt32"			},
+			{ typeof(Int64)			 , "GetInt64"			},
+			{ typeof(Single)		 , "GetFloat"			},
+			{ typeof(Double)		 , "GetDouble"			},
+			{ typeof(Decimal)		 , "GetDecimal"			},
+			{ typeof(String)		 , "GetString"			},
+			{ typeof(DateTime)		 , "GetDateTime"		},
+			{ typeof(DateTimeOffset) , "GetDateTimeOffset"	},
+			{ typeof(TimeSpan)		 , "GetTimeSpan"		},
+			{ typeof(Guid)			 , "GetGuid"			}
+		};
+
+		private static MethodCallExpression GetTypedValueMethodCallExpression(Type type, ParameterExpression sqlDataReaderParam, ConstantExpression indexConst, out bool isDefaultGetValueMethod)
+		{
+			var nonNullableType = Nullable.GetUnderlyingType(type) ?? type;
+
+			isDefaultGetValueMethod = false;
+
+			string methodName;
+
+			if(ReaderGetMethodNames.TryGetValue(nonNullableType, out methodName))
+				return Expression.Call(
 					sqlDataReaderParam, 
 					typeof(SqlDataReader).GetMethod(methodName, new[] { typeof(int) }), 
 					indexConst
 				);
-		}
 
-		private static Func<SqlDataReader, T> CreateAutoMappingFunc<T>(SqlDataReader dr)
+			if (nonNullableType == typeof(Char))
+				return Expression.Call(
+					null, 
+					typeof(SqlDataReaderExtensions).GetMethod("GetCharacter", new[] { typeof(SqlDataReader), typeof(int) }), 
+					sqlDataReaderParam,
+					indexConst
+				);
+
+			isDefaultGetValueMethod = true;
+
+			return  Expression.Call(
+				null,
+				typeof(Convert).GetMethod("ChangeType", new[] { typeof(object), typeof(Type) }),
+				Expression.Call(
+					sqlDataReaderParam,
+					typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) }),
+					indexConst
+				),
+				Expression.Constant(nonNullableType, typeof(Type))
+			);
+
+			//return Expression.Call(
+			//	sqlDataReaderParam,
+			//	typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) }),
+			//	indexConst
+			//);
+		}
+		
+		internal static Func<SqlDataReader, T> CreateAutoMappingFunc<T>(SqlDataReader dr)
 		{ 
 			var properties = typeof(T)
 				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -403,57 +471,10 @@ namespace Artisan.Orm
 				if (prop != null)
 				{
 					var indexConst = Expression.Constant(i, typeof(int));
-					var nonNullableType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-					var nonNullableTypeConst = Expression.Constant(nonNullableType, typeof(Type));
 					
-					MethodCallExpression getTypedValueExpCall;
-					var isDefaultMethod = false;
+					bool isDefaultGetValueMethod;
+					MethodCallExpression getTypedValueExp = GetTypedValueMethodCallExpression(prop.PropertyType, readerParam, indexConst, out isDefaultGetValueMethod);
 					
-					if (nonNullableType == typeof(Boolean))
-						getTypedValueExpCall = GetMethodCall("GetBoolean", readerParam, indexConst);
-					else if (nonNullableType == typeof(Byte))
-						getTypedValueExpCall = GetMethodCall("GetByte", readerParam, indexConst);
-					else if (nonNullableType == typeof(Int16))
-						getTypedValueExpCall = GetMethodCall("GetInt16", readerParam, indexConst);
-					else if (nonNullableType == typeof(Int32))
-						getTypedValueExpCall = GetMethodCall("GetInt32", readerParam, indexConst);
-					else if (nonNullableType == typeof(Int64))
-						getTypedValueExpCall = GetMethodCall("GetInt64", readerParam, indexConst);
-					else if (nonNullableType == typeof(Single))
-						getTypedValueExpCall = GetMethodCall("GetFloat", readerParam, indexConst);
-					else if (nonNullableType == typeof(Double))
-						getTypedValueExpCall = GetMethodCall("GetDouble", readerParam, indexConst);
-					else if (nonNullableType == typeof(Decimal))
-						getTypedValueExpCall = GetMethodCall("GetDecimal", readerParam, indexConst);
-					else if (nonNullableType == typeof(String))
-						getTypedValueExpCall = GetMethodCall("GetString", readerParam, indexConst);
-					else if (nonNullableType == typeof(Char))
-						getTypedValueExpCall = Expression.Call(
-							null, 
-							typeof(SqlDataReaderExtensions).GetMethod("GetCharacter", new[] { typeof(SqlDataReader), typeof(int) }), 
-							readerParam,
-							indexConst
-						);
-					else if (nonNullableType == typeof(DateTime))
-						getTypedValueExpCall = GetMethodCall("GetDateTime", readerParam, indexConst);
-					else if (nonNullableType == typeof(DateTimeOffset))
-						getTypedValueExpCall = GetMethodCall("GetDateTimeOffset", readerParam, indexConst);
-					else if (nonNullableType == typeof(TimeSpan))
-						getTypedValueExpCall = GetMethodCall("GetTimeSpan", readerParam, indexConst);
-					else if (nonNullableType == typeof(Guid))
-						getTypedValueExpCall = GetMethodCall("GetGuid", readerParam, indexConst);
-					else
-					{
-						isDefaultMethod = true;
-
-						getTypedValueExpCall = Expression.Call(
-							readerParam,
-							typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) }),
-							indexConst
-						);
-					}
-
-
 					Expression getValueExp = null;
 
 					if (prop.PropertyType.IsNullableValueType())
@@ -467,16 +488,31 @@ namespace Artisan.Orm
 			
 							Expression.Default(prop.PropertyType),
 
-							Expression.Convert(getTypedValueExpCall, prop.PropertyType)
+							Expression.Convert(getTypedValueExp, prop.PropertyType)
 						);
+
+
+						//getTypedValueExp = Expression.Call(
+						//	null,
+						//	typeof(Convert).GetMethod("ChangeType", new[] { typeof(object), typeof(Type) }),
+						//	Expression.Call(
+						//		readerParam,
+						//		typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) }),
+						//		indexConst
+						//	),
+						//	nonNullableTypeConst
+						//);
+
+
+
 					}
-					else if (isDefaultMethod)
+					else if (isDefaultGetValueMethod)
 					{
-						getValueExp  = Expression.Convert(getTypedValueExpCall, prop.PropertyType);
+						getValueExp  = Expression.Convert(getTypedValueExp, prop.PropertyType);
 					}
 					else
 					{
-						getValueExp = getTypedValueExpCall;
+						getValueExp = getTypedValueExp;
 					}
 			
 					var binding = Expression.Bind(prop, getValueExp);
@@ -572,7 +608,7 @@ namespace Artisan.Orm
 
 /*	ChangeType method
  
-	getTypedValueExpCall = Expression.Call(
+	getTypedValueExp = Expression.Call(
 		null,
 		typeof(Convert).GetMethod("ChangeType", new[] { typeof(object), typeof(Type) }),
 		Expression.Call(

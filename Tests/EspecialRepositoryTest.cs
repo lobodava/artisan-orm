@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -123,6 +125,161 @@ namespace Tests
 		//	Console.WriteLine($"Numb {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms ");
 
 		//}
+
+
+		[TestMethod]
+		public void GetInt32VsGetValueVsChangeType()
+		{
+			_repositoryBase.Connection.Open();
+
+
+			_repositoryBase.RunCommand(cmd => {
+				cmd.UseSql( "select 1");
+
+				cmd.ExecuteReader(reader=>
+				{
+					reader.Read(r =>
+					{
+						var times = 1000000;
+
+
+						// GetInt32
+
+						var sw = new Stopwatch();
+						sw.Start();
+
+						for (int i = 0; i < times; i++)
+						{
+							Int32 id = r.GetInt32(0);
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($"GetInt32 done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one GetInt32" );
+						Console.WriteLine();
+
+
+						// (Int32) + GetValue
+
+						sw.Restart();
+
+						for (int i = 0; i < times; i++)
+						{
+							Int32 id = (Int32)r.GetValue(0);
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($"(Int32) + GetValue done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one (Int32) + GetValue" );
+						Console.WriteLine();
+
+
+						// (Int32) + ChangeType + GetValue
+
+						sw.Restart();
+
+						for (int i = 0; i < times; i++)
+						{
+							Int32 id = (Int32)Convert.ChangeType(r.GetValue(0), typeof(Int32)) ;
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($"(Int32) + ChangeType + GetValue done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one (Int32) + ChangeType + GetValue" );
+						Console.WriteLine();
+
+
+						// (Int32) + (object) + GetInt32
+
+						sw.Restart();
+
+						for (int i = 0; i < times; i++)
+						{
+							Int32 id = (Int32)(object)r.GetInt32(0);
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($"(Int32) + (object) + GetInt32 done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one (Int32) + (object) + GetInt32" );
+						Console.WriteLine();
+
+
+						// typeof(Int32).Name
+
+						sw.Restart();
+						
+						for (int i = 0; i < times; i++)
+						{
+							var name = typeof(Int32).Name;
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($"typeof(Int32).Name done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one typeof(Int32).Name" );
+						Console.WriteLine();
+
+
+						// type == typeof(Int16)
+
+						sw.Restart();
+
+						var type = typeof(Int32);
+						bool f = false;
+
+						for (int i = 0; i < times; i++)
+						{
+							if ( type == typeof(Int16))
+								f = true;
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($" type == typeof(Int32) done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one  type == typeof(Int32)" );
+						Console.WriteLine();
+
+
+						// GetValue<Int32>(r);
+
+						sw.Restart();
+
+						for (int i = 0; i < times; i++)
+						{
+							Int32 id = GetValue<Int32>(r);
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($"GetValue<Int32> done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one GetValue<Int32>" );
+						Console.WriteLine();
+
+
+					});
+
+
+
+				});
+			});
+		}
+
+		private static readonly Dictionary<Type, Func<SqlDataReader, object>>  GetValueFuncs = new Dictionary<Type, Func<SqlDataReader, object>>
+		{
+			{ typeof(Boolean), (dr) => dr.GetBoolean(0)},
+			{ typeof(Byte), (dr) => dr.GetByte(0)},
+			{ typeof(Int16), (dr) => dr.GetInt16(0)},
+			{ typeof(Int32), (dr) => dr.GetInt32(0)},
+			{ typeof(Int64), (dr) => dr.GetInt64(0)},
+			{ typeof(String), (dr) => dr.GetString(0)}
+		}; 
+
+		private static T GetValue<T>(SqlDataReader dr) 
+		{
+			Func<SqlDataReader, object>  getValueFunc;
+
+			if (GetValueFuncs.TryGetValue(typeof(T), out getValueFunc))
+				return (T)getValueFunc(dr);
+			
+			return (T)dr.GetValue(0);
+		}
 
 	
 		[TestCleanup]

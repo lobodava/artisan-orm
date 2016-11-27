@@ -85,7 +85,7 @@ namespace Artisan.Orm
 					if (typeof(T).IsNullableValueType() && dr.IsDBNull(0))
 						return default(T);
 					
-					return SqlDataReaderExtensions.GetValue<T>(dr);
+					return dr.GetValue<T>();
 				}
 
 				return default(T);
@@ -99,14 +99,7 @@ namespace Artisan.Orm
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				if (dr.Read()) {
-					if (typeof(T).IsNullableValueType() & dr.IsDBNull(0))
-						return default(T);
-
-					return createFunc(dr);
-				}
-
-				return default(T);
+				return dr.Read() ? createFunc(dr) : default(T);
 			}
 		}
 		
@@ -124,7 +117,15 @@ namespace Artisan.Orm
 			if (typeof(T).IsSimpleType())
 				return await cmd.ReadToValueAsync<T>();
 
-			return await cmd.ReadToAsync(SqlDataReaderExtensions.CreateObject<T>);
+			var key = SqlDataReaderExtensions.GetAutoMappingFuncKey<T>(cmd.CommandText);
+			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key);
+
+			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
+
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			{
+				return dr.Read() ? dr.CreateObject(autoMappingFunc, key) : default(T);
+			}
 		}
 
 		#endregion
@@ -225,16 +226,17 @@ namespace Artisan.Orm
 
 		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd, IList<T> list) 
 		{
-			if (list == null)
-				list = new List<T>();
-			else if (typeof(T).IsSimpleType())
+			if (typeof(T).IsSimpleType())
 				return await cmd.ReadToListOfValuesAsync<T>(list);
+
+			var key = SqlDataReaderExtensions.GetAutoMappingFuncKey<T>(cmd.CommandText);
+			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key);
 
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				dr.ReadAsList<T>(list, false);
+				list = dr.ReadAsList(list, autoMappingFunc, key);
 			}
 
 			return list;
