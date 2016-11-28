@@ -7,6 +7,34 @@ namespace Artisan.Orm
 {
 	public static partial class SqlDataReaderExtensions
 	{
+		internal static T GetValue<T>(this SqlDataReader reader)  
+		{
+			return reader.GetValue<T>(0);
+		}
+
+		public static T GetValue<T>(this SqlDataReader reader, int ordinal)  
+		{
+			var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+			
+			return (T)Convert.ChangeType(reader.GetValue(ordinal), underlyingType);
+		}
+		
+		internal static T GetValue<T>(SqlDataReader reader, Type underlyingType)
+		{
+			return (T)Convert.ChangeType(reader.GetValue(0), underlyingType);
+		}
+
+		public static T GetValueNullable<T>(this SqlDataReader reader, int ordinal)  
+		{
+			if (reader.IsDBNull(ordinal))
+				return default(T); 
+
+			var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+			
+			return (T)Convert.ChangeType(reader.GetValue(ordinal), underlyingType);
+		}
+
+		
 		public static bool? GetBooleanNullable(this SqlDataReader reader, int ordinal)
 		{
 			return reader.IsDBNull(ordinal) ? default(bool?) : reader.GetBoolean(ordinal);

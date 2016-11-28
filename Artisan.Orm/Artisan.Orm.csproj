@@ -43,6 +43,7 @@
     <Compile Include="DataMessage.cs" />
     <Compile Include="MergeJoinExtensions.cs" />
     <Compile Include="SqlDataReaderExtensions_Get.cs" />
+    <Compile Include="SqlDataReaderExtensions_CreateObject.cs" />
     <Compile Include="SqlDataReaderExtensions_Read.cs" />
     <Compile Include="DataStatus.cs" />
     <Compile Include="SqlCommandExtensions_Async.cs" />

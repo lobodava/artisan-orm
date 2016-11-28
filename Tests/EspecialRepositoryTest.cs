@@ -281,6 +281,109 @@ namespace Tests
 			return (T)dr.GetValue(0);
 		}
 
+		private class SomeClass
+		{
+			public Int32 Id {get; set;}
+
+			public SByte Rate {get; set;}
+			
+			public UInt16 Number {get; set;}
+		}
+
+		[TestMethod]
+		public void GetObjectWithAutomapping()
+		{
+			_repositoryBase.Connection.Open();
+
+			SomeClass someclass = null;
+
+			_repositoryBase.RunCommand(cmd => {
+				cmd.UseSql( "select   cast(1 as tinyint) as Id,   cast(2 as int) as Rate,   cast(3 as bigint) as Number ;");
+
+				cmd.ExecuteReader(reader=>
+				{
+					someclass = reader.ReadAs<SomeClass>();
+				});
+			});
+
+			Assert.IsNotNull(someclass);
+			Console.WriteLine("SomeClass:");
+			Console.WriteLine(JsonConvert.SerializeObject(someclass));
+		}
+
+		[TestMethod]
+		public void GetObjectWithHandMapping()
+		{
+			_repositoryBase.Connection.Open();
+
+			SomeClass someclass = null;
+
+			_repositoryBase.RunCommand(cmd => {
+				cmd.UseSql( "select   cast(1 as tinyint) as Id,   cast(2 as int) as Rate,   cast(3 as bigint) as Number ;");
+
+				cmd.ExecuteReader(reader=>
+				{
+					someclass = reader.ReadTo<SomeClass>(r => new SomeClass
+					{
+						Id		= r.GetValue<Int32>(0),
+						Rate	= r.GetValue<SByte>(1),
+						Number	= r.GetValue<UInt16>(2),
+					});
+				});
+			});
+
+			Assert.IsNotNull(someclass);
+			Console.WriteLine("SomeClass:");
+			Console.WriteLine(JsonConvert.SerializeObject(someclass));
+		}
+		
+
+		//[TestMethod]
+		//public void TryCatchPerformanceCost()
+		//{
+		//	Stopwatch sw = new Stopwatch();
+		//	double d = 0;
+		//	int times = 10000000;
+
+		//	for (int i = 0; i < times; i++)
+		//	{
+		//		d = Math.Sin(1);
+		//	}
+
+
+		//	sw.Start();
+
+		//	for (int i = 0; i < times; i++)
+		//	{
+		//		d = Math.Sin(1);
+		//	}
+
+		//	sw.Stop();
+
+		//	Console.WriteLine($"Without try-catch done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.########")} ms for one loop" );
+		//	Console.WriteLine();
+			
+		//	sw.Restart();
+
+		//	for (int i = 0; i < times; i++)
+		//	{
+		//		try
+		//		{
+		//			d = Math.Sin(1);
+		//		}
+		//		catch (Exception ex)
+		//		{
+		//			Console.WriteLine(ex.ToString());
+		//		}
+		//	}
+
+		//	sw.Stop();
+
+		//	Console.WriteLine($"With try-catch done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.########")} ms for one loop" );
+		//	Console.WriteLine();
+		//}
+		
+
 	
 		[TestCleanup]
 		public void Dispose()
