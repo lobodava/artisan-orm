@@ -220,7 +220,7 @@ raiserror(	-- namespaces & header
 'using System;
 using System.Data;
 using System.Data.SqlClient;
-using Artisan;
+using Artisan.Orm;
 
 namespace %s.%s.Models
 {
