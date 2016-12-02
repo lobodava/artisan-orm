@@ -20,6 +20,9 @@ Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Arti
 
 More information is available in Artisan ORM [documentation Wiki](https://github.com/lobodava/artisan-orm/wiki).
 
+Another resource for understanding the purpose of Artisan ORM is the article published on the [CodeProject](https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-reinvent-the-wheel) website.
+
+
 ## Simple sample
 
 Let's say we have database tables `Users` and `UserRoles` (TSQL):
