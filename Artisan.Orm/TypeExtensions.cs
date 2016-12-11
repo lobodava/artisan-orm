@@ -63,5 +63,10 @@ namespace Artisan.Orm
 		}
 
 
+		internal static Type GetUnderlyingType(this Type type)
+		{
+			return Nullable.GetUnderlyingType(type) ?? type;
+		}
+
 	}
 }

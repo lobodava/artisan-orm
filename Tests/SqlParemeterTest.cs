@@ -577,22 +577,57 @@ namespace Tests
 				new A {Id = 1, Name ="A" },
 				new A {Id = 2, Name ="AA" },
 			};
+			var tableName = "ATable";
 
-			DataTable dt = aList.AsDataTable("ATable", "Id, Name");
+
+			DataTable dt = aList.AsDataTable(tableName, "Id, Name");
+
+			Assert.AreEqual(tableName, dt.TableName);
+			Assert.AreEqual("Id", dt.Columns[0].ColumnName);
+			Assert.AreEqual(typeof(Int32), dt.Columns[0].DataType);
+			Assert.AreEqual("Name", dt.Columns[1].ColumnName);
+			Assert.AreEqual(typeof(string), dt.Columns[1].DataType);
 
 			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
 			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
 			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
 			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
+
+
+			dt = aList.AsDataTable(tableName, new [] { "Id", "Name" });
+
+			Assert.AreEqual(dt.TableName, tableName);
+			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
+			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
+
 			
-			dt = aList.AsDataTable("ATable");
+			dt = aList.AsDataTable(tableName);
 
+			Assert.AreEqual(dt.TableName, tableName);
 			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
 			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
 			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
 			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
+
+
+			dt = aList.AsDataTable();
+
+			Assert.AreEqual(dt.TableName, "");
+			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
+			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
+
+			var numbers = new int[] {1,3,5,7,11,13};
+
+			dt = numbers.AsDataTable();
+			Assert.AreEqual(dt.TableName, "");
+			Assert.AreEqual(dt.Columns[0].ColumnName, "Int32");
 
 		}
+
 		
 		[TestCleanup]
 		public void Dispose()

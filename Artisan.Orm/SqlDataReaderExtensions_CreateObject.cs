@@ -14,9 +14,9 @@ namespace Artisan.Orm
 		
 		public static T CreateObject<T>(this SqlDataReader dr)
 		{
-			var key = GetAutoMappingFuncKey<T>(dr);
+			var key = GetAutoCreateObjectFuncKey<T>(dr);
 			
-			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key); 
+			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key); 
 
 			return CreateObject(dr, autoMappingFunc, key);
 		}
@@ -26,7 +26,7 @@ namespace Artisan.Orm
 			if (autoMappingFunc == null)
 			{
 				autoMappingFunc = CreateAutoMappingFunc<T>(dr);
-				MappingManager.AddAutoMappingFunc(key, autoMappingFunc);
+				MappingManager.AddAutoCreateObjectFunc(key, autoMappingFunc);
 			}
 
 			return autoMappingFunc(dr);
@@ -43,13 +43,13 @@ namespace Artisan.Orm
 			var command = (SqlCommand)CommandProperty.GetValue(dr);
 			return command.CommandText;
 		}
-
-		private static string GetAutoMappingFuncKey<T>(SqlDataReader dr)
+		
+		private static string GetAutoCreateObjectFuncKey<T>(SqlDataReader dr)
 		{
-			return GetAutoMappingFuncKey<T>(dr.GetCommandText());
+			return GetAutoCreateObjectFuncKey<T>(dr.GetCommandText());
 		}
 
-		internal static string GetAutoMappingFuncKey<T>(string commandText)
+		internal static string GetAutoCreateObjectFuncKey<T>(string commandText)
 		{
 			return $"{commandText}+{typeof(T).FullName}";
 		}
@@ -73,7 +73,7 @@ namespace Artisan.Orm
 
 		private static MethodCallExpression GetTypedValueMethodCallExpression(Type propertyType, Type fieldType, ParameterExpression sqlDataReaderParam, ConstantExpression indexConst, out bool isDefaultGetValueMethod)
 		{
-			var nonNullableType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+			var underlyingType = propertyType.GetUnderlyingType();
 
 			isDefaultGetValueMethod = false;
 
@@ -81,14 +81,14 @@ namespace Artisan.Orm
 			{
 				string methodName;
 
-				if(ReaderGetMethodNames.TryGetValue(nonNullableType, out methodName))
+				if(ReaderGetMethodNames.TryGetValue(underlyingType, out methodName))
 					return Expression.Call(
 						sqlDataReaderParam, 
 						typeof(SqlDataReader).GetMethod(methodName, new[] { typeof(int) }), 
 						indexConst
 					);
 
-				if (nonNullableType == typeof(Char))
+				if (underlyingType == typeof(Char))
 					return Expression.Call(
 						null, 
 						typeof(SqlDataReaderExtensions).GetMethod("GetCharacter", new[] { typeof(SqlDataReader), typeof(int) }), 
@@ -107,7 +107,7 @@ namespace Artisan.Orm
 					typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) }),
 					indexConst
 				),
-				Expression.Constant(nonNullableType, typeof(Type))
+				Expression.Constant(underlyingType, typeof(Type))
 			);
 		}
 		

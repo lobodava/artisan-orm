@@ -116,8 +116,8 @@ namespace Artisan.Orm
 			if (typeof(T).IsSimpleType())
 				return cmd.ReadToValue<T>();
 
-			var key = SqlDataReaderExtensions.GetAutoMappingFuncKey<T>(cmd.CommandText);
-			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key);
+			var key = SqlDataReaderExtensions.GetAutoCreateObjectFuncKey<T>(cmd.CommandText);
+			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key);
 
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
 
@@ -146,7 +146,7 @@ namespace Artisan.Orm
 			{
 				if (isNullableValueType)
 				{
-					var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+					var underlyingType = type.GetUnderlyingType();
 					while (dr.Read())
 						list.Add(dr.IsDBNull(0) ? default(T) : SqlDataReaderExtensions.GetValue<T>(dr, underlyingType));
 				}
@@ -228,8 +228,8 @@ namespace Artisan.Orm
 			if (typeof(T).IsSimpleType())
 				return cmd.ReadToListOfValues<T>(list);
 
-			var key = SqlDataReaderExtensions.GetAutoMappingFuncKey<T>(cmd.CommandText);
-			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key);
+			var key = SqlDataReaderExtensions.GetAutoCreateObjectFuncKey<T>(cmd.CommandText);
+			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key);
 
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
@@ -283,7 +283,7 @@ namespace Artisan.Orm
 				{
 					if (isNullableValueType)
 					{
-						var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+						var underlyingType = type.GetUnderlyingType();
 
 						while (dr.Read())
 							if (dr.IsDBNull(0))

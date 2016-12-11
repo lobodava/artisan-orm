@@ -744,6 +744,11 @@ namespace Artisan.Orm
 			cmd.AddTableParam(parameterName, ids?.ToIntIdDataTable());
 		}
 
+		public static void AddTableParam(this SqlCommand cmd, string parameterName, IEnumerable<long> ids)
+		{
+			cmd.AddTableParam(parameterName, ids?.ToBigIntIdDataTable());
+		}
+
 		public static void AddTableParam<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list)
 		{
 			cmd.AddTableParam(parameterName, list?.ToDataTable<T>());
@@ -769,6 +774,11 @@ namespace Artisan.Orm
 		public static void AddTableRowParam(this SqlCommand cmd, string parameterName, int id)
 		{
 			var array = new int[] { id };
+			cmd.AddTableParam(parameterName, array);
+		}
+		public static void AddTableRowParam(this SqlCommand cmd, string parameterName, long id)
+		{
+			var array = new long[] { id };
 			cmd.AddTableParam(parameterName, array);
 		}
 

@@ -200,7 +200,7 @@ namespace Artisan.Orm
 			}).ConfigureAwait(false);
 		}
 
-
+		[Obsolete("Replaced with ParseDataStatus")]
 		public static DataStatus? GetDataStatus (string dataStatusCode) {
 
 			if (String.IsNullOrWhiteSpace(dataStatusCode))
@@ -212,7 +212,10 @@ namespace Artisan.Orm
 			return (DataStatus)Enum.Parse(typeof(DataStatus), dataStatusCode);
 		}
 
-
+		public static DataStatus? ParseDataStatus(string dataStatusCode)
+		{
+			return DataReply.ParseDataStatus(dataStatusCode);
+		}
 		
 		public void Dispose()
 		{

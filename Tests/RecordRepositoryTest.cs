@@ -359,8 +359,6 @@ namespace Tests
 		}
 
 		
-
-
 		[TestMethod]
 		public async Task SaveRecordsAsync()
 		{
@@ -389,7 +387,56 @@ namespace Tests
 			Console.Write(JsonConvert.SerializeObject(savedRecords.Take(10)));
 		}
 		
-		
+		[TestMethod]
+		public void RecordsAsDatatable()
+		{
+			var records = new List<Record>();
+
+			var tableName = "Recods";
+			var columnNames = new string[]
+			{
+				"Id"                ,
+				"GrandRecordId"     ,
+				"Name"              ,
+				"RecordTypeId"      ,
+				"Number"            ,
+				"Date"              ,
+				"Amount"            ,
+				"IsActive"          ,
+				"Comment"
+			};
+
+			var recordCount = 1000;
+
+			for (int i = 0; i < recordCount; i++)
+			{
+				records.Add(CreateNewRecord(i.ToString()));
+			}
+
+			var recordDatatable = records.AsDataTable(tableName, columnNames);
+			
+			var sw = new Stopwatch();
+			sw.Start();
+
+			recordDatatable = records.AsDataTable(tableName, columnNames);
+			
+			sw.Stop();
+
+			Assert.IsTrue(recordDatatable.Rows.Count == recordCount );
+
+			Console.WriteLine($"{recordCount} Records converted to DataTable with AsDataTable method for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms");
+			Console.WriteLine();
+
+			sw.Restart();
+
+			recordDatatable = records.ToDataTable();
+			
+			sw.Stop();
+
+			Assert.IsTrue(recordDatatable.Rows.Count == recordCount );
+
+			Console.WriteLine($"{recordCount} Records converted to DataTable with ToDataTable method for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms");
+		}
 
 		private static Record CreateNewRecord(string suffix = "")
 		{

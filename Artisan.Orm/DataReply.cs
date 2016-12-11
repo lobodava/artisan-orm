@@ -48,15 +48,16 @@ namespace Artisan.Orm
 			Messages = new [] { new DataMessage { Text = message } };
 		}
 
-		public static DataStatus GetReplyStatus (string replyStatusCode) {
+		public static DataStatus? ParseDataStatus (string dataStatusCode) {
 
-			if (String.IsNullOrWhiteSpace(replyStatusCode))
-				throw new InvalidEnumArgumentException("Cannot cast empty string to ReplyStatus Enum");
+			if (String.IsNullOrWhiteSpace(dataStatusCode))
+				return null;
+				//throw new InvalidEnumArgumentException("Cannot cast empty string to ReplyStatus Enum");
 			
-			 if (!Enum.IsDefined(typeof(DataStatus), replyStatusCode))
-				throw new InvalidCastException($"Cannot cast string '{replyStatusCode}' to ReplyStatus Enum");
+			 if (!Enum.IsDefined(typeof(DataStatus), dataStatusCode))
+				throw new InvalidCastException($"Cannot cast string '{dataStatusCode}' to DataStatus Enum");
 
-			return (DataStatus)Enum.Parse(typeof(DataStatus), replyStatusCode);
+			return (DataStatus)Enum.Parse(typeof(DataStatus), dataStatusCode);
 		}
 
 	}

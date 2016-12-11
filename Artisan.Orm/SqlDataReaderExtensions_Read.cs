@@ -78,7 +78,7 @@ namespace Artisan.Orm
 			
 			if (isNullableValueType)
 			{
-				var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+				var underlyingType = type.GetUnderlyingType();
 				while (dr.Read())
 					list.Add(dr.IsDBNull(0) ? default(T) : GetValue<T>(dr, underlyingType));
 			}
@@ -157,8 +157,8 @@ namespace Artisan.Orm
 			if (typeof(T).IsSimpleType())
 				return dr.ReadToListOfValues<T>(list, getNextResult);
 			
-			var key = GetAutoMappingFuncKey<T>(dr);
-			var autoMappingFunc = MappingManager.GetAutoMappingFunc<T>(key); 
+			var key = GetAutoCreateObjectFuncKey<T>(dr);
+			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key); 
 
 			list = dr.ReadAsList(list, autoMappingFunc, key);
 
@@ -177,7 +177,7 @@ namespace Artisan.Orm
 				if (autoMappingFunc == null)
 				{
 					autoMappingFunc = CreateAutoMappingFunc<T>(dr);
-					MappingManager.AddAutoMappingFunc(key, autoMappingFunc);
+					MappingManager.AddAutoCreateObjectFunc(key, autoMappingFunc);
 				}
 
 				list.Add(autoMappingFunc(dr));
@@ -299,7 +299,7 @@ namespace Artisan.Orm
 			var dictionary = new Dictionary<TKey,TValue>();
 
 			var type1 = typeof(TKey);
-			var type2 = Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TValue);
+			var type2 = typeof(TValue).GetUnderlyingType();
 			
 			while (dr.Read()) 
 			{

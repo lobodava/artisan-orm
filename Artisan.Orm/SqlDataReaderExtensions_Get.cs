@@ -14,7 +14,7 @@ namespace Artisan.Orm
 
 		public static T GetValue<T>(this SqlDataReader reader, int ordinal)  
 		{
-			var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+			var underlyingType = typeof(T).GetUnderlyingType();
 			
 			return (T)Convert.ChangeType(reader.GetValue(ordinal), underlyingType);
 		}
@@ -29,7 +29,7 @@ namespace Artisan.Orm
 			if (reader.IsDBNull(ordinal))
 				return default(T); 
 
-			var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+			var underlyingType = typeof(T).GetUnderlyingType();
 			
 			return (T)Convert.ChangeType(reader.GetValue(ordinal), underlyingType);
 		}

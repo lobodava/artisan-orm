@@ -100,19 +100,31 @@ namespace Tests.DAL.Records.Models
 
 		public static DataTable CreateDataTable()
 		{
-			var table = new DataTable("RecordTableType");
+			//var table = new DataTable("RecordTableType");
 			
-			table.Columns.Add(	"Id"			,	typeof( Int32		));
-			table.Columns.Add(	"GrandRecordId"	,	typeof( Int32		));
-			table.Columns.Add(	"Name"			,	typeof( String		));
-			table.Columns.Add(	"RecordTypeId"	,	typeof( Byte		));
-			table.Columns.Add(	"Number"		,	typeof( Int16		));
-			table.Columns.Add(	"Date"			,	typeof( DateTime	));
-			table.Columns.Add(	"Amount"		,	typeof( Decimal		));
-			table.Columns.Add(	"IsActive"		,	typeof( Boolean		));
-			table.Columns.Add(	"Comment"		,	typeof( String		));
+			//table.Columns.Add(	"Id"			,	typeof( Int32		));
+			//table.Columns.Add(	"GrandRecordId"	,	typeof( Int32		));
+			//table.Columns.Add(	"Name"			,	typeof( String		));
+			//table.Columns.Add(	"RecordTypeId"	,	typeof( Byte		));
+			//table.Columns.Add(	"Number"		,	typeof( Int16		));
+			//table.Columns.Add(	"Date"			,	typeof( DateTime	));
+			//table.Columns.Add(	"Amount"		,	typeof( Decimal		));
+			//table.Columns.Add(	"IsActive"		,	typeof( Boolean		));
+			//table.Columns.Add(	"Comment"		,	typeof( String		));
 
-			return table;
+			//return table;
+
+			return new DataTable( "RecordTableType"	)
+				.AddColumn<Int32>	( "Id"				)
+				.AddColumn<Int32>	( "GrandRecordId"	)
+				.AddColumn<String>	( "Name"			)
+				.AddColumn<Byte>	( "RecordTypeId"	)
+				.AddColumn<Int16>	( "Number"			)
+				.AddColumn<DateTime>( "Date"			)
+				.AddColumn<Decimal>	( "Amount"			)
+				.AddColumn<Boolean>	( "IsActive"		)
+				.AddColumn<String>	( "Comment"			);
+
 		}
 
 		public static object[] CreateDataRow(Record obj)

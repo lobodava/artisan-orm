@@ -10,13 +10,15 @@ namespace Artisan.Orm
 {
 	public static class MappingManager
 	{
-		private static readonly Dictionary<Type, object> CreateObjectFuncDictionary = new Dictionary<Type, object>();
+		private static readonly Dictionary<Type, Delegate> CreateObjectFuncDictionary = new Dictionary<Type, Delegate>();
 
-		private static readonly Dictionary<Type, object> CreateObjectRowFuncDictionary = new Dictionary<Type, object>();
+		private static readonly Dictionary<Type, Delegate> CreateObjectRowFuncDictionary = new Dictionary<Type, Delegate>();
 
-		private static readonly Dictionary<Type, Tuple<Func<DataTable>, Delegate>> CreateDataTableFuncsDictionary = new Dictionary<Type, Tuple<Func<DataTable>, Delegate>>();
+		private static readonly Dictionary<Type, Tuple<Func<DataTable>, Delegate>> CreateDataFuncsDictionary = new Dictionary<Type, Tuple<Func<DataTable>, Delegate>>();
 
-		private static readonly ConcurrentDictionary<string, object> AutoMappingFuncDictionary = new ConcurrentDictionary<string, object>();
+		private static readonly ConcurrentDictionary<string, Delegate> AutoCreateObjectFuncDictionary  = new ConcurrentDictionary<string, Delegate>();
+
+		private static readonly ConcurrentDictionary<string, Tuple<Func<DataTable>, Delegate>> AutoCreateDataFuncsDictionary = new ConcurrentDictionary<string, Tuple<Func<DataTable>, Delegate>>();
 
 
 		static MappingManager()
@@ -92,7 +94,7 @@ namespace Artisan.Orm
 						createDataRowDelegate = Delegate.CreateDelegate(funcType, methodInfo);
 					}
 
-					CreateDataTableFuncsDictionary.Add(attribute.MapperForType, Tuple.Create(createDataTableFunc, createDataRowDelegate));
+					CreateDataFuncsDictionary.Add(attribute.MapperForType, Tuple.Create(createDataTableFunc, createDataRowDelegate));
 
 				}
 			}
@@ -101,20 +103,20 @@ namespace Artisan.Orm
 
 		public static Func<SqlDataReader, T> GetCreateObjectFunc<T>()
 		{
-			object obj;
+			Delegate del;
 
-			if (CreateObjectFuncDictionary.TryGetValue(typeof(T), out obj))
-				return (Func<SqlDataReader, T>)obj;
+			if (CreateObjectFuncDictionary.TryGetValue(typeof(T), out del))
+				return (Func<SqlDataReader, T>)del;
 
 			throw new NullReferenceException($"CreateObject Func not found. Check if MapperFor {typeof(T).FullName} exists and CreateObject exist.");
 		}
 		
 		public static Func<SqlDataReader, ObjectRow> GetCreateObjectRowFunc<T>()
 		{
-			object obj;
+			Delegate del;
 
-			if (CreateObjectRowFuncDictionary.TryGetValue(typeof(T), out obj))
-				return (Func<SqlDataReader, ObjectRow>)obj;
+			if (CreateObjectRowFuncDictionary.TryGetValue(typeof(T), out del))
+				return (Func<SqlDataReader, ObjectRow>)del;
 
 			throw new NullReferenceException($"CreateRow Func not found. Check if MapperFor {typeof(T).FullName} and CreateRow exist.");
 		}
@@ -122,17 +124,17 @@ namespace Artisan.Orm
 
 		public static Func<DataTable> GetCreateDataTableFunc<T>()
 		{
-			Tuple<Func<DataTable>, Delegate> obj;
+			Tuple<Func<DataTable>, Delegate> tuple;
 
-			return CreateDataTableFuncsDictionary.TryGetValue(typeof(T), out obj) ? obj.Item1 : null;
+			return CreateDataFuncsDictionary.TryGetValue(typeof(T), out tuple) ? tuple.Item1 : null;
 		}
 
 		public static Func<T, object[]> GetCreateDataRowFunc<T>()
 		{
-			Tuple<Func<DataTable>, Delegate> obj;
+			Tuple<Func<DataTable>, Delegate> tuple;
 
-			if (CreateDataTableFuncsDictionary.TryGetValue(typeof(T), out obj))
-				return (Func<T, object[]>)obj.Item2;
+			if (CreateDataFuncsDictionary.TryGetValue(typeof(T), out tuple))
+				return (Func<T, object[]>)tuple.Item2;
 
 			return null;
 		}
@@ -140,12 +142,12 @@ namespace Artisan.Orm
 
 		public static bool GetCreateDataFuncs<T>(out Func<DataTable> createDataTableFunc, out Func<T, object[]> createDataRowFunc)
 		{
-			Tuple<Func<DataTable>, Delegate> obj;
+			Tuple<Func<DataTable>, Delegate> tuple;
 
-			if (CreateDataTableFuncsDictionary.TryGetValue(typeof(T), out obj))
+			if (CreateDataFuncsDictionary.TryGetValue(typeof(T), out tuple))
 			{
-				createDataTableFunc = obj.Item1;
-				createDataRowFunc = (Func<T, object[]>)obj.Item2;
+				createDataTableFunc = tuple.Item1;
+				createDataRowFunc = (Func<T, object[]>)tuple.Item2;
 
 				return true;
 			}
@@ -159,12 +161,12 @@ namespace Artisan.Orm
 
 		public static bool GetCreateDataFuncs(Type type, out Func<DataTable> createDataTableFunc, out Delegate createDataRowFunc)
 		{
-			Tuple<Func<DataTable>, Delegate> obj;
+			Tuple<Func<DataTable>, Delegate> funcs;
 
-			if (CreateDataTableFuncsDictionary.TryGetValue(type, out obj))
+			if (CreateDataFuncsDictionary.TryGetValue(type, out funcs))
 			{
-				createDataTableFunc = obj.Item1;
-				createDataRowFunc = obj.Item2;
+				createDataTableFunc = funcs.Item1;
+				createDataRowFunc = funcs.Item2;
 
 				return true;
 			}
@@ -176,20 +178,46 @@ namespace Artisan.Orm
 		}
 
 
-		public static bool AddAutoMappingFunc<T>(string key, Func<SqlDataReader, T> autoMappingFunc)
+		public static bool AddAutoCreateObjectFunc<T>(string key, Func<SqlDataReader, T> autoCreateObjectFunc)
 		{
-			return AutoMappingFuncDictionary.TryAdd(key, autoMappingFunc);
+			return AutoCreateObjectFuncDictionary.TryAdd(key, autoCreateObjectFunc);
 		}
 
-		public static Func<SqlDataReader, T> GetAutoMappingFunc<T>(string key)
+		public static Func<SqlDataReader, T> GetAutoCreateObjectFunc<T>(string key)
 		{
-			object obj;
+			Delegate del;
 
-			if (AutoMappingFuncDictionary.TryGetValue(key, out obj)) {
-				return (Func<SqlDataReader, T>)obj;
+			if (AutoCreateObjectFuncDictionary.TryGetValue(key, out del)) {
+				return (Func<SqlDataReader, T>)del;
 			}
 			return null;
 		}
+
+		public static bool AddAutoCreateDataFuncs<T>(string key, Func<DataTable> createDataTableFunc, Func<T, object[]> createDataRowFunc)
+		{
+			var funcs = new Tuple<Func<DataTable>, Delegate>(createDataTableFunc, createDataRowFunc);
+			
+			return AutoCreateDataFuncsDictionary.TryAdd(key, funcs);
+		}
+
+		public static bool GetAutoCreateDataFuncs<T>(string key, out Func<DataTable> createDataTableFunc, out Func<T, object[]> createDataRowFunc)
+		{
+			Tuple<Func<DataTable>, Delegate> funcs;
+
+			if (AutoCreateDataFuncsDictionary.TryGetValue(key, out funcs))
+			{
+				createDataTableFunc = funcs.Item1;
+				createDataRowFunc = (Func<T, object[]>)funcs.Item2;
+
+				return true;
+			}
+
+			createDataTableFunc = null;
+			createDataRowFunc = null;
+
+			return false;
+		}
+
 
 
 		private static IEnumerable<Type> GetTypesWithMapperForAttribute() {

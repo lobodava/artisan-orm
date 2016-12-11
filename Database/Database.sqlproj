@@ -128,5 +128,6 @@
     <Build Include="5. Procedures\SqlParameters\GetStringParams.sql" />
     <Build Include="5. Procedures\SqlParameters\GetDateTimeParams.sql" />
     <Build Include="5. Procedures\SqlParameters\GetGuidAndRowVersionParams.sql" />
+    <Build Include="4. Types\Common\BigIntIdTableType.sql" />
   </ItemGroup>
 </Project>
