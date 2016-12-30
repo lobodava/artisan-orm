@@ -72,6 +72,29 @@ namespace Tests
 			Console.WriteLine($"GetRecordById With AutoMapping reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
 			Console.Write(JsonConvert.SerializeObject(record));
 		}
+		
+		[TestMethod]
+		public void GetRecordByIdOnBaseLevel()
+		{
+			Record record =_repository.GetRecordByIdOnBaseLevel(1);
+
+			var sw = new Stopwatch();
+			sw.Start();
+			
+			for (var i = 1; i <= 676; i++)
+			{
+				record = _repository.GetRecordByIdOnBaseLevel(i);
+
+				Assert.IsTrue(record.Id == i || record == null);
+			}
+
+			Assert.IsNotNull(record);
+
+			sw.Stop();
+
+			Console.WriteLine($"GetRecordByIdOnBaseLevel reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
+			Console.Write(JsonConvert.SerializeObject(record));
+		}
 
 
 		[TestMethod]
@@ -235,14 +258,14 @@ namespace Tests
 			var recordList = _repository.GetRecords();
 			var json = JsonConvert.SerializeObject(recordList);
 			
-			var recordEnumerable  = _repository.GetRecordsAsEnumerable();
+			var recordEnumerable  = _repository.GetRecordsToEnumerable();
 			json = JsonConvert.SerializeObject(recordEnumerable);
 			
 
 			var sw = new Stopwatch();
 			sw.Start();
 			
-			recordEnumerable  = _repository.GetRecordsAsEnumerable();
+			recordEnumerable  = _repository.GetRecordsToEnumerable();
 			json = JsonConvert.SerializeObject(recordEnumerable);
 			
 			sw.Stop();
@@ -264,6 +287,18 @@ namespace Tests
 			Console.WriteLine($"GetRecords reads records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 		}
 
+		[TestMethod]
+		public void GetRecordsToEnumerableOnBaseLevel()
+		{
+			var enumRecords  = _repository.GetRecordsToEnumerableOnBaseLevel();
+
+			var records = enumRecords.ToList();
+
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 0);
+		}
+
+
 
 		[TestMethod]
 		public void GetRecordRows()
@@ -283,7 +318,25 @@ namespace Tests
 
 		}
 		
+		[TestMethod]
+		public void GetRecordsOnBaseLevel()
+		{
+			var records  = _repository.GetRecordsOnBaseLevel();
 
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 0);
+		}
+
+		[TestMethod]
+		public void GetRecordRowsOnBaseLevel()
+		{
+			var recordRows  = _repository.GetRecordRowsOnBaseLevel();
+
+			Assert.IsNotNull(recordRows);
+			Assert.IsTrue(recordRows.Count > 0);
+		}
+
+		
 
 
 		[TestMethod]

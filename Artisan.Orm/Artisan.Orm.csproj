@@ -38,6 +38,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="INode.cs" />
     <Compile Include="ConnectionStringHelper.cs" />
     <Compile Include="DataExceptions.cs" />
     <Compile Include="DataMessage.cs" />

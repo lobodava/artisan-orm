@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Artisan.Orm;
 using Tests.DAL.Records.Models;
@@ -17,23 +18,44 @@ namespace Tests.DAL.Records
 			{
 				cmd.UseProcedure("dbo.GetRecordById");
 
-				cmd.AddIntParam("@Id", id);
+				cmd.AddIntParam("Id", id);
 
 				return cmd.ReadTo<Record>();
 			});
 		}
-
-
+		
 		public Record GetRecordByIdWithAutoMapping(int id)
 		{
 			return GetByCommand(cmd =>
 			{
 				cmd.UseProcedure("dbo.GetRecordById");
 
-				cmd.AddIntParam("@Id", id);
+				cmd.AddIntParam("Id", id);
 
 				return cmd.ReadAs<Record>();
 			});
+		}
+
+		public Record GetRecordByIdOnBaseLevel(int id)
+		{
+			//var sql = @"select
+			//				Id				,
+			//				GrandRecordId	,
+			//				Name			,
+			//				RecordTypeId	,
+			//				Number			,
+			//				[Date]			,
+			//				Amount			,
+			//				IsActive		,
+			//				Comment			
+			//			from
+			//				dbo.Records
+			//			where
+			//				Id = @Id";
+
+			var sql = "dbo.GetRecordById";
+
+			return ReadTo<Record>(sql, new SqlParameter("Id", id));
 		}
 		
 
@@ -96,7 +118,7 @@ namespace Tests.DAL.Records
 			});
 		}
 
-		public IEnumerable<Record> GetRecordsAsEnumerable()
+		public IEnumerable<Record> GetRecordsToEnumerable()
 		{
 			return GetByCommand(cmd =>
 			{
@@ -106,6 +128,16 @@ namespace Tests.DAL.Records
 			});
 		}
 
+		public IEnumerable<Record> GetRecordsToEnumerableOnBaseLevel()
+		{
+			return ReadToEnumerable<Record>("dbo.GetRecords");
+		}
+
+
+		public IList<Record> GetRecordsOnBaseLevel()
+		{
+			return ReadToList<Record>("dbo.GetRecords");
+		}
 
 
 		#endregion
@@ -131,6 +163,11 @@ namespace Tests.DAL.Records
 
 				return cmd.ReadToObjectRowsAsync<Record>();
 			});
+		}
+
+		public ObjectRows GetRecordRowsOnBaseLevel()
+		{
+			return ReadToObjectRows<Record>("dbo.GetRecords");
 		}
 
 

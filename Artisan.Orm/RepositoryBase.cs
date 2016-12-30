@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Artisan.Orm
@@ -199,6 +202,226 @@ namespace Artisan.Orm
 
 			}).ConfigureAwait(false);
 		}
+
+
+		#region [ ReadTo, ReadAs ]
+		
+		public T ReadTo<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadTo<T>();
+			}
+		}
+		
+		public async Task<T> ReadToAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadToAsync<T>();
+			}
+		}
+
+
+		public T ReadAs<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadAs<T>();
+			}
+		}
+		
+		public async Task<T> ReadAsAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadAsAsync<T>();
+			}
+		}
+
+		#endregion
+
+		#region [ ReadToList, ReadAsList ]
+
+		public IList<T> ReadToList<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadToList<T>();
+			}
+		}
+		
+		public async Task<IList<T>> ReadToListAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadToListAsync<T>();
+			}
+		}
+
+		public IList<T> ReadAsList<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadAsList<T>();
+			}
+		}
+		
+		public async Task<IList<T>> ReadAsListAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadAsListAsync<T>();
+			}
+		}
+		
+		#endregion
+
+		#region [ ReadToObjectRow, ReadAsObjectRow ]
+
+		public ObjectRow ReadToObjectRow<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadToObjectRow<T>();
+			}
+		}
+		
+		public async Task<ObjectRow> ReadToObjectRowAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadToObjectRowAsync<T>();
+			}
+		}
+		
+		public ObjectRow ReadAsObjectRow(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadAsObjectRow();
+			}
+		}
+		
+		public async Task<ObjectRow> ReadAsObjectRowAsync(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadAsObjectRowAsync();
+			}
+		}
+		
+		#endregion
+
+		#region [ ReadToObjectRows, ReadAsObjectRows ]
+
+		public ObjectRows ReadToObjectRows<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadToObjectRows<T>();
+			}
+		}
+		
+		public async Task<ObjectRows> ReadToObjectRowsAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadToObjectRowsAsync<T>();
+			}
+		}
+		
+		public ObjectRows ReadAsObjectRows(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadAsObjectRows();
+			}
+		}
+		
+		public async Task<ObjectRows> ReadAsObjectRowsAsync(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadAsObjectRowsAsync();
+			}
+		}
+
+
+		#endregion
+		
+		#region [ ReadToDictionary ]
+
+		public IDictionary<TKey, TValue> ReadToDictionary<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) 
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadToDictionary<TKey, TValue>();
+			}
+		}
+
+		public async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) 
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadToDictionaryAsync<TKey, TValue>();
+			}
+		}
+
+		#endregion 
+
+		#region [ ReadToEnumerable ]
+
+		public IEnumerable<T> ReadToEnumerable<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadToEnumerable<T>();
+			}
+		}
+
+		#endregion
+
+
+
 
 		[Obsolete("Replaced with ParseDataStatus")]
 		public static DataStatus? GetDataStatus (string dataStatusCode) {

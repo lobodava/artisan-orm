@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Artisan.Orm
 {
@@ -707,7 +708,12 @@ namespace Artisan.Orm
 
 		public static void AddTableParam(this SqlCommand cmd, string parameterName, DataTable dataTable)
 		{
-			var param = CreateInputParam(parameterName, SqlDbType.Structured);
+			var param = new SqlParameter
+			{
+				ParameterName = parameterName,
+				Direction = ParameterDirection.Input,
+				SqlDbType = SqlDbType.Structured,
+			};
 
 			if (dataTable == null)
 				param.Value = DBNull.Value;
@@ -839,17 +845,20 @@ namespace Artisan.Orm
 		}
 
 
-		private static SqlParameter CreateInputParam(string parameterName, SqlDbType parameterType)
+		internal static bool IsSqlText(string sql)
 		{
-			return new SqlParameter
-			{
-				ParameterName = parameterName,
-				Direction = ParameterDirection.Input,
-				SqlDbType = parameterType,
-			};
+			return (Regex.IsMatch(sql, @"\bselect|insert|update|delete|merge\b", RegexOptions.IgnoreCase));
 		}
-		
 
-		
+		internal static void ConfigureCommand(this SqlCommand cmd, string sql, params SqlParameter[] sqlParameters)
+		{
+			if(IsSqlText(sql))
+				cmd.UseSql(sql);
+			else
+				cmd.UseProcedure(sql);
+
+			foreach (var param in sqlParameters)
+				cmd.Parameters.Add(param);
+		}
 	}
 }
