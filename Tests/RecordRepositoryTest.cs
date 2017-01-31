@@ -186,7 +186,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(records);
-			Assert.IsTrue(records.Count > 0);
+			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
@@ -205,7 +205,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(records);
-			Assert.IsTrue(records.Count > 0);
+			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordsWithAutoMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
@@ -225,7 +225,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(records);
-			Assert.IsTrue(records.Count > 0);
+			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordsAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
@@ -245,7 +245,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(records);
-			Assert.IsTrue(records.Count > 0);
+			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordsWithAutoMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
@@ -253,7 +253,7 @@ namespace Tests
 
 
 		[TestMethod]
-		public void GetRecordsAsEnumerable()
+		public void GetRecordsToEnumerable()
 		{
 			var recordList = _repository.GetRecords();
 			var json = JsonConvert.SerializeObject(recordList);
@@ -295,8 +295,40 @@ namespace Tests
 			var records = enumRecords.ToList();
 
 			Assert.IsNotNull(records);
-			Assert.IsTrue(records.Count > 0);
+			Assert.IsTrue(records.Count > 1);
 		}
+
+		[TestMethod]
+		public void GetRecordsAsEnumerable()
+		{
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var enumRecords  = _repository.GetRecordsAsEnumerable();
+
+			sw.Stop();
+
+			var records = enumRecords.ToList();
+
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 1);
+
+			Console.WriteLine($"GetRecordsAsEnumerable reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.Write(JsonConvert.SerializeObject(records));
+		}
+
+
+		[TestMethod]
+		public void GetRecordsAsEnumerableOnBaseLevel()
+		{
+			var enumRecords  = _repository.GetRecordsAsEnumerableOnBaseLevel();
+
+			var records = enumRecords.ToList();
+
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 1);
+		}
+
 
 
 
@@ -311,12 +343,48 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(records);
-			Assert.IsTrue(records.Count > 0);
+			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(records));
-
 		}
+		
+
+		[TestMethod]
+		public void GetRecordRowsWithHandMapping()
+		{
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var records  = _repository.GetRecordRowsWithHandMapping();
+	
+			sw.Stop();
+
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 1);
+
+			Console.WriteLine($"GetRecordRowsWithHandMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.Write(JsonConvert.SerializeObject(records));
+		}
+
+		[TestMethod]
+		public  async Task  GetRecordRowsWithHandMappingAsync()
+		{
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var records  = await _repository.GetRecordRowsWithHandMappingAsync();
+	
+			sw.Stop();
+
+			Assert.IsNotNull(records);
+			Assert.IsTrue(records.Count > 1);
+
+			Console.WriteLine($"GetRecordRowsWithHandMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.Write(JsonConvert.SerializeObject(records));
+		}
+
+
 		
 		[TestMethod]
 		public void GetRecordsOnBaseLevel()
@@ -324,7 +392,7 @@ namespace Tests
 			var records  = _repository.GetRecordsOnBaseLevel();
 
 			Assert.IsNotNull(records);
-			Assert.IsTrue(records.Count > 0);
+			Assert.IsTrue(records.Count > 1);
 		}
 
 		[TestMethod]
@@ -333,7 +401,7 @@ namespace Tests
 			var recordRows  = _repository.GetRecordRowsOnBaseLevel();
 
 			Assert.IsNotNull(recordRows);
-			Assert.IsTrue(recordRows.Count > 0);
+			Assert.IsTrue(recordRows.Count > 1);
 		}
 
 		

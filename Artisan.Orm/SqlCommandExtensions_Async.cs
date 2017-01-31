@@ -294,7 +294,7 @@ namespace Artisan.Orm
 
 		public static async Task<ObjectRows> ReadToObjectRowsAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
+			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
 			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
@@ -336,7 +336,18 @@ namespace Artisan.Orm
 		#endregion
 
 
-		#region [ ReadToDictionary ]
+		#region [ ReadToDictionary, ReadAsDictionary ]
+
+		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc) 
+		{
+			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
+
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			{
+				return dr.ReadToDictionary<TKey, TValue>(createFunc);
+			}
+		}
+
 
 		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd) 
 		{
@@ -348,13 +359,13 @@ namespace Artisan.Orm
 			}
 		}
 
-		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc) 
+		public static async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(this SqlCommand cmd) 
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			 using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
 			{
-				return dr.ReadToDictionary<TKey, TValue>(createFunc);
+				return dr.ReadAsDictionary<TKey, TValue>();
 			}
 		}
 

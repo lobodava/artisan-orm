@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using Tests.DAL.Records.Models;
+using Tests.DAL.Users.Models;
 
 namespace Tests
 {
@@ -59,39 +62,6 @@ namespace Tests
 			Assert.IsNotNull(nameAndNumber);
 
 			Console.WriteLine($"Name '{nameAndNumber.Name}' and Number '{nameAndNumber.Number}' has been read for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms. ");
-
-		}
-
-		[TestMethod]
-		public void GetDictionary()
-		{
-			var sw = new Stopwatch();
-			sw.Start();
-
-			var dictionary = _repositoryBase.GetByCommand(cmd =>
-			{
-				cmd.UseSql("select Id, Name from dbo.Roles");
-				
-				return cmd.ReadToDictionary<byte, string>();
-
-				/* or
-				
-				return cmd.GetByReader(reader => 
-				{
-					return reader.ReadToDictionary<byte, string>());
-				}
-
-				*/
-
-			});
-
-			sw.Stop();
-
-			Assert.IsNotNull(dictionary);
-
-			Console.WriteLine($"Role dictionary has been read for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
-			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
 
 		}
 
@@ -312,7 +282,7 @@ namespace Tests
 		}
 
 		[TestMethod]
-		public void GetObjectWithHandMapping()
+		public void GetObjectWithHandmapping()
 		{
 			_repositoryBase.Connection.Open();
 

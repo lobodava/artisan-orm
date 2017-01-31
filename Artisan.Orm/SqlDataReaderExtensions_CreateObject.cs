@@ -44,7 +44,7 @@ namespace Artisan.Orm
 			return command.CommandText;
 		}
 		
-		private static string GetAutoCreateObjectFuncKey<T>(SqlDataReader dr)
+		internal static string GetAutoCreateObjectFuncKey<T>(SqlDataReader dr)
 		{
 			return GetAutoCreateObjectFuncKey<T>(dr.GetCommandText());
 		}

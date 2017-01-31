@@ -292,26 +292,42 @@ namespace Artisan.Orm
 		#endregion
 
 
-		#region [ ReadToDictionary ]
+		#region [ ReadToDictionary, ReadAsDictionary ]
 
-		public static Dictionary<TKey, TValue> ReadToDictionary<TKey,TValue>(this SqlDataReader dr,  bool getNextResult = true)
+		private static Dictionary<TKey, TValue> ReadToDictionaryOfValues<TKey, TValue>(SqlDataReader dr, Type underlyingTypeOfValue)
 		{
 			var dictionary = new Dictionary<TKey,TValue>();
 
-			var type1 = typeof(TKey);
-			var type2 = typeof(TValue).GetUnderlyingType();
-			
-			while (dr.Read()) 
+			var keyType = typeof(TKey);
+
+			while (dr.Read())
 			{
-				if (!dr.IsDBNull(0)) {
-					var key = (TKey)Convert.ChangeType(dr.GetValue(0), type1);
-					var value = (TValue)(dr.IsDBNull(1) ? null : Convert.ChangeType(dr.GetValue(1), type2));
+				if (!dr.IsDBNull(0))
+				{
+					var key = (TKey) Convert.ChangeType(dr.GetValue(0), keyType);
+					var value = (TValue) (dr.IsDBNull(1) ? null : Convert.ChangeType(dr.GetValue(1), underlyingTypeOfValue));
 					dictionary.Add(key, value);
 				}
-	
 			}
 
-			if (getNextResult) dr.NextResult();
+			return dictionary;
+		}
+
+		private static Dictionary<TKey, TObject> ReadToDictionaryOfObjects<TKey, TObject>(SqlDataReader dr, Func<SqlDataReader, TObject> createFunc)
+		{
+			var dictionary = new Dictionary<TKey,TObject>();
+
+			var keyType = typeof(TKey);
+
+			while (dr.Read())
+			{
+				if (!dr.IsDBNull(0))
+				{
+					var key = (TKey) Convert.ChangeType(dr.GetValue(0), keyType);
+					var objectValue = createFunc(dr);
+					dictionary.Add(key, objectValue);
+				}
+			}
 
 			return dictionary;
 		}
@@ -329,7 +345,49 @@ namespace Artisan.Orm
 					var value = createFunc(dr);
 					dictionary.Add(key, value);
 				}
-	
+			}
+
+			if (getNextResult) dr.NextResult();
+
+			return dictionary;
+		}
+
+		public static Dictionary<TKey, TValue> ReadToDictionary<TKey,TValue>(this SqlDataReader dr,  bool getNextResult = true)
+		{
+			Dictionary<TKey,TValue> dictionary;
+
+			var underlyingType = typeof(TValue).GetUnderlyingType();
+			
+			if (underlyingType.IsSimpleType())
+				dictionary = ReadToDictionaryOfValues<TKey, TValue>(dr, underlyingType);
+			else
+				dictionary = ReadToDictionaryOfObjects<TKey, TValue>(dr, MappingManager.GetCreateObjectFunc<TValue>());
+
+			if (getNextResult) dr.NextResult();
+
+			return dictionary;
+		}
+
+		public static Dictionary<TKey, TValue> ReadAsDictionary<TKey,TValue>(this SqlDataReader dr,  bool getNextResult = true)
+		{
+			Dictionary<TKey,TValue> dictionary;
+
+			var underlyingType = typeof(TValue).GetUnderlyingType();
+			
+			if (underlyingType.IsSimpleType())
+				dictionary = ReadToDictionaryOfValues<TKey, TValue>(dr, underlyingType);
+			else
+			{
+				var key = GetAutoCreateObjectFuncKey<TValue>(dr);
+				var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<TValue>(key);
+
+				if (autoMappingFunc == null)
+				{
+					autoMappingFunc = CreateAutoMappingFunc<TValue>(dr);
+					MappingManager.AddAutoCreateObjectFunc(key, autoMappingFunc);
+				}
+
+				dictionary = ReadToDictionaryOfObjects<TKey, TValue>(dr, autoMappingFunc);
 			}
 
 			if (getNextResult) dr.NextResult();

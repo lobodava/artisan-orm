@@ -128,9 +128,25 @@ namespace Tests.DAL.Records
 			});
 		}
 
+		public IEnumerable<Record> GetRecordsAsEnumerable()
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecords");
+
+				return cmd.ReadAsEnumerable<Record>();
+			});
+		}
+
+
 		public IEnumerable<Record> GetRecordsToEnumerableOnBaseLevel()
 		{
 			return ReadToEnumerable<Record>("dbo.GetRecords");
+		}
+
+		public IEnumerable<Record> GetRecordsAsEnumerableOnBaseLevel()
+		{
+			return ReadAsEnumerable<Record>("dbo.GetRecords");
 		}
 
 
@@ -170,6 +186,47 @@ namespace Tests.DAL.Records
 			return ReadToObjectRows<Record>("dbo.GetRecords");
 		}
 
+		public ObjectRows GetRecordRowsWithHandMapping()
+		{
+			return GetByCommand(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecords");
+
+				return cmd.ReadToObjectRows(dr => new ObjectRow(9) 
+				{
+					/* Id			 */	dr.GetInt32(0)				,
+					/* GrandRecordId */	dr.GetInt32(1)				,
+					/* Name			 */	dr.GetString(2)				,
+					/* RecordTypeId	 */	dr.GetByteNullable(3)		,
+					/* Number		 */	dr.GetInt16Nullable(4)		,
+					/* Date			 */	dr.GetDateTimeNullable(5)	,
+					/* Amount		 */	dr.GetDecimalNullable(6)	,
+					/* IsActive		 */	dr.GetBooleanNullable(7)	,
+					/* Comment		 */	dr.GetStringNullable(8)	
+				});
+			});
+		}
+
+		public async Task<ObjectRows> GetRecordRowsWithHandMappingAsync()
+		{
+			return await GetByCommandAsync(cmd =>
+			{
+				cmd.UseProcedure("dbo.GetRecords");
+
+				return cmd.ReadToObjectRowsAsync(dr => new ObjectRow(9) 
+				{
+					/* Id			 */	dr.GetInt32(0)				,
+					/* GrandRecordId */	dr.GetInt32(1)				,
+					/* Name			 */	dr.GetString(2)				,
+					/* RecordTypeId	 */	dr.GetByteNullable(3)		,
+					/* Number		 */	dr.GetInt16Nullable(4)		,
+					/* Date			 */	dr.GetDateTimeNullable(5)	,
+					/* Amount		 */	dr.GetDecimalNullable(6)	,
+					/* IsActive		 */	dr.GetBooleanNullable(7)	,
+					/* Comment		 */	dr.GetStringNullable(8)	
+				});
+			});
+		}
 
 		#endregion
 

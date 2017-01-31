@@ -300,7 +300,7 @@ namespace Artisan.Orm
 			}
 		}
 
-		private static IEnumerable<T> ReadToEnumerableOfObjects<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
+		private static IEnumerable<T> ReadToEnumerableObjects<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
@@ -309,12 +309,33 @@ namespace Artisan.Orm
 					yield return createFunc(dr);
 		}
 
+		private static IEnumerable<T> ReadAsEnumerableObjects<T>(this SqlCommand cmd)
+		{
+			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
+
+			using (var dr = cmd.ExecuteReader(readerFlags))
+			{
+				var key = SqlDataReaderExtensions.GetAutoCreateObjectFuncKey<T>(dr);
+				var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key);
+
+				if (autoMappingFunc == null)
+				{
+					autoMappingFunc = SqlDataReaderExtensions.CreateAutoMappingFunc<T>(dr);
+					MappingManager.AddAutoCreateObjectFunc(key, autoMappingFunc);
+				}
+
+				while (dr.Read())
+					yield return autoMappingFunc(dr);
+			}
+		}
+
+
 		public static IEnumerable<T> ReadToEnumerable<T>(this SqlCommand cmd) 
 		{
 			if (typeof(T).IsSimpleType())
 				return cmd.ReadToEnumerableValues<T>();
 
-			return cmd.ReadToEnumerableOfObjects(MappingManager.GetCreateObjectFunc<T>());
+			return cmd.ReadToEnumerableObjects(MappingManager.GetCreateObjectFunc<T>());
 		}
 		
 		public static IEnumerable<T> ReadToEnumerable<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc) 
@@ -337,6 +358,15 @@ namespace Artisan.Orm
 						yield return createFunc(dr);
 			}
 		}
+
+		public static IEnumerable<T> ReadAsEnumerable<T>(this SqlCommand cmd) 
+		{
+			if (typeof(T).IsSimpleType())
+				return cmd.ReadToEnumerableValues<T>();
+
+			return cmd.ReadAsEnumerableObjects<T>();
+		}
+
 
 		#endregion
 
@@ -366,7 +396,7 @@ namespace Artisan.Orm
 
 		public static ObjectRows ReadToObjectRows(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
 		{
-			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
+			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
 			using (var dr = cmd.ExecuteReader(readerFlags))
 			{
@@ -408,7 +438,17 @@ namespace Artisan.Orm
 		#endregion
 		
 
-		#region [ ReadToDictionary ]
+		#region [ ReadToDictionary, ReadAsDictionary ]
+
+		public static IDictionary<TKey, TValue> ReadToDictionary<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc) 
+		{
+			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
+
+			using (var dr = cmd.ExecuteReader(readerFlags))
+			{
+				return dr.ReadToDictionary<TKey, TValue>(createFunc);
+			}
+		}
 
 		public static IDictionary<TKey, TValue> ReadToDictionary<TKey, TValue>(this SqlCommand cmd) 
 		{
@@ -420,13 +460,13 @@ namespace Artisan.Orm
 			}
 		}
 		
-		public static IDictionary<TKey, TValue> ReadToDictionary<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc) 
+		public static IDictionary<TKey, TValue> ReadAsDictionary<TKey, TValue>(this SqlCommand cmd) 
 		{
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
 			using (var dr = cmd.ExecuteReader(readerFlags))
 			{
-				return dr.ReadToDictionary<TKey, TValue>(createFunc);
+				return dr.ReadAsDictionary<TKey, TValue>();
 			}
 		}
 

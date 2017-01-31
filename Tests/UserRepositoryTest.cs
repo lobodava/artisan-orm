@@ -107,7 +107,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(users);
-			Assert.IsTrue(users.Count > 0);
+			Assert.IsTrue(users.Count > 1);
 
 			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(users));
@@ -125,7 +125,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(users);
-			Assert.IsTrue(users.Count > 0);
+			Assert.IsTrue(users.Count > 1);
 
 			Console.WriteLine($"GetUsersAsync reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(users));
@@ -145,7 +145,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(users);
-			Assert.IsTrue(users.Count > 0);
+			Assert.IsTrue(users.Count > 1);
 
 			Console.WriteLine($"GetUsersWithAutoMapping reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(users));
@@ -164,7 +164,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(users);
-			Assert.IsTrue(users.Count > 0);
+			Assert.IsTrue(users.Count > 1);
 
 			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(users));
@@ -183,7 +183,7 @@ namespace Tests
 			sw.Stop();
 
 			Assert.IsNotNull(users);
-			Assert.IsTrue(users.Count > 0);
+			Assert.IsTrue(users.Count > 1);
 
 			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(users));
@@ -480,7 +480,7 @@ namespace Tests
 
 			sw.Stop();
 
-			Assert.IsTrue(users.Count > 0);
+			Assert.IsTrue(users.Count > 1);
 
 			Console.WriteLine($"GetUsersWithRoles reads {users.Count} Users with their Roles for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms" );
 			Console.Write(JsonConvert.SerializeObject(users));

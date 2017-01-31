@@ -394,6 +394,16 @@ namespace Artisan.Orm
 			}
 		}
 
+		public IDictionary<TKey, TValue> ReadAsDictionary<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) 
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadAsDictionary<TKey, TValue>();
+			}
+		}
+
 		public async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) 
 		{
 			using (var cmd = CreateCommand())
@@ -404,9 +414,20 @@ namespace Artisan.Orm
 			}
 		}
 
+		public async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) 
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return await cmd.ReadAsDictionaryAsync<TKey, TValue>();
+			}
+		}
+
+
 		#endregion 
 
-		#region [ ReadToEnumerable ]
+		#region [ ReadToEnumerable, ReadAsEnumerable ]
 
 		public IEnumerable<T> ReadToEnumerable<T>(string sql, params SqlParameter[] sqlParameters)
 		{
@@ -417,6 +438,18 @@ namespace Artisan.Orm
 				return cmd.ReadToEnumerable<T>();
 			}
 		}
+
+		public IEnumerable<T> ReadAsEnumerable<T>(string sql, params SqlParameter[] sqlParameters)
+		{
+			using (var cmd = CreateCommand())
+			{
+				cmd.ConfigureCommand(sql, sqlParameters);
+				
+				return cmd.ReadAsEnumerable<T>();
+			}
+		}
+
+
 
 		#endregion
 
