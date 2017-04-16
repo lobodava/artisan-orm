@@ -17,6 +17,9 @@ namespace Tests.DAL.Users.Models
 
 		public String Email { get; set; }
 
+		public String RowVersion { get; set; }
+
+
 		[JsonConverter(typeof(ByteArrayConverter))]
 		public Byte[] RoleIds { get; set; }
 
@@ -34,11 +37,12 @@ namespace Tests.DAL.Users.Models
 			
 			return new User 
 			{
-				Id		=	dr.GetInt32(i++)	,
-				Login	=	dr.GetString(i++)	,
-				Name	=	dr.GetString(i++)	,
-				Email	=	dr.GetString(i++)	,
-				RoleIds	=	(i + 1 <= dr.FieldCount) ? dr.GetByteArrayFromString(i) : null
+				Id			=	dr.GetInt32(i)	,
+				Login		=	dr.GetString(++i)	,
+				Name		=	dr.GetString(++i)	,
+				Email		=	dr.GetString(++i)	,
+				RowVersion	=	dr.GetBase64StringFromRowVersion(++i),
+				RoleIds		=	++i < dr.FieldCount ? dr.GetByteArrayFromString(i) : null
 			};
 		}
 
@@ -48,26 +52,26 @@ namespace Tests.DAL.Users.Models
 			
 			return new ObjectRow(5)
 			{
-				/* 0 - Id		=	*/	dr.GetInt32(i++)	,
-				/* 1 - Login	=	*/	dr.GetString(i++)	,
-				/* 2 - Name		=	*/	dr.GetString(i++)	,
-				/* 3 - Email	=	*/	dr.GetString(i++)	,
-				/* 4 - RoleIds	=	*/	dr.GetInt16ArrayFromString(i++)
+				/* 0 - Id		  =	*/	dr.GetInt32(i)	,
+				/* 1 - Login	  =	*/	dr.GetString(++i)	,
+				/* 2 - Name		  =	*/	dr.GetString(++i)	,
+				/* 3 - Email	  =	*/	dr.GetString(++i)	,
+				/* 4 - RowVersion =	*/	dr.GetBase64StringFromRowVersion(++i),
+				/* 5 - RoleIds	  =	*/	dr.GetInt16ArrayFromString(++i)
 			};
 		}
 
 	
 		public static DataTable CreateDataTable()
 		{
-			var table = new DataTable("UserTableType");
-			
-			table.Columns.Add(	"Id"		,	typeof( Int32	));
-			table.Columns.Add(	"Login"		,	typeof( String	));
-			table.Columns.Add(	"Name"		,	typeof( String	));
-			table.Columns.Add(	"Email"		,	typeof( String	));
-			table.Columns.Add(	"RoleIds"	,	typeof( String	));
+			return new DataTable("UserTableType")
 
-			return table;
+			.AddColumn< Int32	>(	"Id"			)
+			.AddColumn< String	>(	"Login"			)
+			.AddColumn< String	>(	"Name"			)
+			.AddColumn< String	>(	"Email"			)
+			.AddColumn< Byte[]	>(	"RowVersion"	)
+			.AddColumn< String	>(	"RoleIds"		);
 		}
 
 		public static object[] CreateDataRow(User obj)
@@ -81,6 +85,7 @@ namespace Tests.DAL.Users.Models
 				obj.Login	,
 				obj.Name	,
 				obj.Email	,
+				Convert.FromBase64String(obj.RowVersion),
 				obj.RoleIds == null ? null : String.Join(",", obj.RoleIds)
 			};
 		}

@@ -5,7 +5,7 @@ using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static System.String;
 
-namespace Tests
+namespace Tests.Tests
 {
 	[TestClass]
 	public class ConnectionStringHelperTest
@@ -23,7 +23,7 @@ namespace Tests
 
 				Assert.Fail();
 			} 
-			catch(ConnectionStringNotFoundException)
+			catch(SettingsPropertyNotFoundException)
 			{
 				connectionString = Empty;
 			}
@@ -48,19 +48,21 @@ namespace Tests
 		[TestMethod]
 		public void MachineConnectionString()
 		{
+			var connectionStringName = $"{MachineName}.MachineConnectionString";
+
 			Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
 			var connectionStringSettings = new ConnectionStringSettings
 			{
-				Name = $"{MachineName}.MachineConnectionString",
+				Name = connectionStringName,
 				ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=MachineDb;Integrated Security=True"
 			};
 			
 			config.ConnectionStrings.ConnectionStrings.Add(connectionStringSettings);
     
 			config.Save(ConfigurationSaveMode.Modified);
+			ConfigurationManager.RefreshSection("connectionStrings");
 			
-
 			var connectionString = ConnectionStringHelper.GetConnectionString("MachineConnectionString");
 
 			Assert.IsNotNull(connectionString);
@@ -82,8 +84,8 @@ namespace Tests
 			config.ConnectionStrings.ConnectionStrings.Add(connectionStringSettings);
     
 			config.Save(ConfigurationSaveMode.Modified);
+			ConfigurationManager.RefreshSection("connectionStrings");
 			
-
 			var connectionString = ConnectionStringHelper.GetConnectionString("MachineConnectionString", "Debug");
 
 			Assert.IsNotNull(connectionString);
@@ -104,7 +106,7 @@ namespace Tests
 			config.ConnectionStrings.ConnectionStrings.Add(connectionStringSettings);
     
 			config.Save(ConfigurationSaveMode.Modified);
-			
+			ConfigurationManager.RefreshSection("connectionStrings");
 
 			var connectionString = ConnectionStringHelper.GetConnectionString("DebugConnectionString", "Debug");
 

@@ -28,9 +28,9 @@ namespace Tests.DAL.GrandRecords.Models
 			
 			return new ChildRecord 
 			{
-				Id			=	dr.GetInt32(i++)	,
-				RecordId	=	dr.GetInt32(i++)	,
-				Name		=	dr.GetString(i++)	,
+				Id			=	dr.GetInt32(i)		,
+				RecordId	=	dr.GetInt32(++i)	,
+				Name		=	dr.GetString(++i)	,
 			};
 		}
 	

@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Tests.DAL.Users.Models;
 
-namespace Tests
+namespace Tests.Tests
 {
 	[TestClass]
 	public class ReadDictionaryTest

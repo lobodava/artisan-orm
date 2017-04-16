@@ -5,8 +5,7 @@ using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Users.Models;
 
-
-namespace Tests
+namespace Tests.Tests
 {
 	[TestClass]
 	public class CommandReadTest
@@ -447,7 +446,7 @@ namespace Tests
 			_repository.Connection.Open();
 			
 			_repository.RunCommand(cmd => {
-				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users where Id = 1");
+				cmd.UseSql( "select Id, [Login], Name, Email, RowVersion from dbo.Users where Id = 1");
 
 				user = cmd.ReadTo<User>();
 
@@ -463,7 +462,7 @@ namespace Tests
 			for (int i = 0; i < times; i++)
 			{
 				_repository.RunCommand(cmd => {
-					cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users where Id = 1");
+					cmd.UseSql( "select Id, [Login], Name, Email, RowVersion from dbo.Users where Id = 1");
 					user = cmd.ReadTo<User>();
 				});
 			}
@@ -487,7 +486,7 @@ namespace Tests
 			_repository.Connection.Open();
 			
 			_repository.RunCommand(cmd => {
-				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users");
+				cmd.UseSql( "select Id, [Login], Name, Email, RowVersion from dbo.Users");
 
 				users = cmd.ReadToList<User>();
 
@@ -503,7 +502,7 @@ namespace Tests
 			for (int i = 0; i < times; i++)
 			{
 				_repository.RunCommand(cmd => {
-					cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users");
+					cmd.UseSql( "select Id, [Login], Name, Email, RowVersion from dbo.Users");
 					users = cmd.ReadToList<User>();
 				});
 			}
@@ -529,7 +528,7 @@ namespace Tests
 			_repository.RunCommand(cmd => {
 				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users where Id = 1");
 
-				user = cmd.ReadTo<User>();
+				user = cmd.ReadAs<User>();
 
 				Assert.AreEqual(user.Id, 1);
 			});
@@ -569,7 +568,7 @@ namespace Tests
 			_repository.RunCommand(cmd => {
 				cmd.UseSql( "select Id, [Login], Name, Email from dbo.Users");
 
-				users = cmd.ReadToList<User>();
+				users = cmd.ReadAsList<User>();
 
 				Assert.IsTrue(users.Count > 1);
 			});

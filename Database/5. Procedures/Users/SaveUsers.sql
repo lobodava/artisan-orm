@@ -7,16 +7,15 @@ begin
 	declare @UserIds table ( InsertedId int primary key, ParamId int unique)
 
 	
-	declare @DataStatus varchar(20);
-	declare @DataMessages dbo.DataMessageTableType;
-			--create type dbo.DataMessageTableType as table
-			--(
-			--	Code		varchar(50)		not null	,
-			--	Field		varchar(255)	null		,
-			--	[Text]		nvarchar(4000)	null		,
-			--	SourceId	int				null
-			--);
-
+	declare @DataReplyStatus varchar(20);
+	declare @DataReplyMessages dbo.DataReplyMessageTableType;
+				--create type  dbo.DataReplyMessageTableType as table
+				--(
+				--	Code		varchar(50)		not null	,
+				--	[Text]		nvarchar(4000)	null		,
+				--	Id			bigint			null		,
+				--	[Value]		sql_variant		null
+				--);
 
 
 	declare @StartTranCount int;
@@ -42,17 +41,17 @@ begin
 					dbo.Users u with (tablockx, holdlock)
 					full join @Users t on t.Id = u.Id
 			)
-			insert into @DataMessages (
-				Code		,
-				Field		,
-				[Text]		,
-				SourceId	)
+			insert into @DataReplyMessages (
+				Code	 ,
+				[Text]	 ,
+				Id		 ,
+				[Value]	 )
 
 			select 
-				Code		=	'NON_UNIQUE_LOGIN',
-				Field		=	'Login',
-				[Text]		=	'Dublicate value: ' + [Login],
-				SourceId	=	Id
+				Code	 =	'NON_UNIQUE_LOGIN',
+				[Text]	 =	'User login is not unique',
+				Id		 =	Id,
+				[Value]	 =	[Login]
 			from
 				cte
 			where
@@ -61,10 +60,10 @@ begin
 			union all
 
 			select 
-				Code		=	'NON_UNIQUE_NAME',
-				Field		=	'Name',
-				[Text]		=	'Dublicate value: ' + Name,
-				SourceId	=	Id
+				Code	 =	'NON_UNIQUE_NAME',
+				[Text]	 =	'User name is not unique',
+				Id		 =	Id,
+				[Value]	 =	Name
 			from
 				cte
 			where
@@ -73,25 +72,25 @@ begin
 			union all
 
 			select 
-				Code		=	'NON_UNIQUE_EMAIL',
-				Field		=	'Email',
-				[Text]		=	'Dublicate value: ' + Email,
-				SourceId	=	Id
+				Code	 =	'NON_UNIQUE_EMAIL',
+				[Text]	 =	'User email is not unique',
+				Id		 =	Id,
+				[Value]	 =	Email
 			from
 				cte
 			where
 				LoginRn > 1 and Id > 0
 
 
-			if exists(select * from @DataMessages) 
-				set @DataStatus = 'Warning';
+			if exists(select * from @DataReplyMessages) 
+				set @DataReplyStatus = 'Validation';
 
 			
-			select DataStatus = @DataStatus where @DataStatus is not null;
+			select DataReplyStatus = @DataReplyStatus;
 						
-			if @DataStatus is not null  
+			if @DataReplyStatus is not null  
 			begin
-				select * from @DataMessages;
+				select * from @DataReplyMessages;
 
 				if @StartTranCount = 0 rollback transaction;
 				return;

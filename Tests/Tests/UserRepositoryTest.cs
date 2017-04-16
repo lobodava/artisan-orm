@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using Tests.DAL.Users;
 using Tests.DAL.Users.Models;
 
-namespace Tests
+namespace Tests.Tests
 {
 	[TestClass]
 	public class UserRepositoryTest
@@ -130,27 +130,6 @@ namespace Tests
 			Console.WriteLine($"GetUsersAsync reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
 			Console.Write(JsonConvert.SerializeObject(users));
 		}
-
-		
-		[TestMethod]
-		public void GetUsersWithAutoMapping()
-		{
-			var users  = _repository.GetUsersWithAutoMapping();
-
-			var sw = new Stopwatch();
-			sw.Start();
-
-			users  = _repository.GetUsersWithAutoMapping();
-	
-			sw.Stop();
-
-			Assert.IsNotNull(users);
-			Assert.IsTrue(users.Count > 1);
-
-			Console.WriteLine($"GetUsersWithAutoMapping reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(users));
-		}
-
 
 
 		[TestMethod]
@@ -291,7 +270,7 @@ namespace Tests
 
 		
 		[TestMethod]
-		public void SaveUserDataWarningException()
+		public void SaveUserDataValidationException()
 		{
 			var user = _repository.GetUserById(1);
 			user.Id = 0;
@@ -301,15 +280,16 @@ namespace Tests
 				var savedUser = _repository.SaveUser(user);
 				Assert.Fail();
 			}
-			catch (DataWarningException ex)
+			catch (DataReplyException ex)
 			{
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
+				Assert.AreEqual(DataReplyStatus.Validation, ex.Status);
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
 
-				Console.WriteLine("DataWarningException.DataMessages: ");
+				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.DataMessages));
+				Console.Write(JsonConvert.SerializeObject(ex.Messages));
 			}
 			catch (Exception )
 			{
@@ -318,7 +298,7 @@ namespace Tests
 		}
 		
 		[TestMethod]
-		public async Task SaveUserDataWarningExceptionAsync()
+		public async Task SaveUserDataValidationExceptionAsync()
 		{
 			var user = _repository.GetUserById(1);
 			user.Id = 0;
@@ -328,15 +308,16 @@ namespace Tests
 				var savedUser = await _repository.SaveUserAsync(user);
 				Assert.Fail();
 			}
-			catch (DataWarningException ex)
+			catch (DataReplyException ex)
 			{
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
+				Assert.AreEqual(DataReplyStatus.Validation, ex.Status);
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
 
-				Console.WriteLine("DataWarningException.DataMessages: ");
+				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.DataMessages));
+				Console.Write(JsonConvert.SerializeObject(ex.Messages));
 			}
 			catch (Exception )
 			{
@@ -345,7 +326,7 @@ namespace Tests
 		}
 		
 		[TestMethod]
-		public void SaveUsersDataWarningException()
+		public void SaveUsersDataValidationException()
 		{
 			var user1 = _repository.GetUserById(1);
 			var user2 = _repository.GetUserById(2);
@@ -359,24 +340,25 @@ namespace Tests
 				var savedUser = _repository.SaveUsers(users);
 				Assert.Fail();
 			}
-			catch (DataWarningException ex)
+			catch (DataReplyException ex)
 			{
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
+				Assert.AreEqual(DataReplyStatus.Validation, ex.Status);
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
 
-				Console.WriteLine("DataWarningException.DataMessages: ");
+				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.DataMessages));
+				Console.Write(JsonConvert.SerializeObject(ex.Messages));
 			}
-			catch (Exception )
+			catch (Exception ex)
 			{
 				Assert.Fail();
 			}
 		}
 		
 		[TestMethod]
-		public async Task SaveUsersDataWarningExceptionAsync()
+		public async Task SaveUsersDataValidationExceptionAsync()
 		{
 			var user1 = _repository.GetUserById(1);
 			var user2 = _repository.GetUserById(2);
@@ -390,15 +372,16 @@ namespace Tests
 				var savedUser = await _repository.SaveUsersAsync(users);
 				Assert.Fail();
 			}
-			catch (DataWarningException ex)
+			catch (DataReplyException ex)
 			{
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
+				Assert.AreEqual(DataReplyStatus.Validation, ex.Status);
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_LOGIN"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_NAME"));
+				Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "NON_UNIQUE_EMAIL"));
 
-				Console.WriteLine("DataWarningException.DataMessages: ");
+				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.DataMessages));
+				Console.Write(JsonConvert.SerializeObject(ex.Messages));
 			}
 			catch (Exception )
 			{
@@ -454,15 +437,30 @@ namespace Tests
 				var isSuccess = await _repository.DeleteUserAsync(1);
 				Assert.Fail();
 			}
-			catch (DataWarningException ex)
+			catch (DataReplyException ex)
 			{
-				Assert.IsNotNull(ex.DataMessages.FirstOrDefault(dm => dm.Code == "UNDELETABLE"));
+				if (ex.Status == DataReplyStatus.Fail)
+				{
+					Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "UNDELETABLE"));
 
-				Console.WriteLine("DataWarningException.DataMessages: ");
-				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.DataMessages));
+					Console.WriteLine("DataValidationException.Messages: ");
+					Console.WriteLine();
+					Console.Write(JsonConvert.SerializeObject(ex.Messages));
+				}
+				else if (ex.Status == DataReplyStatus.Missing)
+				{
+					Assert.IsNotNull(ex.Messages.FirstOrDefault(dm => dm.Code == "USER_NOT_FOUND"));
+
+					Console.WriteLine("DataValidationException.Messages: ");
+					Console.WriteLine();
+					Console.Write(JsonConvert.SerializeObject(ex.Messages));
+				}
+				else
+				{
+					Assert.Fail();
+				}
 			}
-			catch (Exception )
+			catch (Exception ex)
 			{
 				Assert.Fail();
 			}

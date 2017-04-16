@@ -2,11 +2,12 @@
 as
 (
 	select
-		Id		,
-		[Login]	,
-		Name	,
-		Email	,
-		RoleIds =  dbo.GetUserRoleIds(Id)
+		Id				,
+		[Login]			,
+		Name			,
+		Email			,
+		[RowVersion]	,
+		RoleIds			=  dbo.GetUserRoleIds(Id)
 	from
 		dbo.Users u
 );

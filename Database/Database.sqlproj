@@ -99,7 +99,6 @@
     <Build Include="1. Tables\Records\4. RecordTypes.sql" />
     <Build Include="1. Tables\Users\1. Users.sql" />
     <Build Include="1. Tables\Users\2. Roles.sql" />
-    <Build Include="1. Tables\Users\4. ExtraPermits.sql" />
     <None Include="6. Post-Deployment\Roles.sql" />
     <Build Include="1. Tables\Users\3. UserRoles.sql" />
     <Build Include="4. Types\UserTableType.sql" />

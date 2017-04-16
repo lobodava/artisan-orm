@@ -5,7 +5,7 @@ using System.Linq;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Tests
+namespace Tests.Tests
 {
 	[TestClass]
 	public class SqlParemeterTest

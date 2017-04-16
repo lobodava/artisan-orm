@@ -230,6 +230,10 @@ namespace Artisan.Orm
 
 			return ids.Split(',').Select(s => Convert.ToInt32(s)).ToArray();
 		}
+
+
+
+
 	}
 }
 

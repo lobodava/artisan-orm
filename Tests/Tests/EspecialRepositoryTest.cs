@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Tests.DAL.Records.Models;
-using Tests.DAL.Users.Models;
 
-namespace Tests
+namespace Tests.Tests
 {
 	[TestClass]
 	public class EspecialRepositoryTest

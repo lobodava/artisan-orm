@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Artisan.Orm
@@ -452,27 +450,26 @@ namespace Artisan.Orm
 
 
 		#endregion
+	
 
-
-
-
-		[Obsolete("Replaced with ParseDataStatus")]
-		public static DataStatus? GetDataStatus (string dataStatusCode) {
-
-			if (String.IsNullOrWhiteSpace(dataStatusCode))
-				return null;
-		
-				if (!Enum.IsDefined(typeof(DataStatus), dataStatusCode))
-				throw new InvalidCastException($"Cannot cast string '{dataStatusCode}' to DataStatus Enum");
-
-			return (DataStatus)Enum.Parse(typeof(DataStatus), dataStatusCode);
-		}
-
-		public static DataStatus? ParseDataStatus(string dataStatusCode)
+		public static void CheckForDataReplyException(SqlDataReader dr)
 		{
-			return DataReply.ParseDataStatus(dataStatusCode);
+			var statusCode = dr.ReadTo<string>(getNextResult: false);
+
+			var dataReplyStatus = DataReply.ParseStatus(statusCode);
+
+			if (dataReplyStatus != null )
+			{
+				if (dr.NextResult())
+					throw new DataReplyException(dataReplyStatus.Value, dr.ReadToArray<DataReplyMessage>());
+
+				throw new DataReplyException(dataReplyStatus.Value);
+			}
+
+			dr.NextResult();
 		}
 		
+
 		public void Dispose()
 		{
 			Transaction?.Dispose();

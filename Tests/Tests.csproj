@@ -66,14 +66,17 @@
     <Compile Include="DAL\Users\Models\Role.cs" />
     <Compile Include="DAL\Users\Models\User.cs" />
     <Compile Include="DAL\Users\Repository.cs" />
-    <Compile Include="CommandReadTest.cs" />
-    <Compile Include="ReadDictionaryTest.cs" />
-    <Compile Include="SqlParemeterTest.cs" />
-    <Compile Include="GrandRecordRepositoryTest.cs" />
-    <Compile Include="EspecialRepositoryTest.cs" />
-    <Compile Include="UserRepositoryTest.cs" />
-    <Compile Include="RecordRepositoryTest.cs" />
-    <Compile Include="ConnectionStringHelperTest.cs" />
+    <Compile Include="Tests\CommandReadTest.cs" />
+    <Compile Include="DataServices\DataServiceBase.cs" />
+    <Compile Include="DataServices\UserDataService.cs" />
+    <Compile Include="Tests\ReadDictionaryTest.cs" />
+    <Compile Include="Tests\UserDataServiceTest.cs" />
+    <Compile Include="Tests\SqlParemeterTest.cs" />
+    <Compile Include="Tests\GrandRecordRepositoryTest.cs" />
+    <Compile Include="Tests\EspecialRepositoryTest.cs" />
+    <Compile Include="Tests\UserRepositoryTest.cs" />
+    <Compile Include="Tests\RecordRepositoryTest.cs" />
+    <Compile Include="Tests\ConnectionStringHelperTest.cs" />
     <Compile Include="DAL\Records\Models\Record.cs" />
     <Compile Include="DAL\Records\Repository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -86,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="DataReplyDiagram.cd" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />

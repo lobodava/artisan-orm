@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using Tests.DAL.GrandRecords;
 using Tests.DAL.GrandRecords.Models;
 
-namespace Tests
+namespace Tests.Tests
 {
 	[TestClass]
 	public class GrandRecordRepositoryTest

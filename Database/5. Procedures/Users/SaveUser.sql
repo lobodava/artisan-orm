@@ -16,8 +16,8 @@ begin
 	declare @Email varchar(50);
 
 
-	declare @DataStatus varchar(20);
-	declare @DataMessages dbo.DataMessageTableType;
+	declare @DataReplyStatus varchar(20);
+	declare @DataReplyMessages dbo.DataReplyMessageTableType;
 
 	declare @UserIds table ( InsertedId int primary key, ParamId int unique)
 
@@ -28,21 +28,40 @@ begin
 		set @StartTranCount = @@trancount;
 		if @StartTranCount = 0 begin transaction;
 
+
+		if exists -- concurrency 
+		(
+			select
+				*
+			from
+				dbo.Users u with (tablockx, holdlock)
+				inner join @User t on t.Id = u.Id and t.[RowVersion] <> u.[RowVersion]
+		)
+		begin
+			
+			select DataReplyStatus = 'Concurrency';
+
+			if @StartTranCount = 0 rollback transaction;
+			return;
+		end
+
+	
+		
 		begin -- validation
 
 			begin -- check User.Login uniqueness
 				select top 1 
 					@Login = u.[Login]
 				from
-					dbo.Users u with (tablockx, holdlock)
+					dbo.Users u
 					inner join @User t on t.[Login] = u.[Login] and t.Id <> u.Id;
 
 				if @Login is not null 
 				begin 
-					set @DataStatus = 'Warning';
+					set @DataReplyStatus = 'Validation';
 
-					insert into @DataMessages (Code) 
-					select Code ='NON_UNIQUE_LOGIN';
+					insert into @DataReplyMessages (Code, Value) 
+					select Code ='NON_UNIQUE_LOGIN', @Login;
 				end;
 			end;
 			
@@ -55,10 +74,10 @@ begin
 
 				if @Name is not null 
 				begin 
-					set @DataStatus = 'Warning';
+					set @DataReplyStatus = 'Validation';
 
-					insert into @DataMessages (Code) 
-					select Code ='NON_UNIQUE_NAME';
+					insert into @DataReplyMessages (Code, Value) 
+					select Code ='NON_UNIQUE_NAME', @Name;
 				end;
 			end;
 
@@ -71,18 +90,18 @@ begin
 
 				if @Email is not null 
 				begin 
-					set @DataStatus = 'Warning';
+					set @DataReplyStatus = 'Validation';
 
-					insert into @DataMessages (Code) 
-					select Code ='NON_UNIQUE_EMAIL';
+					insert into @DataReplyMessages (Code, Value) 
+					select Code ='NON_UNIQUE_EMAIL', @Email;
 				end;
 			end;
 			
-			select DataStatus = @DataStatus where @DataStatus is not null;
+			select DataReplyStatus = @DataReplyStatus;
 						
-			if @DataStatus is not null  
+			if @DataReplyStatus is not null  
 			begin
-				select * from @DataMessages;
+				select * from @DataReplyMessages;
 
 				if @StartTranCount = 0 rollback transaction;
 				return;

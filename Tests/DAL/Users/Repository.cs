@@ -10,7 +10,6 @@ using Tests.DAL.Users.Models;
 namespace Tests.DAL.Users
 {
 
-
 	public class Repository: RepositoryBase
 	{
 		//#if DEBUG
@@ -87,21 +86,6 @@ namespace Tests.DAL.Users
 		}
 
 
-		public IList<User> GetUsersWithAutoMapping()
-		{
-			return GetByCommand(cmd =>
-			{
-				cmd.UseProcedure("dbo.GetUsers");
-
-				return cmd.GetByReader(reader =>
-				{
-					return reader.ReadAsList<User>();
-				});
-			});
-		}
-
-
-
 		#endregion
 
 
@@ -160,9 +144,7 @@ namespace Tests.DAL.Users
 		}
 
 
-
 		#endregion
-
 
 
 		#region [ Save ONE User ]
@@ -179,16 +161,6 @@ namespace Tests.DAL.Users
 				cmd.AddTableParam("@RoleIds", user.RoleIds);
 
 				return cmd.GetByReader(ReadSavedUser);
-
-				//return cmd.GetByReader(reader =>
-				//{
-				//	if (GetDataStatus(reader.ReadTo<string>()) == DataStatus.Warning)
-				//	{
-				//		throw new DataWarningException(reader.ReadToArray<DataMessage>());
-				//	}
-
-				//	return reader.ReadTo<User>();
-				//});
 			});
 		}
 
@@ -208,15 +180,14 @@ namespace Tests.DAL.Users
 
 		private static User ReadSavedUser(SqlDataReader reader)
 		{
-			if (GetDataStatus(reader.ReadTo<string>()) == DataStatus.Warning)
-			{
-				throw new DataWarningException(reader.ReadToArray<DataMessage>());
-			}
+			CheckForDataReplyException(reader);
 
 			return reader.ReadTo<User>();
 		}
+		
 
 		#endregion
+
 
 		#region [ Save MANY Users ]
 
@@ -230,16 +201,6 @@ namespace Tests.DAL.Users
 				cmd.AddTableParam("@Users", users);
 				
 				return cmd.GetByReader(ReadSavedUsers);
-
-				//return cmd.GetByReader(reader =>
-				//{
-				//	if (GetDataStatus(reader.ReadTo<string>()) == DataStatus.Warning)
-				//	{
-				//		throw new DataWarningException(reader.ReadToArray<DataMessage>());
-				//	}
-
-				//	return reader.ReadToList<User>();
-				//});
 			});
 		}
 
@@ -258,10 +219,7 @@ namespace Tests.DAL.Users
 
 		private static IList<User> ReadSavedUsers(SqlDataReader reader)
 		{
-			if (GetDataStatus(reader.ReadTo<string>()) == DataStatus.Warning)
-			{
-				throw new DataWarningException(reader.ReadToArray<DataMessage>());
-			}
+			CheckForDataReplyException(reader);
 
 			return reader.ReadToList<User>();
 		}
@@ -272,7 +230,8 @@ namespace Tests.DAL.Users
 
 		#region [ Delete User ]
 
-		public void DeleteUser(Int32 userId)
+
+		public Boolean DeleteUser(Int32 userId)
 		{
 			var returnValue = ExecuteCommand(cmd =>
 			{
@@ -281,10 +240,12 @@ namespace Tests.DAL.Users
 			});
 			
 			if (returnValue == 1)
-				throw new DataWarningException("UNDELETABLE", "The Boss can not be deleted");
+				throw new DataReplyException(DataReplyStatus.Fail, "UNDELETABLE", "The Heros can not be deleted", userId);
 
 			if (returnValue == 2)
-				throw new DataNotFoundException($"User with Id = {userId} does not exist and cannot be deleted");
+				throw new DataReplyException(DataReplyStatus.Missing, "USER_IS_MISSING", userId);
+
+			return true;
 		}
 
 
@@ -297,10 +258,10 @@ namespace Tests.DAL.Users
 			});
 			
 			if (returnValue == 1)
-				throw new DataWarningException("UNDELETABLE","Heros can not be deleted", "Id", userId);
+				throw new DataReplyException(DataReplyStatus.Fail, "UNDELETABLE", "Heros can not be deleted", userId);
 
 			if (returnValue == 2)
-				throw new DataNotFoundException($"User with Id = {userId} does not exist and cannot be deleted");
+				throw new DataReplyException(DataReplyStatus.Missing, "USER_NOT_FOUND", userId);
 
 			return true;
 		}
@@ -389,7 +350,7 @@ namespace Tests.DAL.Users
 		//		int returnValue = (int)returnValueParam.Value;
 
 		//		if (returnValue == 1)
-		//			throw new DataWarningException("UNDELETABLE", "Heros can not be deleted");
+		//			throw new DataValidationException("UNDELETABLE", "Heros can not be deleted");
 
 		//	});
 		//}

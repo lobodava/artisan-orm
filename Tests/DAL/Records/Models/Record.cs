@@ -36,28 +36,28 @@ namespace Tests.DAL.Records.Models
 
 			return new Record 
 			{
-				Id				=	dr.GetInt32(i++)			,
-				GrandRecordId	=	dr.GetInt32(i++)			,
-				Name			=	dr.GetString(i++)			,
-				RecordTypeId	=	dr.GetByteNullable(i++)		,
-				Number			=	dr.GetInt16Nullable(i++)	,
-				Date			=	dr.GetDateTimeNullable(i++)	,
-				Amount			=	dr.GetDecimalNullable(i++)	,
-				IsActive		=	dr.GetBooleanNullable(i++)	,
-				Comment			=	dr.GetStringNullable(i++)	,
+				Id				=	dr.GetInt32(i)				,
+				GrandRecordId	=	dr.GetInt32(++i)			,
+				Name			=	dr.GetString(++i)			,
+				RecordTypeId	=	dr.GetByteNullable(++i)		,
+				Number			=	dr.GetInt16Nullable(++i)	,
+				Date			=	dr.GetDateTimeNullable(++i)	,
+				Amount			=	dr.GetDecimalNullable(++i)	,
+				IsActive		=	dr.GetBooleanNullable(++i)	,
+				Comment			=	dr.GetStringNullable(++i)	,
 			};
 
 			//return new Record
 			//{
-			//	Id				= (Int32)dr.GetValue(i++)	,
-			//	GrandRecordId	= (Int32)dr.GetValue(i++)	,
-			//	Name			= (String)dr.GetValue(i++)	,
-			//	RecordTypeId	= dr.IsDBNull(i) ? default(Byte?)		: (Byte?)dr.GetValue(i++)	,
-			//	Number			= dr.IsDBNull(i) ? default(Int16?)		: (Int16?)dr.GetValue(i++)	,
-			//	Date			= dr.IsDBNull(i) ? default(DateTime?)	: (DateTime?)dr.GetValue(i++)	,
-			//	Amount			= dr.IsDBNull(i) ? default(Decimal?)	: (Decimal?)dr.GetValue(i++)	,
-			//	IsActive		= dr.IsDBNull(i) ? default(Boolean?)	: (Boolean?)dr.GetValue(i++)	,
-			//	Comment			= dr.IsDBNull(i) ? null					: (String)dr.GetValue(i++)	
+			//	Id				= (Int32)dr.GetValue(++i)	,
+			//	GrandRecordId	= (Int32)dr.GetValue(++i)	,
+			//	Name			= (String)dr.GetValue(++i)	,
+			//	RecordTypeId	= dr.IsDBNull(i) ? default(Byte?)		: (Byte?)dr.GetValue(++i)	,
+			//	Number			= dr.IsDBNull(i) ? default(Int16?)		: (Int16?)dr.GetValue(++i)	,
+			//	Date			= dr.IsDBNull(i) ? default(DateTime?)	: (DateTime?)dr.GetValue(++i)	,
+			//	Amount			= dr.IsDBNull(i) ? default(Decimal?)	: (Decimal?)dr.GetValue(++i)	,
+			//	IsActive		= dr.IsDBNull(i) ? default(Boolean?)	: (Boolean?)dr.GetValue(++i)	,
+			//	Comment			= dr.IsDBNull(i) ? null					: (String)dr.GetValue(++i)	
 			//};
 
 
@@ -66,14 +66,14 @@ namespace Tests.DAL.Records.Models
 
 			//return new Record 
 			//{
-			//	Id				=	(Int32)dr.GetValue(i++)			,
-			//	GrandRecordId	=	(Int32)dr.GetValue(i++) 		, 
-			//	Name			=	(String)dr.GetValue(i++) 		, 
-			//	RecordTypeId	=	dr.GetValue(i++) as Byte?		,
-			//	Number			=	dr.GetValue(i++) as Int16?		, 
-			//	Date			=	dr.GetValue(i++) as DateTime?	, 
-			//	Amount			=	dr.GetValue(i++) as Decimal?	, 
-			//	IsActive		=	dr.GetValue(i++) as Boolean?	, 
+			//	Id				=	(Int32)dr.GetValue(++i)			,
+			//	GrandRecordId	=	(Int32)dr.GetValue(++i) 		, 
+			//	Name			=	(String)dr.GetValue(++i) 		, 
+			//	RecordTypeId	=	dr.GetValue(++i) as Byte?		,
+			//	Number			=	dr.GetValue(++i) as Int16?		, 
+			//	Date			=	dr.GetValue(++i) as DateTime?	, 
+			//	Amount			=	dr.GetValue(++i) as Decimal?	, 
+			//	IsActive		=	dr.GetValue(++i) as Boolean?	, 
 			//	Comment			=	dr.GetValue(i) as String 
 			//};
 
@@ -85,15 +85,15 @@ namespace Tests.DAL.Records.Models
 
 			return new ObjectRow(9)
 			{
-				/*	0 - Id				=	*/	dr.GetInt32(i++)			,
-				/*	1 - GrandRecordId	=	*/	dr.GetInt32(i++)			,
-				/*	2 - Name			=	*/	dr.GetString(i++)			,
-				/*	3 - RecordTypeId	=	*/	dr.GetByteNullable(i++)		,
-				/*	4 - Number			=	*/	dr.GetInt16Nullable(i++)	,
-				/*	5 - Date			=	*/	dr.GetDateTimeNullable(i++)	,
-				/*	6 - Amount			=	*/	dr.GetDecimalNullable(i++)	,
-				/*	7 - IsActive		=	*/	dr.GetBooleanNullable(i++)	,
-				/*	8 - Comment			=	*/	dr.GetStringNullable(i++)	,
+				/*	0 - Id				=	*/	dr.GetInt32(i)				,
+				/*	1 - GrandRecordId	=	*/	dr.GetInt32(++i)			,
+				/*	2 - Name			=	*/	dr.GetString(++i)			,
+				/*	3 - RecordTypeId	=	*/	dr.GetByteNullable(++i)		,
+				/*	4 - Number			=	*/	dr.GetInt16Nullable(++i)	,
+				/*	5 - Date			=	*/	dr.GetDateTimeNullable(++i)	,
+				/*	6 - Amount			=	*/	dr.GetDecimalNullable(++i)	,
+				/*	7 - IsActive		=	*/	dr.GetBooleanNullable(++i)	,
+				/*	8 - Comment			=	*/	dr.GetStringNullable(++i)	,
 			};
 		}
 

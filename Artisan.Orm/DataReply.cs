@@ -1,63 +1,71 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Runtime.Serialization;
-//using Newtonsoft.Json;
+using static System.String;
 
 namespace Artisan.Orm
 {
 	[DataContract]
 	public class DataReply {
 
+
 		[DataMember]
-		public DataStatus Status { get; set; }
+		public DataReplyStatus Status { get; set; }
 
-		//[JsonProperty( NullValueHandling = NullValueHandling.Ignore )]
 		[DataMember(EmitDefaultValue = false)]
-		public DataMessage[] Messages { get; set; }
+		public DataReplyMessage[] Messages { get; set; }
 		
-		public DataReply() {
-			Status = DataStatus.Success;
+		public DataReply()
+		{
+			Status = DataReplyStatus.Ok;
 			Messages = null;
 		}
 
-		public DataReply(DataStatus status) {
+		public DataReply(DataReplyStatus status)
+		{
 			Status = status;
 			Messages = null;
 		}
 
-		public DataReply(DataStatus status, string messageText) {
+		public DataReply(DataReplyStatus status, string code, string text)
+		{
 			Status = status;
-			Messages = new [] { new DataMessage { Text = messageText } };
+			Messages = new [] { new DataReplyMessage { Code = code, Text = text } };
+		}
+		
+		public DataReply(DataReplyStatus status, DataReplyMessage message)
+		{
+			Status = status;
+			if (message != null)
+				Messages = new [] { message };
 		}
 
-		public DataReply(DataStatus status, DataMessage message) {
+		public DataReply(DataReplyStatus status, DataReplyMessage[] messages)
+		{
 			Status = status;
-			Messages = new [] { message };
-		}
-
-
-		public DataReply(DataStatus status, DataMessage[] messages) {
-			Status = status;
-			if (messages.Length > 0)
+			if (messages?.Length > 0)
 				Messages = messages;
 		}
 
 
-		public DataReply(string message) {
-			Status = DataStatus.Success;
-			Messages = new [] { new DataMessage { Text = message } };
+		public DataReply(string message)
+		{
+			Status = DataReplyStatus.Ok;
+			Messages = new [] { new DataReplyMessage { Text = message } };
 		}
 
-		public static DataStatus? ParseDataStatus (string dataStatusCode) {
-
-			if (String.IsNullOrWhiteSpace(dataStatusCode))
+		public static DataReplyStatus? ParseStatus (string statusCode)
+		{
+			if (IsNullOrWhiteSpace(statusCode))
 				return null;
-				//throw new InvalidEnumArgumentException("Cannot cast empty string to ReplyStatus Enum");
-			
-			 if (!Enum.IsDefined(typeof(DataStatus), dataStatusCode))
-				throw new InvalidCastException($"Cannot cast string '{dataStatusCode}' to DataStatus Enum");
+	
+			DataReplyStatus status;
 
-			return (DataStatus)Enum.Parse(typeof(DataStatus), dataStatusCode);
+			if (Enum.TryParse(statusCode, true, out status))
+				return status;
+	
+			throw new InvalidCastException(
+					$"Cannot cast string '{statusCode}' to DataReplyStatus Enum. " +
+					$"Available values: {Join(", ", Enum.GetNames(typeof(DataReplyStatus)))}");
 		}
 
 	}
@@ -65,7 +73,6 @@ namespace Artisan.Orm
 	[DataContract]
 	public class DataReply<TData>: DataReply {
 
-		//[JsonProperty( NullValueHandling = NullValueHandling.Ignore )]
 		[DataMember(EmitDefaultValue = false)]
 		public TData Data { get; set; }
 
@@ -79,27 +86,33 @@ namespace Artisan.Orm
 			Data = default(TData);
 		}
 
-		public DataReply(DataStatus status, string message, TData data)  :base(status, message) 
+		public DataReply(DataReplyStatus status, string code, string text, TData data)  :base(status, code, text) 
 		{
 			Data = data;
 		}
 
-		public DataReply(DataStatus status, TData data) :base(status) 
+		public DataReply(DataReplyStatus status, TData data) :base(status) 
 		{
 			Data = data;
 		}
 
-		public DataReply(DataStatus status) :base(status) 
+		public DataReply(DataReplyStatus status) :base(status) 
 		{
 			Data = default(TData);
 		}
 
-		public DataReply(DataStatus status, string message) :base(status, message) 
+		public DataReply(DataReplyStatus status, string code, string text) :base(status, code, text) 
 		{
 			Data = default(TData);
 		}
 
-		public DataReply(DataStatus status, DataMessage[] messages) :base(status, messages)  {
+		public DataReply(DataReplyStatus status, DataReplyMessage replyMessage) :base(status, replyMessage)
+		{
+			Data = default(TData);
+		}
+
+		public DataReply(DataReplyStatus status, DataReplyMessage[] replyMessages) :base(status, replyMessages)
+		{
 			Data = default(TData);
 		}
 	}

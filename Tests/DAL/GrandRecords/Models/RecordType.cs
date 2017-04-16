@@ -25,17 +25,17 @@ namespace Tests.DAL.GrandRecords.Models
 
 		public static RecordType CreateObject(SqlDataReader dr, ref int index)
 		{
-			if (dr.IsDBNull(index))
+			if (dr.IsDBNull(++index))
 			{
-				index = index + 3;
+				index = index + 2;
 				return null;
 			}		
 			
 			return new RecordType 
 			{
-				Id		=	dr.GetByte(index++)		,
-				Code	=	dr.GetString(index++)	,
-				Name	=	dr.GetString(index++)	
+				Id		=	dr.GetByte(index)		,
+				Code	=	dr.GetString(++index)	,
+				Name	=	dr.GetString(++index)	
 			};
 		}
 

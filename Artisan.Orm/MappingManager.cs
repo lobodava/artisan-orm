@@ -217,11 +217,11 @@ namespace Artisan.Orm
 
 			return false;
 		}
+		
 
-
-
-		private static IEnumerable<Type> GetTypesWithMapperForAttribute() {
-			foreach(Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+		private static IEnumerable<Type> GetTypesWithMapperForAttribute()
+		{
+			foreach (Assembly assembly in GetCurrentAndDependentAssemblies())
 			{
 				foreach (Type type in assembly.GetTypes().Where(type => type.GetCustomAttributes(typeof(MapperForAttribute), true).Length > 0))
 				{
@@ -229,5 +229,28 @@ namespace Artisan.Orm
 				}
 			}
 		}
+
+
+		#region [ Get Dependent Assemblies ]
+		
+		// http://stackoverflow.com/a/8850495/623190
+
+		private static IEnumerable<Assembly> GetCurrentAndDependentAssemblies()
+		{
+			var currentAssembly =  typeof(MappingManager).Assembly;
+
+			return AppDomain.CurrentDomain.GetAssemblies()
+				.Where(a => GetNamesOfAssembliesReferencedBy(a).Contains(currentAssembly.FullName))
+				.Concat(new[] { currentAssembly });
+		}
+
+		public static IEnumerable<string> GetNamesOfAssembliesReferencedBy(Assembly assembly)
+		{
+			return assembly.GetReferencedAssemblies()
+				.Select(assemblyName => assemblyName.FullName);
+		}
+
+		#endregion
+
 	}
 }

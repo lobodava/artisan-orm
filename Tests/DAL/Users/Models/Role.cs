@@ -23,9 +23,9 @@ namespace Tests.DAL.Users.Models
 
 			return new Role
 			{
-				Id		=	dr.GetByte(i++)		,
-				Code	=	dr.GetString(i++)	,
-				Name	=	dr.GetString(i)
+				Id		=	dr.GetByte(i)		,
+				Code	=	dr.GetString(++i)	,
+				Name	=	dr.GetString(++i)
 			};
 		}
 

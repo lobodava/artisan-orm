@@ -57,7 +57,7 @@ namespace Artisan.Orm
 			}
 
 			if (settings == null) 
-				throw new ConnectionStringNotFoundException($"ConnectionString with name '{connectionStringName}' not found");
+				throw new SettingsPropertyNotFoundException($"ConnectionString with name '{connectionStringName}' not found");
 
 
 			//https://msdn.microsoft.com/ru-ru/library/hh211418(v=vs.110).aspx

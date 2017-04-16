@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="Artisan.Orm.DataReply">
+    <Position X="3" Y="1.75" Width="3" />
+    <TypeIdentifier />
+  </Class>
+  <Class Name="Artisan.Orm.DataReply&lt;TData&gt;">
+    <Position X="3" Y="4.25" Width="3" />
+    <TypeIdentifier />
+  </Class>
+  <Class Name="Artisan.Orm.DataReplyException">
+    <Position X="10.25" Y="4.25" Width="2.75" />
+    <Members>
+      <Property Name="Message" Hidden="true" />
+    </Members>
+    <TypeIdentifier />
+  </Class>
+  <Class Name="Artisan.Orm.DataReplyMessage">
+    <Position X="6.5" Y="1.75" Width="1.75" />
+    <TypeIdentifier />
+  </Class>
+  <Enum Name="Artisan.Orm.DataReplyStatus">
+    <Position X="1" Y="1.75" Width="1.5" />
+    <TypeIdentifier />
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

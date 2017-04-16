@@ -27,8 +27,8 @@ namespace Tests.DAL.GrandRecords.Models
 			
 			return new GrandRecord 
 			{
-				Id		=	dr.GetInt32(i++)	,
-				Name	=	dr.GetString(i++)	,
+				Id		=	dr.GetInt32(i)		,
+				Name	=	dr.GetString(++i)	,
 
 				Records =	new List<Record>()
 			};

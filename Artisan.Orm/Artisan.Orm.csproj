@@ -40,13 +40,13 @@
   <ItemGroup>
     <Compile Include="INode.cs" />
     <Compile Include="ConnectionStringHelper.cs" />
-    <Compile Include="DataExceptions.cs" />
-    <Compile Include="DataMessage.cs" />
+    <Compile Include="DataReplyException.cs" />
+    <Compile Include="DataReplyMessage.cs" />
     <Compile Include="MergeJoinExtensions.cs" />
     <Compile Include="SqlDataReaderExtensions_Get.cs" />
     <Compile Include="SqlDataReaderExtensions_CreateObject.cs" />
     <Compile Include="SqlDataReaderExtensions_Read.cs" />
-    <Compile Include="DataStatus.cs" />
+    <Compile Include="DataReplyState.cs" />
     <Compile Include="SqlCommandExtensions_Async.cs" />
     <Compile Include="SqlCommandExtensions_Parameters.cs" />
     <Compile Include="SqlCommandExtensions_Sync.cs" />
