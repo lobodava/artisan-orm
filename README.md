@@ -43,7 +43,7 @@ To achieve these goals Artisan.Orm uses:
 * [unique negative identities](https://github.com/lobodava/artisan-orm/blob/master/Artisan.Orm/NegativeIdentity.cs) as a flag of new entities;
 * a [special approach](https://github.com/lobodava/artisan-orm/wiki/Negative-identities-and-object-graph-saving) to writing stored procedures for object reading and saving.
 
-Artisan ОRМ is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
+Artisan.Оrm is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
 
 [![NuGet Logo](https://www.nuget.org/Content/Logos/nugetlogo.png)](http://www.nuget.org/packages/Artisan.ORM)
 
