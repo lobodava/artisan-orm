@@ -17,7 +17,7 @@ Finaly the *object graph saving method* required a new approach to transmitting 
 
 Full information about Artisan.Orm is available in [documentation Wiki](https://github.com/lobodava/artisan-orm/wiki). 
 
-But more interesting articles are:
+The most interesting articles from Wiki are:
 
 * [Simple Sample](https://github.com/lobodava/artisan-orm/wiki/Simple-Sample)
 * [Getting Started](https://github.com/lobodava/artisan-orm/wiki/Getting-started)
