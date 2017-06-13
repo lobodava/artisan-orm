@@ -11,7 +11,7 @@ Then there was a desire of more control over Object-Relational Mapping, better p
 
 Thus a set of extensions to ADO.NET methods turned into a separate project. Here is a story about [Artisan.Orm or How To Reinvent the Wheel](https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-reinvent-the-wheel)!
 
-Finaly the *object graph saving method* required a new approach to transmitting more details about exceptional cases. [Artisan Way of Data Reply](https://www.codeproject.com/Articles/1181182/Artisan-Way-of-Data-Reply) became such an answer.  
+Finaly the *object graph saving method* required a new approach to transmitting of more details about exceptional cases. [Artisan Way of Data Reply](https://www.codeproject.com/Articles/1181182/Artisan-Way-of-Data-Reply) became such an answer.  
 
 ## What to read for better understanding
 
