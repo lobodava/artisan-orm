@@ -708,20 +708,17 @@ namespace Artisan.Orm
 
 		public static void AddTableParam(this SqlCommand cmd, string parameterName, DataTable dataTable)
 		{
+			if (dataTable == null)
+				return;
+
 			var param = new SqlParameter
 			{
 				ParameterName = parameterName,
 				Direction = ParameterDirection.Input,
 				SqlDbType = SqlDbType.Structured,
+				TypeName = dataTable.TableName,
+				Value = dataTable
 			};
-
-			if (dataTable == null)
-				param.Value = DBNull.Value;
-			else
-			{ 
-				param.TypeName = dataTable.TableName;
-				param.Value = dataTable;
-			}
 
 			cmd.Parameters.Add(param);
 		}

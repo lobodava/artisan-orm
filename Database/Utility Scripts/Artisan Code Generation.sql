@@ -1,10 +1,11 @@
 /*		Code Generation via SQL!  :)
- 
+	
 	1.	Open the script in Sql Server Management Studio or Visual Studio.
-	2.	Change the declared variables with the values you need.
-	3.	Boldly execute the script - it changes nothing!
-	4.	The generated code should appear in the message panel below.
-	5.	After a short revision the code can be used in the real case. 
+	2.	Set a query window to use your database.
+	3.	Change the declared variables with the values you need.
+	4.	Boldly execute the script - it changes nothing!
+	5.	The generated code should appear in the message panel below.
+	6.	After a short revision the code can be used in the real case. 
 */ 
  
 declare @NameSpacePrefix sysname = N'Tests.DAL';
@@ -21,7 +22,7 @@ set nocount on;
 
 begin -- декларация переменных 
 
-	declare @ColumnCount varchar(10);
+	declare @ColumnCount int = 0;
 
 	declare @ColumnTabCount int;
 	declare @SqlTypeTabCount int;
@@ -53,14 +54,14 @@ begin -- декларация переменных
 		Constrain		varchar(30)		,
 		Comma			varchar(1)		,
 		ClassPropLine	nvarchar(4000)	,
-		ToObjLine	nvarchar(4000)	,
+		ToObjLine		nvarchar(4000)	,
 		ToObjRowLine	nvarchar(4000)	,
 		DataTableLine	nvarchar(4000)	,
 		TableTypeLine	nvarchar(4000)	,
 		ToObjectLine	nvarchar(4000)	,
 		FunctionLine	nvarchar(4000)	
 	);
-
+	
 end;
 
 begin -- наполнение @LineSource 
@@ -102,7 +103,7 @@ begin -- наполнение @LineSource
 						
 		Method		=	'dr.' +  isnull((select Method from DataTypes where SqlType = DATA_TYPE), '###' + DATA_TYPE  + '###')
 					+ case IS_NULLABLE when 'YES' then 'Nullable' else '' end
-					+ '(i++)',	
+					/*+ '(i++)'*/,	
 		
 		C#Type		=	isnull((select C#Type from DataTypes where SqlType = DATA_TYPE), '###' + DATA_TYPE  + '###'),	
 		
@@ -117,9 +118,10 @@ begin -- наполнение @LineSource
 		TABLE_SCHEMA = @Schema
 	and TABLE_NAME = @TableName;
 	
-
 	
-	update @LineSource set Comma = '' where ColumnNo = (select max(ColumnNo) from @LineSource);
+	select @ColumnCount = count(*) from @LineSource
+	
+	update @LineSource set Comma = '' where ColumnNo = @ColumnCount;
 end;
 
 begin -- расстановка ключей (constraint) 
@@ -165,8 +167,7 @@ begin -- составление строк
 		@ColumnTabCount = max(len(ColumnName) + 2) / 4 + case when (max(len(ColumnName) + 2) % 4) = 0 then 0 else 1 end,
 		@SqlTypeTabCount = max(len(SqlType) + 2) / 4 + case when (max(len(SqlType) + 2) % 4) = 0 then 0 else 1 end,
 		@MethodTabCount = max(len(Method) + 2) / 4 + case when (max(len(Method) + 2) % 4) = 0 then 0 else 1 end,
-		@C#TypeTabCount = max(len(C#Type) + 2) / 4 + case when (max(len(C#Type) + 2) % 4) = 0 then 0 else 1 end,
-		@ColumnCount = cast(count(*) as varchar(10))
+		@C#TypeTabCount = max(len(C#Type) + 2) / 4 + case when (max(len(C#Type) + 2) % 4) = 0 then 0 else 1 end
 	from 
 		@LineSource;
 
@@ -189,27 +190,34 @@ begin -- составление строк
 			+ ColumnName + replicate ( @Tab , (@ColumnTabCount - len(ColumnName) / 4 ) )
 			+ '=	'
 			+ Method + replicate ( @Tab , (@MethodTabCount - len(Method) / 4 ) )
-			+ ',',
+			+ case ColumnNo when 1 then '(i)' + @Tab else '(++i)' end
+			+ case when ColumnNo < @ColumnCount then @Tab + ',' else '' end,
 
 		ToObjRowLine = @4Tabs
 			+ '/*' + @Tab + ColumnName + replicate ( @Tab , (@ColumnTabCount - len(ColumnName) / 4 ) ) +  cast(ColumnNo - 1 as varchar(2)) + @Tab +  '*/' + @Tab 
 			+ Method + replicate ( @Tab , (@MethodTabCount - len(Method) / 4 ) )
-			+ ',',
+			+ case ColumnNo when 1 then '(i)' + @Tab else '(++i)' end
+			+ case when ColumnNo < @ColumnCount then @Tab + ',' else '' end,
 
 
 		TableTypeLine = @Tab
 			+ ColumnName + replicate ( @Tab , (@ColumnTabCount - len(ColumnName) / 4 ) )
 			+ SqlType	 + replicate ( @Tab , (@SqlTypeTabCount - len(SqlType) / 4 ) )
-			+ IsNullable + replicate ( @Tab , (3 - len(IsNullable) / 4 ) )
+			+ replicate ( @Tab , (2 - len(IsNullable) / 4 ) ) + IsNullable + @Tab 
 			+ Constrain
 			+ Comma,
 
-		DataTableLine = @3Tabs
-			+ 'table.Columns.Add(	"' + ColumnName + '"' + replicate ( @Tab , (@ColumnTabCount + 0 - (len(ColumnName) + 2) / 4 ) ) 
-			+ ',	typeof( ' + C#Type + replicate ( @Tab , (@C#TypeTabCount + 2 - (len(C#Type) + 8 ) / 4 ) ) + '));',
+		--DataTableLine = @3Tabs
+		--	+ 'table.Columns.Add(	"' + ColumnName + '"' + replicate ( @Tab , (@ColumnTabCount + 0 - (len(ColumnName) + 2) / 4 ) ) 
+		--	+ ',	typeof( ' + C#Type + replicate ( @Tab , (@C#TypeTabCount + 2 - (len(C#Type) + 8 ) / 4 ) ) + '));',
+
+		DataTableLine = @4Tabs
+			+ '.AddColumn< '+ C#Type + replicate ( @Tab , (@C#TypeTabCount + 2 - (len(C#Type) + 8 ) / 4 ) ) + '>(	"' 
+			+ ColumnName + '"' + replicate ( @Tab , (@ColumnTabCount + 0 - (len(ColumnName) + 2) / 4 ) ) + ')'
+			+ case when ColumnNo = @ColumnCount then ';' else '' end,
 
 		ToObjectLine = @4Tabs
-			+ 'obj.' + ColumnName + replicate ( @Tab , (@ColumnTabCount + 2 - (len('obj.' + ColumnName) ) / 4 ) ) + Comma,
+			+ 'obj.' + ColumnName + replicate ( @Tab , (@ColumnTabCount + 1 - (len('obj.' + ColumnName) ) / 4 ) ) + Comma,
 			
 		FunctionLine = @2Tabs
 			+ ColumnName + replicate ( @Tab , (@ColumnTabCount - len(ColumnName) / 4 ) ) + Comma;
@@ -269,7 +277,9 @@ begin
 end;	
 
 raiserror(	
-'			};
+'
+				//ExtraInfo = ++i < dr.FieldCount ? dr.GetStringNullable(i) : null
+			};
 		}
 '
 ,0,1);
@@ -282,10 +292,10 @@ raiserror(	-- CreateObjectRow
 		{
 			var i = 0;
 			
-			return new ObjectRow 
+			return new ObjectRow(%d) 
 			{
 '
-,0,1);
+,0,1, @ColumnCount );
 
 set @n = 1;
 while (1=1)
@@ -307,7 +317,7 @@ raiserror(	-- Additional Create and  CreateDataTable header
 '	
 		public static DataTable CreateDataTable()
 		{
-			var table = new DataTable("%sTableType");
+			return new DataTable("%sTableType")
 			
 '
 ,0,1, @ObjectName, @ObjectName);
@@ -322,7 +332,6 @@ end;
  
 raiserror(	-- CreateDataRow
 '
-			return table;
 		}
 
 		public static Object[] CreateDataRow(%s obj)
