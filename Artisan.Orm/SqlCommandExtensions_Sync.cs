@@ -472,5 +472,50 @@ namespace Artisan.Orm
 
 		#endregion 
 	
+
+		#region [ ReadToTree, ReadToTreeList ]
+		
+		public static T ReadToTree<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return cmd.ReadToListOfObjects<T>(createFunc, list).ToTree(hierarchicallySorted);
+		}
+
+		public static T ReadToTree<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return cmd.ReadToEnumerableObjects<T>(createFunc).ToTree(hierarchicallySorted);
+		}
+
+		public static T ReadToTree<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false)  where T: class, INode<T>
+		{
+			return cmd.ReadToListOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), list).ToTree(hierarchicallySorted);
+		}
+		
+		public static T ReadToTree<T>(this SqlCommand cmd, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return cmd.ReadToEnumerableObjects<T>(MappingManager.GetCreateObjectFunc<T>()).ToTree(hierarchicallySorted);
+		}
+		
+		public static IList<T> ReadToTreeList<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return cmd.ReadToListOfObjects<T>(createFunc, list).ToTreeList(hierarchicallySorted);
+		}
+
+		public static IList<T> ReadToTreeList<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return cmd.ReadToEnumerableObjects<T>(createFunc).ToTreeList(hierarchicallySorted);
+		}
+
+		public static IList<T> ReadToTreeList<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false)  where T: class, INode<T>
+		{
+			return cmd.ReadToListOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), list).ToTreeList(hierarchicallySorted);
+		}
+		
+		public static IList<T> ReadToTreeList<T>(this SqlCommand cmd, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return cmd.ReadToEnumerableObjects<T>(MappingManager.GetCreateObjectFunc<T>()).ToTreeList(hierarchicallySorted);
+		}
+
+		#endregion 
+
 	}
 }

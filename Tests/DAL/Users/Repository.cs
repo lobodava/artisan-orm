@@ -233,11 +233,17 @@ namespace Tests.DAL.Users
 
 		public Boolean DeleteUser(Int32 userId)
 		{
-			var returnValue = ExecuteCommand(cmd =>
+			//var returnValue = ExecuteCommand(cmd =>
+			//{
+			//	cmd.UseProcedure("dbo.DeleteUser");
+			//	cmd.AddIntParam("@UserId", userId);
+			//});
+
+			var returnValue = Execute("dbo.DeleteUser", cmd =>
 			{
-				cmd.UseProcedure("dbo.DeleteUser");
 				cmd.AddIntParam("@UserId", userId);
 			});
+
 			
 			if (returnValue == 1)
 				throw new DataReplyException(DataReplyStatus.Fail, "UNDELETABLE", "The Heros can not be deleted", userId);
@@ -251,9 +257,14 @@ namespace Tests.DAL.Users
 
 		public async Task<Boolean> DeleteUserAsync(Int32 userId)
 		{
-			var returnValue = await ExecuteCommandAsync(cmd =>
+			//var returnValue = await ExecuteCommandAsync(cmd =>
+			//{
+			//	cmd.UseProcedure("dbo.DeleteUser");
+			//	cmd.AddIntParam("@UserId", userId);
+			//});
+
+			var returnValue = await ExecuteAsync("dbo.DeleteUser", cmd =>
 			{
-				cmd.UseProcedure("dbo.DeleteUser");
 				cmd.AddIntParam("@UserId", userId);
 			});
 			

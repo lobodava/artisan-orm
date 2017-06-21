@@ -495,11 +495,12 @@ namespace Tests.Tests
 
 			_repository.BeginTransaction(tran =>
 			{
-				_repository.ExecuteCommand(cmd =>
-				{
-					cmd.UseSql($"delete from Users where Id = {id}");
+				//_repository.ExecuteCommand(cmd =>
+				//{
+				//	cmd.UseSql($"delete from Users where Id = {id}");
+				//});
 
-				});
+				_repository.Execute("delete from Users where Id = @Id", cmd => cmd.AddIntParam("@Id", id));
 
 				//tran.Rollback();
 			});

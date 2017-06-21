@@ -336,7 +336,7 @@ namespace Artisan.Orm
 		#endregion
 
 
-		#region [ ReadToDictionary, ReadAsDictionary ]
+		#region [ ReadToDictionaryAsync, ReadAsDictionaryAsync ]
 
 		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc) 
 		{
@@ -370,6 +370,51 @@ namespace Artisan.Orm
 		}
 
 		#endregion 
+
+
+		#region [ ReadToTree, ReadToTreeList ]
+		
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, list)).ToTree(hierarchicallySorted);
+		}
+
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, null)).ToTree(hierarchicallySorted);
+		}
+
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false)  where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list)).ToTree(hierarchicallySorted);
+		}
+		
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null)).ToTree(hierarchicallySorted);
+		}
+		
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, list)).ToTreeList(hierarchicallySorted);
+		}
+
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, null)).ToTreeList(hierarchicallySorted);
+		}
+
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false)  where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list)).ToTreeList(hierarchicallySorted);
+		}
+		
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null)).ToTreeList(hierarchicallySorted);
+		}
+
+		#endregion
 
 	}
 }

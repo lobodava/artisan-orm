@@ -80,12 +80,14 @@ namespace Tests.DAL.Records
 
 		public IList<Record> GetRecords()
 		{
-			return GetByCommand(cmd =>
-			{
-				cmd.UseProcedure("dbo.GetRecords");
+			return ReadToList<Record>("dbo.GetRecords");
 
-				return cmd.ReadToList<Record>();
-			});
+			//return GetByCommand(cmd =>
+			//{
+			//	cmd.UseProcedure("dbo.GetRecords");
+
+			//	return cmd.ReadToList<Record>();
+			//});
 		}
 
 		public IList<Record> GetRecordsWithAutoMapping()

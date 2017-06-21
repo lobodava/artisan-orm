@@ -829,6 +829,14 @@ namespace Artisan.Orm
 
 		public static SqlParameter ReturnValueParam(this SqlCommand cmd)
 		{
+			if (!cmd.Parameters.Contains("ReturnValue"))
+				cmd.AddReturnValueParam();
+
+			return cmd.Parameters["ReturnValue"];
+		}
+
+		public static void AddReturnValueParam(this SqlCommand cmd)
+		{
 			var returnValueParam = new SqlParameter
 			{
 				ParameterName = "ReturnValue",
@@ -836,15 +844,20 @@ namespace Artisan.Orm
 				SqlDbType = SqlDbType.Int,
 			};
 
-			cmd.Parameters.Add(returnValueParam);
+		//	cmd.Parameters.Add(returnValueParam);
 
-			return returnValueParam;
+			cmd.Parameters.Insert(0, returnValueParam);
+		}
+
+		public static SqlParameter GetReturnValueParam(this SqlCommand cmd)
+		{
+			return cmd.Parameters.Contains("ReturnValue") ? cmd.Parameters["ReturnValue"] : null;
 		}
 
 
 		internal static bool IsSqlText(string sql)
 		{
-			return (Regex.IsMatch(sql, @"\bselect|insert|update|delete|merge\b", RegexOptions.IgnoreCase));
+			return (Regex.IsMatch(sql, @"\bselect\b|\binsert\b|\bupdate\b|\bdelete\b|\bmerge\b", RegexOptions.IgnoreCase));
 		}
 
 		internal static void ConfigureCommand(this SqlCommand cmd, string sql, params SqlParameter[] sqlParameters)
@@ -857,5 +870,17 @@ namespace Artisan.Orm
 			foreach (var param in sqlParameters)
 				cmd.Parameters.Add(param);
 		}
+
+		internal static void ConfigureCommand(this SqlCommand cmd, string sql, Action<SqlCommand> action)
+		{
+			if(IsSqlText(sql))
+				cmd.UseSql(sql);
+			else
+				cmd.UseProcedure(sql);
+
+			action(cmd);
+		}
+
+
 	}
 }

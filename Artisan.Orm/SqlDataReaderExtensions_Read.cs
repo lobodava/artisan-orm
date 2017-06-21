@@ -218,6 +218,67 @@ namespace Artisan.Orm
 		#endregion
 		
 
+		#region [ ReadToEnumerable, ReadAsEnumerable ]
+		
+		private static IEnumerable<T> ReadToEnumerableOfValues<T>(this SqlDataReader dr, bool getNextResult = true)
+		{
+			var type = typeof(T);
+			var isNullableValueType = type.IsNullableValueType();
+			
+			if (isNullableValueType)
+			{
+				var underlyingType = type.GetUnderlyingType();
+				while (dr.Read())
+					yield return dr.IsDBNull(0) ? default(T) : GetValue<T>(dr, underlyingType);
+			}
+			else
+			{
+				while (dr.Read())
+					yield return GetValue<T>(dr, type);
+			}
+
+			if (getNextResult) dr.NextResult();
+		}
+
+		private static IEnumerable<T> ReadToEnumerableOfObjects<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true)
+		{
+			while (dr.Read()) 
+				yield return createFunc(dr);
+
+			if (getNextResult) dr.NextResult();
+		}
+		
+		public static IEnumerable<T> ReadToEnumerable<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
+		{
+			if (typeof(T).IsSimpleType())
+				return dr.ReadToEnumerableOfValues<T>(getNextResult);
+
+			return dr.ReadToEnumerableOfObjects<T>(createFunc, getNextResult);
+		}
+		
+		public static IEnumerable<T> ReadToEnumerable<T>(this SqlDataReader dr, bool getNextResult = true)
+		{
+			if (typeof(T).IsSimpleType())
+				return dr.ReadToEnumerableOfValues<T>(getNextResult);
+
+			return dr.ReadToEnumerableOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
+		}
+		
+		public static IEnumerable<T> ReadAsEnumerable<T>(this SqlDataReader dr, bool getNextResult = true)
+		{
+			if (typeof(T).IsSimpleType())
+				return dr.ReadToEnumerableOfValues<T>(getNextResult);
+			
+			var key = GetAutoCreateObjectFuncKey<T>(dr);
+			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key); 
+
+			return dr.ReadToEnumerableOfObjects<T>(autoMappingFunc, getNextResult);
+		}
+		
+		#endregion
+		
+
+
 		#region [ ReadToObjectRow(s), ReadAsObjectRow(s) ]
 
 		public static ObjectRow ReadToObjectRow(this SqlDataReader dr, Func<SqlDataReader, ObjectRow> createFunc, bool getNextResult = true) 
@@ -397,5 +458,42 @@ namespace Artisan.Orm
 		
 		#endregion 
 		
+
+		#region [ ReadToTree, ReadToTreeList ]
+
+		public static T ReadToTree<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return dr.ReadToListOfObjects<T>(createFunc, list, getNextResult).ToTree(hierarchicallySorted);
+		}
+		
+		public static T ReadToTree<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return dr.ReadToEnumerableOfObjects<T>(createFunc, getNextResult).ToTree(hierarchicallySorted);
+		}
+
+		public static T ReadToTree<T>(this SqlDataReader dr, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return dr.ReadToEnumerableOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), getNextResult).ToTree(hierarchicallySorted);
+		}
+
+
+		public static IList<T> ReadToTreeList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return dr.ReadToListOfObjects<T>(createFunc, list, getNextResult).ToTreeList(hierarchicallySorted);
+		}
+		
+		public static IList<T> ReadToTreeList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return dr.ReadToEnumerableOfObjects<T>(createFunc, getNextResult).ToTreeList(hierarchicallySorted);
+		}
+
+		public static IList<T> ReadToTreeList<T>(this SqlDataReader dr, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
+		{
+			return dr.ReadToEnumerableOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), getNextResult).ToTreeList(hierarchicallySorted);
+		}
+
+		
+		#endregion 
+
 	}
 }
