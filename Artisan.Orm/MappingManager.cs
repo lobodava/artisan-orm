@@ -230,9 +230,6 @@ namespace Artisan.Orm
 		}
 
 		#region [ Get Dependent Assemblies ]
-		
-		// 
-		
 
 		private static IEnumerable<Assembly> GetCurrentAndDependentAssemblies()
 		{
