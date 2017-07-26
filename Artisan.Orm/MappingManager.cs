@@ -217,7 +217,6 @@ namespace Artisan.Orm
 
 			return false;
 		}
-		
 
 		private static IEnumerable<Type> GetTypesWithMapperForAttribute()
 		{
@@ -230,18 +229,24 @@ namespace Artisan.Orm
 			}
 		}
 
-
 		#region [ Get Dependent Assemblies ]
 		
-		// http://stackoverflow.com/a/8850495/623190
+		// 
+		
 
 		private static IEnumerable<Assembly> GetCurrentAndDependentAssemblies()
 		{
-			var currentAssembly =  typeof(MappingManager).Assembly;
+			var currentAssembly = typeof(MappingManager).Assembly;
 
 			return AppDomain.CurrentDomain.GetAssemblies()
+
+				// http://stackoverflow.com/a/8850495/623190
 				.Where(a => GetNamesOfAssembliesReferencedBy(a).Contains(currentAssembly.FullName))
-				.Concat(new[] { currentAssembly });
+				.Concat(new[] { currentAssembly })
+
+				// https://www.codeproject.com/Articles/1155836/Artisan-Orm-or-How-To-Reinvent-the-Wheel?msg=5419092#xx5419092xx
+				.GroupBy(a => a.FullName)
+				.Select(x => x.First());
 		}
 
 		public static IEnumerable<string> GetNamesOfAssembliesReferencedBy(Assembly assembly)
