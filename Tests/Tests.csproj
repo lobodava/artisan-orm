@@ -58,6 +58,8 @@
   </Choose>
   <ItemGroup>
     <Compile Include="DAL\ByteArrayConverter.cs" />
+    <Compile Include="DAL\Folders\Models\Folder.cs" />
+    <Compile Include="DAL\Folders\Repository.cs" />
     <Compile Include="DAL\GrandRecords\Models\ChildRecord.cs" />
     <Compile Include="DAL\GrandRecords\Models\RecordType.cs" />
     <Compile Include="DAL\GrandRecords\Models\GrandRecord.cs" />
@@ -69,6 +71,7 @@
     <Compile Include="Tests\CommandReadTest.cs" />
     <Compile Include="DataServices\DataServiceBase.cs" />
     <Compile Include="DataServices\UserDataService.cs" />
+    <Compile Include="Tests\FolderTests.cs" />
     <Compile Include="Tests\ReadDictionaryTest.cs" />
     <Compile Include="Tests\UserDataServiceTest.cs" />
     <Compile Include="Tests\SqlParemeterTest.cs" />

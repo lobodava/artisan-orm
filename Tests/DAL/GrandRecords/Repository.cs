@@ -21,10 +21,7 @@ namespace Tests.DAL.GrandRecords
 
 				cmd.AddIntParam("@Id", id);
 
-				return cmd.GetByReader(reader =>
-				{
-					return ReadGrandRecord(reader);
-				});
+				return cmd.GetByReader(ReadGrandRecord);
 			});
 		}
 		

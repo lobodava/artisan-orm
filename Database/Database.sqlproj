@@ -72,10 +72,11 @@
     <Folder Include="2. Views" />
     <Folder Include="4. Types\Common" />
     <Folder Include="5. Procedures\SqlParameters" />
+    <Folder Include="5. Procedures\Folders" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Artisan.publish.xml" />
-    <None Include="6. Post-Deployment\RecordTypes.sql" />
+    <None Include="6. Post-Deployment\4. RecordTypes.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Utility Scripts\Artisan Code Generation.sql" />
@@ -99,7 +100,7 @@
     <Build Include="1. Tables\Records\4. RecordTypes.sql" />
     <Build Include="1. Tables\Users\1. Users.sql" />
     <Build Include="1. Tables\Users\2. Roles.sql" />
-    <None Include="6. Post-Deployment\Roles.sql" />
+    <None Include="6. Post-Deployment\2. Roles.sql" />
     <Build Include="1. Tables\Users\3. UserRoles.sql" />
     <Build Include="4. Types\UserTableType.sql" />
     <Build Include="5. Procedures\Users\GetUserById.sql" />
@@ -128,5 +129,24 @@
     <Build Include="5. Procedures\SqlParameters\GetDateTimeParams.sql" />
     <Build Include="5. Procedures\SqlParameters\GetGuidAndRowVersionParams.sql" />
     <Build Include="4. Types\Common\BigIntIdTableType.sql" />
+    <Build Include="1. Tables\Users\4. Folders.sql" />
+    <Build Include="3. Functions\GetHidCode.sql" />
+    <Build Include="4. Types\FolderTableType.sql" />
+    <Build Include="5. Procedures\Folders\DeleteFolder.sql" />
+    <Build Include="5. Procedures\Folders\FindFoldersWithParents.sql" />
+    <Build Include="5. Procedures\Folders\GenerateFolders.sql" />
+    <Build Include="5. Procedures\Folders\GetFolderById.sql" />
+    <Build Include="5. Procedures\Folders\GetFolderParents.sql" />
+    <Build Include="5. Procedures\Folders\GetFolderWithSubFolders.sql" />
+    <Build Include="5. Procedures\Folders\GetImmediateSubFolders.sql" />
+    <Build Include="5. Procedures\Folders\GetNextSiblingFolder.sql" />
+    <Build Include="5. Procedures\Folders\GetPreviousSiblingFolder.sql" />
+    <Build Include="5. Procedures\Folders\GetUserRootFolder.sql" />
+    <Build Include="5. Procedures\Folders\ReculcSubFolderHids.sql" />
+    <Build Include="5. Procedures\Folders\SaveFolder.sql" />
+    <None Include="6. Post-Deployment\1. Users.sql" />
+    <None Include="6. Post-Deployment\6. Sequence reset.sql" />
+    <None Include="6. Post-Deployment\3. UserRoles.sql" />
+    <None Include="6. Post-Deployment\5. Records.sql" />
   </ItemGroup>
 </Project>

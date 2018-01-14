@@ -199,6 +199,8 @@ namespace Tests.Tests
 								f = true;
 						}
 
+						Assert.IsFalse(f);
+
 						sw.Stop();
 
 						Console.WriteLine($" type == typeof(Int32) done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one  type == typeof(Int32)" );

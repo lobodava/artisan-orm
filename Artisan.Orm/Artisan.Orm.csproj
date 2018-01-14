@@ -11,6 +11,7 @@
     <AssemblyName>Artisan.Orm</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,6 +29,10 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>6</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Logo.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -38,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TreeExtensions.cs" />
     <Compile Include="INode.cs" />
     <Compile Include="ConnectionStringHelper.cs" />
     <Compile Include="DataReplyException.cs" />
@@ -60,6 +66,9 @@
     <Compile Include="ObjectRows.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="StringExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Logo.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

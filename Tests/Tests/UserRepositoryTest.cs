@@ -351,7 +351,7 @@ namespace Tests.Tests
 				Console.WriteLine();
 				Console.Write(JsonConvert.SerializeObject(ex.Messages));
 			}
-			catch (Exception ex)
+			catch
 			{
 				Assert.Fail();
 			}
@@ -460,7 +460,7 @@ namespace Tests.Tests
 					Assert.Fail();
 				}
 			}
-			catch (Exception ex)
+			catch
 			{
 				Assert.Fail();
 			}
