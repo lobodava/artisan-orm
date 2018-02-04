@@ -32,7 +32,8 @@
     <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Logo.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -66,9 +67,6 @@
     <Compile Include="ObjectRows.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="StringExtensions.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Logo.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
