@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Configuration;
 using System.Data.SqlClient;
+using System.IO;
+using Microsoft.Extensions.Configuration;
 using static System.String;
 
 namespace Artisan.Orm
@@ -19,59 +21,99 @@ namespace Artisan.Orm
 			}
 			
 			string connectionStringKey = $"{MachineName}.{activeSolutionConfiguration ?? "null"}.{connectionStringName}";
-			
-			string connectionString;
 
-			if (ConnectionStrings.TryGetValue(connectionStringKey, out connectionString))
+			if (ConnectionStrings.TryGetValue(connectionStringKey, out var connectionString))
 			{
 				return connectionString; 
 			}
 			
-			string tryConnectionStringName;
-			ConnectionStringSettings settings = null;
+			if (IsNullOrWhiteSpace(AppContext.TargetFrameworkName))
+				connectionString = GetConnectionStringForNetCore(connectionStringName, activeSolutionConfiguration);
+			else
+				connectionString = GetConnectionStringForNetFramework(connectionStringName, activeSolutionConfiguration);
 
+			ConnectionStrings.TryAdd(connectionStringKey, connectionString);
+
+			return connectionString;
+		}
+
+		private static string GetConnectionStringForNetCore(string connectionStringName, string activeSolutionConfiguration)
+		{
+			var builder = new ConfigurationBuilder()
+			.SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json");
+			//.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+			
+			var config = builder.Build();
+
+			string connectionString;
+			string tryConnectionStringName;
+			var connectionStrings = config.GetSection("ConnectionStrings");
 
 			if (IsNullOrWhiteSpace(activeSolutionConfiguration))
 			{
 				tryConnectionStringName = $"{MachineName}.{connectionStringName}";
-				settings =	ConfigurationManager.ConnectionStrings[tryConnectionStringName] ??
+				connectionString = connectionStrings[tryConnectionStringName] ?? connectionStrings[connectionStringName];
+			}
+			else
+			{
+				tryConnectionStringName = $"{MachineName}.{activeSolutionConfiguration}.{connectionStringName}";
+				connectionString = connectionStrings[tryConnectionStringName];
+
+				if (connectionString == null)
+				{
+					tryConnectionStringName = $"{MachineName}.{connectionStringName}";
+					connectionString = connectionStrings[tryConnectionStringName];
+
+					if (connectionString == null)
+					{
+						tryConnectionStringName = $"{activeSolutionConfiguration}.{connectionStringName}";
+						connectionString = connectionStrings[tryConnectionStringName] ?? connectionStrings[connectionStringName];
+					}
+				}
+			}
+
+			if (connectionString == null)
+				throw new SettingsPropertyNotFoundException($"ConnectionString with name '{connectionStringName}' not found");
+
+			return connectionString;
+		}
+
+
+		private static string GetConnectionStringForNetFramework(string connectionStringName, string activeSolutionConfiguration)
+		{
+			string tryConnectionStringName;
+			ConnectionStringSettings settings;
+
+			if (IsNullOrWhiteSpace(activeSolutionConfiguration))
+			{
+				tryConnectionStringName = $"{MachineName}.{connectionStringName}";
+				settings = ConfigurationManager.ConnectionStrings[tryConnectionStringName] ??
 							ConfigurationManager.ConnectionStrings[connectionStringName];
 			}
 			else
 			{
 				tryConnectionStringName = $"{MachineName}.{activeSolutionConfiguration}.{connectionStringName}";
-				settings =	ConfigurationManager.ConnectionStrings[tryConnectionStringName];
+				settings = ConfigurationManager.ConnectionStrings[tryConnectionStringName];
 
-				if (settings == null) 
+				if (settings == null)
 				{
 					tryConnectionStringName = $"{MachineName}.{connectionStringName}";
-					settings =	ConfigurationManager.ConnectionStrings[tryConnectionStringName];
+					settings = ConfigurationManager.ConnectionStrings[tryConnectionStringName];
 
-					if (settings == null) 
+					if (settings == null)
 					{
 						tryConnectionStringName = $"{activeSolutionConfiguration}.{connectionStringName}";
-						settings =	ConfigurationManager.ConnectionStrings[tryConnectionStringName] ??
+						settings = ConfigurationManager.ConnectionStrings[tryConnectionStringName] ??
 									ConfigurationManager.ConnectionStrings[connectionStringName];
 					}
 				}
 			}
 
-			if (settings == null) 
+			if (settings == null)
 				throw new SettingsPropertyNotFoundException($"ConnectionString with name '{connectionStringName}' not found");
 
-
-			//https://msdn.microsoft.com/ru-ru/library/hh211418(v=vs.110).aspx
-			//Starting .NET Framework 4,5, there is no need to add Asynchronous Processing=true into connection string.
-
-			//_connectionString = new SqlConnectionStringBuilder(settings.ConnectionString) {
-			//	AsynchronousProcessing = true
-			//}.ToString();
-
-			connectionString = settings.ConnectionString;
-
-			ConnectionStrings.TryAdd(connectionStringKey, connectionString);
-
-			return connectionString;
+			return settings.ConnectionString;
 		}
 
 		public static string GetServerName(string connectionString)
