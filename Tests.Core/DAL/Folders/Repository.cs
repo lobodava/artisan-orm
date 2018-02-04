@@ -10,6 +10,9 @@ namespace Tests.DAL.Folders
 
 	public class Repository: RepositoryBase
 	{
+
+
+
 		public Folder GetFolderById(int id)
 		{
 			return ReadTo<Folder>("dbo.GetFolderById", cmd => cmd.AddIntParam("@Id", id)); 
