@@ -1,6 +1,8 @@
 
 
-# [![Artisan.Orm Logo](https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png)](http://www.nuget.org/packages/Artisan.ORM)<br/><br/>Artisan.Orm<br/><br/>ADO.NET Micro-ORM to SQL Server
+# [![Artisan.Orm Logo](https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png)](http://www.nuget.org/packages/Artisan.ORM) Artisan.Orm
+
+## ADO.NET Micro-ORM to SQL Server.
 
 First there was a desire to save a graph of objects for one access to the database: 
 * one command on the client,
