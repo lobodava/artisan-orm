@@ -23,7 +23,7 @@ Full information about Artisan.Orm is available in [documentation Wiki](https://
 
 The most interesting articles from Wiki are:
 
-* [Simple Sample](https://github.com/lobodava/artisan-orm/wiki/Simple-Sample)
+* [The Sample](https://github.com/lobodava/artisan-orm/wiki/The-Sample)
 * [Getting Started](https://github.com/lobodava/artisan-orm/wiki/Getting-started)
 * [Read Methods Understanding](https://github.com/lobodava/artisan-orm/wiki/Read-Methods-Understanding)
 * [Mappers](https://github.com/lobodava/artisan-orm/wiki/Mappers)
