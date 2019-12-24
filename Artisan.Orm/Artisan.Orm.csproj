@@ -2,33 +2,46 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <Authors>Vadim Loboda</Authors>
-    <Description>ADO.NET Micro-ORM to SQL Server, implemented as a .Net Standard 2.0 library.
+    <Description>ADO.NET Micro-ORM to SQL Server, implemented as a .Net Standard 2.0.3 library.
 
 This library is designed to use stored procedures, table-valued parameters and structured static mappers, with the goal of reading and saving of complex object graphs at once in the fast, convinient and efficient way.
 
 Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-reinvent-the-wheel     
 </Description>
-    <Copyright>Copyright 2016-2018</Copyright>
-    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <Copyright>Copyright 2016-2020</Copyright>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/lobodava/artisan-orm</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png</PackageIconUrl>
+    <PackageIconUrl></PackageIconUrl>
     <RepositoryUrl>https://github.com/lobodava/artisan-orm</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>ado.net orm micro-orm sql server mssql</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
-    <PackageReleaseNotes>The library has been rebuilt for the .Net Standard 2.0 specification.</PackageReleaseNotes>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
+    <PackageReleaseNotes>The library has been rebuilt for the .Net Standard 2.0.3 specification.
+System.Data.SqlClient library replaced with Microsoft.Data.SqlClient.</PackageReleaseNotes>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageIcon>Logo.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.4.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="1.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

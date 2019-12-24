@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -829,29 +829,27 @@ namespace Artisan.Orm
 
 		public static SqlParameter ReturnValueParam(this SqlCommand cmd)
 		{
-			if (!cmd.Parameters.Contains("ReturnValue"))
+			if (!cmd.Parameters.Contains("@ReturnValue"))
 				cmd.AddReturnValueParam();
 
-			return cmd.Parameters["ReturnValue"];
+			return cmd.Parameters["@ReturnValue"];
 		}
 
 		public static void AddReturnValueParam(this SqlCommand cmd)
 		{
 			var returnValueParam = new SqlParameter
 			{
-				ParameterName = "ReturnValue",
+				ParameterName = "@ReturnValue",
 				Direction = ParameterDirection.ReturnValue,
 				SqlDbType = SqlDbType.Int,
 			};
 
-		//	cmd.Parameters.Add(returnValueParam);
-
-			cmd.Parameters.Insert(0, returnValueParam);
+			cmd.Parameters.Add(returnValueParam);
 		}
 
 		public static SqlParameter GetReturnValueParam(this SqlCommand cmd)
 		{
-			return cmd.Parameters.Contains("ReturnValue") ? cmd.Parameters["ReturnValue"] : null;
+			return cmd.Parameters.Contains("@ReturnValue") ? cmd.Parameters["@ReturnValue"] : null;
 		}
 
 

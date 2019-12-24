@@ -134,7 +134,9 @@
     <Build Include="4. Types\FolderTableType.sql" />
     <Build Include="5. Procedures\Folders\DeleteFolder.sql" />
     <Build Include="5. Procedures\Folders\FindFoldersWithParents.sql" />
-    <Build Include="5. Procedures\Folders\GenerateFolders.sql" />
+    <Build Include="5. Procedures\Folders\GenerateFolders.sql">
+      <SuppressTSqlWarnings>71502</SuppressTSqlWarnings>
+    </Build>
     <Build Include="5. Procedures\Folders\GetFolderById.sql" />
     <Build Include="5. Procedures\Folders\GetFolderParents.sql" />
     <Build Include="5. Procedures\Folders\GetFolderWithSubFolders.sql" />

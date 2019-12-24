@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Configuration;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using static System.String;
@@ -27,7 +27,7 @@ namespace Artisan.Orm
 				return connectionString; 
 			}
 			
-			if (IsNullOrWhiteSpace(AppContext.TargetFrameworkName))
+			if (IsNullOrWhiteSpace(AppContext.TargetFrameworkName) || AppContext.TargetFrameworkName.Contains("Core"))
 				connectionString = GetConnectionStringForNetCore(connectionStringName, activeSolutionConfiguration);
 			else
 				connectionString = GetConnectionStringForNetFramework(connectionStringName, activeSolutionConfiguration);
@@ -41,7 +41,7 @@ namespace Artisan.Orm
 		{
 			var builder = new ConfigurationBuilder()
 			.SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json");
+			.AddJsonFile("appsettings.json");
 			//.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 			
 			var config = builder.Build();
