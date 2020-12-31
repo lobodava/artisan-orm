@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
@@ -30,6 +31,21 @@ namespace Artisan.Orm
 			}
 
 			return autoMappingFunc(dr);
+		}
+
+		public static dynamic CreateDynamic(this SqlDataReader dr)
+		{
+			dynamic expando = new ExpandoObject();
+			var dict = expando as IDictionary<string, object>;
+			
+			for (var i = 0; i < dr.FieldCount; i++)
+			{
+				var columnName = dr.GetName(i);
+				var value = dr.GetValue(i);
+				dict.Add(columnName, value == DBNull.Value ? null : value);
+			}	
+
+			return expando;
 		}
 
 		#endregion

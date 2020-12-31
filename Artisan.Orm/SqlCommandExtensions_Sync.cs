@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
@@ -127,6 +128,17 @@ namespace Artisan.Orm
 			}
 		}
 
+		public static dynamic ReadDynamic(this SqlCommand cmd)
+		{
+			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleRow);
+
+			using (var dr = cmd.ExecuteReader(readerFlags))
+			{
+				return dr.Read() ? dr.CreateDynamic() : null;
+			}
+		}
+		
+
 		#endregion
 
 
@@ -221,7 +233,31 @@ namespace Artisan.Orm
 
 			return cmd.ReadToListOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), null);
 		}
-		
+
+		public static IList<dynamic> ReadDynamicList(this SqlCommand cmd, IList<dynamic> list) 
+		{
+			if (list == null)
+				list = new List<dynamic>();
+
+			var iList = (IList)list;
+
+			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
+
+			using (var dr = cmd.ExecuteReader(readerFlags))
+			{
+				while (dr.Read())
+				{
+					iList.Add(dr.CreateDynamic());
+				}
+			}
+
+			return list;
+		}
+
+		public static IList<dynamic> ReadDynamicList(this SqlCommand cmd) 
+		{
+			return cmd.ReadDynamicList(null);
+		}
 
 		public static IList<T> ReadAsList<T>(this SqlCommand cmd, IList<T> list) 
 		{
@@ -263,6 +299,11 @@ namespace Artisan.Orm
 		public static T[] ReadAsArray<T>(this SqlCommand cmd)
 		{
 			return cmd.ReadAsList<T>().ToArray();
+		}
+
+		public static IList<dynamic> ReadDynamicArray(this SqlCommand cmd) 
+		{
+			return cmd.ReadDynamicList().ToArray();;
 		}
 		
 		#endregion

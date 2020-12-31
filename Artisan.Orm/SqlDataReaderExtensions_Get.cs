@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
@@ -90,14 +91,14 @@ namespace Artisan.Orm
 			return reader.IsDBNull(ordinal) ? default(decimal?) : reader.GetBigDecimal(ordinal);
 		}
 
-		public static Char GetCharacter(this SqlDataReader reader, int ordinal)
+		public static char GetCharacter(this SqlDataReader reader, int ordinal)
 		{
 			var buffer = new char[1];
 			reader.GetChars(ordinal, 0, buffer, 0, 1);
 			return buffer[0];
 		}
 
-		public static Char? GetCharacterNullable(this SqlDataReader reader, int ordinal)
+		public static char? GetCharacterNullable(this SqlDataReader reader, int ordinal)
 		{	
 			if (reader.IsDBNull(ordinal))
 				return null;
@@ -192,41 +193,41 @@ namespace Artisan.Orm
 			return (byte[])reader.GetValue(ordinal);
 		}
 
-		public static Byte[] GetByteArrayFromString(this SqlDataReader reader, int ordinal)
+		public static byte[] GetByteArrayFromString(this SqlDataReader reader, int ordinal)
 		{
 			if (reader.IsDBNull(ordinal))
-				return new Byte[] {};
+				return new byte[] {};
 
 			var ids = reader.GetStringNullable(ordinal);
 
-			if (String.IsNullOrWhiteSpace(ids))
-				return new Byte[] {};
+			if (string.IsNullOrWhiteSpace(ids))
+				return new byte[] {};
 
 			return ids.Split(',').Select(s => Convert.ToByte(s)).ToArray();
 		}
 
-		public static Int16[] GetInt16ArrayFromString(this SqlDataReader reader, int ordinal)
+		public static short[] GetInt16ArrayFromString(this SqlDataReader reader, int ordinal)
 		{
 			if (reader.IsDBNull(ordinal))
-				return new Int16[] {};
+				return new short[] {};
 
 			var ids = reader.GetString(ordinal);
 
-			if (String.IsNullOrWhiteSpace(ids))
-				return new Int16[] {};
+			if (string.IsNullOrWhiteSpace(ids))
+				return new short[] {};
 
 			return ids.Split(',').Select(s => Convert.ToInt16(s)).ToArray();
 		}
 
-		public static Int32[] GetInt32ArrayFromString(this SqlDataReader reader, int ordinal)
+		public static int[] GetInt32ArrayFromString(this SqlDataReader reader, int ordinal)
 		{
 			if (reader.IsDBNull(ordinal))
-				return new Int32[] {};
+				return new int[] {};
 
 			var ids = reader.GetString(ordinal);
 
-			if (String.IsNullOrWhiteSpace(ids))
-				return new Int32[] {};
+			if (string.IsNullOrWhiteSpace(ids))
+				return new int[] {};
 
 			return ids.Split(',').Select(s => Convert.ToInt32(s)).ToArray();
 		}

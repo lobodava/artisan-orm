@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Artisan.Orm;
@@ -597,7 +597,53 @@ namespace Tests.Tests
 			_repository.Connection.Close();
 		}
 		
+		[TestMethod]
+		public void ReadDynamicUsers()
+		{
+			dynamic user = null;
+			IList<dynamic> users = null;
 
+			_repository.Connection.Open();
+			
+			_repository.RunCommand(cmd => {
+				cmd.UseSql( "select Id, [Login], Name, Email, RowVersion from dbo.Users where Id = 1");
+
+				user = cmd.ReadDynamic();
+
+				Assert.AreEqual(user.Id, 1);
+			});
+			
+
+			var times = 1000;
+
+			var sw = new Stopwatch();
+			sw.Start();
+
+			for (int i = 0; i < times; i++)
+			{
+				_repository.RunCommand(cmd => {
+					cmd.UseSql( "select Id, [Login], Name, Email, RowVersion from dbo.Users");
+					users = cmd.ReadDynamicList();
+				});
+			}
+
+			sw.Stop();
+
+			Assert.AreEqual(user.Id, 1);
+
+			Console.WriteLine($"ReadDynamicList done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine();
+
+			_repository.RunCommand(cmd => {
+				cmd.UseSql( "select Id, [Login], Name, Email, RowVersion from dbo.Users");
+				users = cmd.ReadDynamicList();
+			});
+
+			Assert.IsTrue(users.Count > 1);
+
+			_repository.Connection.Close();
+		}
+		
 
 		
 		[TestCleanup]

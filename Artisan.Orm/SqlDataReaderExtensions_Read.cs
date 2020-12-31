@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using System.Linq;
@@ -63,6 +63,15 @@ namespace Artisan.Orm
 			return dr.ReadTo(CreateObject<T>, getNextResult);
 		}
 
+		public static dynamic ReadDynamic(this SqlDataReader dr, bool getNextResult = true) 
+		{
+			var obj = dr.Read() ? dr.CreateDynamic() : null;
+
+			if (getNextResult) dr.NextResult();
+
+			return obj;
+		}
+
 		#endregion
 		
 
@@ -105,7 +114,6 @@ namespace Artisan.Orm
 
 			return list;
 		}
-	
 
 		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true) 
 		{
@@ -150,7 +158,6 @@ namespace Artisan.Orm
 
 			return dr.ReadToListOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), null, getNextResult);
 		}
-
 
 		public static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
 		{
@@ -199,6 +206,26 @@ namespace Artisan.Orm
 			return dr.ReadAsList<T>(null, getNextResult);
 		}
 
+		public static IList<dynamic> ReadDynamicList(this SqlDataReader dr, IList<dynamic> list, bool getNextResult = true) 
+		{
+			if (list == null)
+				list = new List<dynamic>();
+
+
+			while (dr.Read())
+			{
+				list.Add(dr.CreateDynamic());
+			}
+
+			if (getNextResult) dr.NextResult();
+
+			return list;
+		}
+
+		public static IList<dynamic> ReadDynamicList(this SqlDataReader dr, bool getNextResult = true) 
+		{
+			return dr.ReadDynamicList( null, getNextResult);
+		}
 
 		public static T[] ReadToArray<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
 		{
@@ -213,6 +240,11 @@ namespace Artisan.Orm
 		public static T[] ReadAsArray<T>(this SqlDataReader dr, bool getNextResult = true)
 		{
 			return dr.ReadAsList<T>(getNextResult).ToArray();
+		}
+
+		public static dynamic[] ReadDynamicArray(this SqlDataReader dr, bool getNextResult = true)
+		{
+			return dr.ReadDynamicList(getNextResult).ToArray();
 		}
 		
 		#endregion
