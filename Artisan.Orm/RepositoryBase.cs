@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using System.Threading.Tasks;
@@ -589,7 +590,18 @@ namespace Artisan.Orm
 		
 		#endregion
 
-	
+		public void AddParams(SqlCommand cmd, dynamic parameters)
+		{
+			var dict = new Dictionary<string, object>();
+
+			foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(parameters))
+			{
+				object obj = descriptor.GetValue(parameters);
+				dict.Add(descriptor.Name, obj);
+			}
+
+			cmd.AddParams(dict);
+		}
 
 		public static void CheckForDataReplyException(SqlDataReader dr)
 		{

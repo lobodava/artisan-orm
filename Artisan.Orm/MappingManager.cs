@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -19,6 +19,8 @@ namespace Artisan.Orm
 		private static readonly ConcurrentDictionary<string, Delegate> AutoCreateObjectFuncDictionary  = new ConcurrentDictionary<string, Delegate>();
 
 		private static readonly ConcurrentDictionary<string, Tuple<Func<DataTable>, Delegate>> AutoCreateDataFuncsDictionary = new ConcurrentDictionary<string, Tuple<Func<DataTable>, Delegate>>();
+
+		private static readonly ConcurrentDictionary<string, SqlParameter[]> SqlParametersDictionary  = new ConcurrentDictionary<string, SqlParameter[]>();
 
 
 		static MappingManager()
@@ -227,6 +229,16 @@ namespace Artisan.Orm
 					yield return type;
 				}
 			}
+		}
+
+		public static bool AddSqlParameters(string key, SqlParameter[] sqlParameters)
+		{
+			return SqlParametersDictionary.TryAdd(key, sqlParameters);
+		}
+
+		public static SqlParameter[] GetSqlParameters(string key)
+		{
+			return SqlParametersDictionary.TryGetValue(key, out var collection) ? collection : null;
 		}
 
 		#region [ Get Dependent Assemblies ]

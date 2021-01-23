@@ -62,7 +62,7 @@ namespace Artisan.Orm
 
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd);
 
-            using (var dr = cmd.ExecuteReader(readerFlags))
+			using (var dr = cmd.ExecuteReader(readerFlags))
 			{
 				action(dr);
 			}

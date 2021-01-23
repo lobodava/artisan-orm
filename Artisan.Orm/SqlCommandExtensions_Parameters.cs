@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Dynamic;
 using Microsoft.Data.SqlClient;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Artisan.Orm
@@ -762,6 +764,14 @@ namespace Artisan.Orm
 			cmd.AddTableParam(parameterName, list?.AsDataTable(tableName, columnNames));
 		}
 
+		public static void AddTableParam<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list, string tableName)
+		{
+			var dataTable = list?.ToDataTable<T>();
+			if (dataTable != null)
+				dataTable.TableName = tableName;
+			cmd.AddTableParam(parameterName, dataTable);
+		}
+
 		public static void AddTableRowParam(this SqlCommand cmd, string parameterName, byte id)
 		{
 			var array = new byte[] { id };
@@ -852,6 +862,64 @@ namespace Artisan.Orm
 			return cmd.Parameters.Contains("@ReturnValue") ? cmd.Parameters["@ReturnValue"] : null;
 		}
 
+		public static void AddParams(this SqlCommand cmd, Dictionary<string, object> paramDictionary)
+		{
+			var collectionKey = cmd.CommandText;
+
+			var sqlParameters = MappingManager.GetSqlParameters(collectionKey);
+
+			if (sqlParameters == null)
+			{
+				var isConnectionClosed = true;
+				
+				try
+				{
+					isConnectionClosed = cmd.Connection.State == ConnectionState.Closed;
+
+					if (isConnectionClosed)
+						cmd.Connection.Open();
+
+					SqlCommandBuilder.DeriveParameters(cmd);
+				}
+				finally
+				{
+					if (isConnectionClosed)
+						cmd.Connection.Close();
+				}
+
+				cmd.Parameters.Remove(cmd.Parameters["@RETURN_VALUE"]);
+				
+				sqlParameters = new SqlParameter[cmd.Parameters.Count];
+				cmd.Parameters.CopyTo(sqlParameters, 0);
+
+				MappingManager.AddSqlParameters(collectionKey, sqlParameters);
+			}
+			else
+			{
+				foreach (var sqlParameter in sqlParameters)
+				{
+					var newSqlParameter = new SqlParameter(sqlParameter.ParameterName,sqlParameter.SqlDbType)
+					{
+						Size = sqlParameter.Size,
+						Direction = sqlParameter.Direction,
+						Precision = sqlParameter.Precision,
+						Scale = sqlParameter.Scale
+					};
+
+					cmd.Parameters.Add(newSqlParameter);
+				}
+			}
+
+			foreach (SqlParameter sqlParameter in cmd.Parameters)
+			{
+				var key = paramDictionary.Keys.FirstOrDefault(k =>
+					string.Equals(k, sqlParameter.ParameterName.Replace("@", ""), StringComparison.InvariantCultureIgnoreCase)
+				);
+
+				if (key != null)
+					sqlParameter.Value = paramDictionary[key] ?? DBNull.Value;
+			}
+		}
 
 		internal static bool IsSqlText(string sql)
 		{
