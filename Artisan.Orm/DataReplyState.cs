@@ -1,16 +1,12 @@
-﻿using System.Runtime.Serialization;
+﻿namespace Artisan.Orm;
 
-namespace Artisan.Orm
+public enum DataReplyStatus
 {
-	public enum DataReplyStatus
-	{
-		Ok			,
-		Fail		,
-		Missing		,
-		Validation	,
-		Concurrency	,
-		Denial		,
-		Error
-	}
-
+	Ok			,
+	Fail		,
+	Missing		,
+	Validation	,
+	Concurrency	,
+	Denial		,
+	Error
 }

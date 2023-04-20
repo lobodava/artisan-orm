@@ -4,7 +4,7 @@ as
 	select
 		Id				,
 		[Login]			,
-		Name			,
+		[Name]			,
 		Email			,
 		[RowVersion]	,
 		RoleIds			=  dbo.GetUserRoleIds(Id)

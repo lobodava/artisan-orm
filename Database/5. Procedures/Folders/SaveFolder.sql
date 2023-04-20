@@ -17,15 +17,15 @@ begin
 			@OldParentId	 int			,
 			@OldParentHid	 hierarchyid	,
 			@OldHid			 hierarchyid	,
-			@NewHid			 hierarchyid	;		
+			@NewHid			 hierarchyid	;
 
 
 		declare @FolderIds  table ( 
 			InsertedId		int			not null,
 			OldParentId		int				null,
-			OldParentHid	hierarchyid		null,	
+			OldParentHid	hierarchyid		null,
 			OldHid			hierarchyid		null,
-			NewHid			hierarchyid		null	
+			NewHid			hierarchyid		null
 		)
 
 	end;
@@ -46,7 +46,7 @@ begin
 			select
 				@UserId			= UserId,
 				@ParentHid		= Hid	,
-				@ParentHidStr	= cast(Hid as varchar(1000))		
+				@ParentHidStr	= cast(Hid as varchar(1000))
 			from
 				dbo.Folders
 			where
@@ -71,10 +71,10 @@ begin
 
 			when matched and target.UserId = @UserId then
 				update set
-					ParentId	=	source.ParentId	,						
-					[Name]		=	source.[Name]					
+					ParentId	=	source.ParentId	,	
+					[Name]		=	source.[Name]
 
-			when not matched by target and source.Id = 0  then													 	
+			when not matched by target and source.Id = 0  then
 				insert (
 					UserId		,
 					Hid			,
@@ -88,7 +88,7 @@ begin
 			output
 				inserted.Id,
 				deleted.ParentId,
-				deleted.Hid.GetAncestor(1)				
+				deleted.Hid.GetAncestor(1)
 			into 
 				@FolderIds (
 					InsertedId		,
@@ -104,7 +104,7 @@ begin
 
 			--exec dbo.ResetSubFolderHids @ParentId, @ParentHid, @UserId;
 
-			exec dbo.ReculcSubFolderHids @UserId, @ParentId, @ParentHid, @OldParentId, @OldParentHid ;
+			exec dbo.RecalcSubFolderHids @UserId, @ParentId, @ParentHid, @OldParentId, @OldParentHid ;
 
 		end
 		else
@@ -133,7 +133,7 @@ begin
 					[Name]		=	source.[Name]	,
 					ParentId	=	source.ParentId
 
-			when not matched by target and source.Id = 0  then													 	
+			when not matched by target and source.Id = 0  then
 				insert (
 					UserId		,
 					Hid			,
@@ -194,6 +194,6 @@ begin
 		);
 
 		exec dbo.GetFolderById @Id = @FolderId;
-	end;	
+	end;
 
 end;

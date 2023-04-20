@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Tests.DAL.Folders;
 using Tests.DAL.Folders.Models;
 
@@ -23,17 +18,15 @@ namespace Tests.Tests
 		[TestMethod]
 		public void GetFolderById()
 		{
-			using (var repository = new Repository())
-			{
-				var folder = repository.GetFolderById(5);
+			using var repository = new Repository();
+			var folder = repository.GetFolderById(5);
 
-				Assert.IsNotNull(folder);
-				
-				Console.WriteLine("GetFolderById returned");
-				Console.WriteLine();
+			Assert.IsNotNull(folder);
 
-				Console.Write(ToJson(folder));
-			}
+			Console.WriteLine("GetFolderById returned");
+			Console.WriteLine();
+
+			Console.Write(ToJson(folder));
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
@@ -62,7 +55,7 @@ namespace Tests.Tests
 
 			Console.WriteLine($"GetFolderWithSubFolders read {folders.Count} folders");
 			Console.WriteLine();
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 
 			for (var i = 0; i < folders.Count; i++)
@@ -111,7 +104,7 @@ namespace Tests.Tests
 
 			Console.WriteLine($"GetFolderWithSubFoldersAsObjectRows read {rows.Count} folder ObjectRows");
 			Console.WriteLine();
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 
 			Console.Write("Id, ParentId, Name, Level, HidCode, HidPath, Path");
@@ -121,7 +114,7 @@ namespace Tests.Tests
 			{
 				var level = Convert.ToInt32(row[3]);
 
-				Console.WriteLine($"{Repeat("    ", level)}{JsonConvert.SerializeObject(row)}");
+				Console.WriteLine($"{Repeat("	", level)}{JsonSerializer.Serialize(row)}");
 			}
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
@@ -130,25 +123,23 @@ namespace Tests.Tests
 		[TestMethod]
 		public void GetTreeOfFolderParents()
 		{
-			using (var repository = new Repository())
-			{
-				var folders = repository.GetFolderWithSubFolders(1);
+			using var repository = new Repository();
+			var folders = repository.GetFolderWithSubFolders(1);
 
-				var folder = folders.FirstOrDefault(f => f.Level == 5);
+			var folder = folders.FirstOrDefault(f => f.Level == 5);
 
-				Assert.IsNotNull(folder);
+			Assert.IsNotNull(folder);
 
-				folders = repository.GetFolderWithParents(folder.Id);
+			folders = repository.GetFolderWithParents(folder.Id);
 
-				Assert.IsTrue(folders.Count == 6);
+			Assert.IsTrue(folders.Count == 6);
 
-				var folderTree = folders.ToTree();
-				
-				Console.WriteLine($"GetFolderWithParents read & combined {folders.Count} folders in a tree");
-				Console.WriteLine();
+			var folderTree = folders.ToTree();
 
-				Console.Write(ToJson(folderTree));
-			}
+			Console.WriteLine($"GetFolderWithParents read & combined {folders.Count} folders in a tree");
+			Console.WriteLine();
+
+			Console.Write(ToJson(folderTree));
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
@@ -179,23 +170,13 @@ namespace Tests.Tests
 
 			Console.WriteLine($"GetFolderTree read & combined {folders.Count} folders in a tree");
 			Console.WriteLine();
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 
 			Console.Write(ToJson(folderTree));
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
-
-		private void linkParentAndFolderAction(Folder p, Folder f)
-		{
-			if (p.SubFolders == null)
-				p.SubFolders = new List<Folder>();
-
-			p.SubFolders.Add(f);
-			f.Parent = p;
-		}
-
 
 		[TestMethod]
 		public void GetFolderTreeGeneric()
@@ -208,14 +189,13 @@ namespace Tests.Tests
 			var sw = new Stopwatch();
 			sw.Start();
 
-			Action<Folder, Folder> linkParentAndFolderAction = (p, f) => 
+			static void linkParentAndFolderAction(Folder p, Folder f)
 			{
-				if (p.SubFolders == null) 
-					p.SubFolders = new List<Folder>();
+				p.SubFolders ??= new List<Folder>();
 
 				p.SubFolders.Add(f);
 				f.Parent = p;
-			};
+			}
 
 
 			var folderTree = folders.ToTree(f => f.Id, f => f.ParentId, linkParentAndFolderAction, hierarchicallySorted: true);
@@ -228,7 +208,7 @@ namespace Tests.Tests
 
 			Console.WriteLine($"ToTree combined {folders.Count} folders in a tree");
 			Console.WriteLine();
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 
 			Console.Write(ToJson(folderTree));
@@ -269,7 +249,7 @@ namespace Tests.Tests
 			
 			Console.WriteLine($"GetFolderTreeBranch read & combined {folders.Count-1} folders into a tree");
 			Console.WriteLine();
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 
 			Console.Write(ToJson(folderTree));
@@ -311,7 +291,7 @@ namespace Tests.Tests
 			Assert.IsTrue(folderTrees.Count == 2);
 
 
-			Console.WriteLine($"GetFolderTreeBranch built a tree of {folders1.Count + folders2.Count} folders for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"GetFolderTreeBranch built a tree of {folders1.Count + folders2.Count} folders for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 
 			Console.Write(ToJson(folderTrees));
@@ -352,7 +332,7 @@ namespace Tests.Tests
 			Assert.IsNotNull(folderTrees);
 			Assert.IsTrue(folderTrees.Count == 2);
 
-			Console.WriteLine($"GetTwoFolderTreeBranchesUnsorted built a tree of {folders1.Count + folders2.Count} folders for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"GetTwoFolderTreeBranchesUnsorted built a tree of {folders1.Count + folders2.Count} folders for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 
 			Console.Write(ToJson(folderTrees));
@@ -364,83 +344,81 @@ namespace Tests.Tests
 		[TestMethod]
 		public void AddAndDeleteFolder()
 		{
-			using (var repository = new Repository())
+			using var repository = new Repository();
+			repository.BeginTransaction(tran =>
 			{
-				repository.BeginTransaction(tran =>
+				var folders = repository.GetFolderWithSubFolders(1);
+
+				Console.WriteLine($"Quantity of folders found: {folders.Count}");
+				Console.WriteLine();
+
+
+				var root = folders.First();
+
+				var firstSubFolder = folders.Skip(1).First();
+				var originHidCode = firstSubFolder.HidCode;
+
+				Console.WriteLine("First subfolder of the root:");
+				Console.Write(ToJson(firstSubFolder));
+				Console.WriteLine();
+				Console.WriteLine();
+
+				var newFolder = new Folder
 				{
-					var folders = repository.GetFolderWithSubFolders(1);
+					ParentId = root.Id,
+					Name = "000"
+				};
 
-					Console.WriteLine($"Quantity of folders found: {folders.Count}");
-					Console.WriteLine();
+				var sw = new Stopwatch();
+				sw.Start();
+
+				var savedFolder = repository.SaveFolder(newFolder, withHidReorder: true);
+
+				sw.Stop();
+
+				Console.WriteLine($"The new subfolder was added to the the root for {sw.Elapsed.TotalMilliseconds:0.##} ms:");
+				Console.Write(ToJson(savedFolder));
+				Console.WriteLine();
+				Console.WriteLine();
 
 
-					var root = folders.First();
-				
-					var firstSubFolder = folders.Skip(1).First();
-					var originHidCode = firstSubFolder.HidCode;
+				var nextSibling = repository.GetNextSiblingFolder(savedFolder.Id);
 
-					Console.WriteLine("First subfolder of the root:");
-					Console.Write(ToJson(firstSubFolder));
-					Console.WriteLine();
-					Console.WriteLine();
-			
-					var newFolder = new Folder
-					{
-						ParentId = root.Id,
-						Name = "000"
-					};
+				Assert.AreEqual(nextSibling.Id, firstSubFolder.Id);
+				Assert.IsTrue(string.Compare(nextSibling.HidCode, firstSubFolder.HidCode, StringComparison.InvariantCultureIgnoreCase) > 0);
 
-					var sw = new Stopwatch();
-					sw.Start();
+				Console.WriteLine("The subfolder that was the first before the new folder was added:");
+				Console.Write(ToJson(nextSibling));
+				Console.WriteLine();
+				Console.WriteLine();
 
-					var savedFolder = repository.SaveFolder(newFolder, withHidReorder: true);
-			
-					sw.Stop();
+				sw.Restart();
 
-					Console.WriteLine($"The new subfolder was added to the the root for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms:");
-					Console.Write(ToJson(savedFolder));
-					Console.WriteLine();
-					Console.WriteLine();
-				
+				repository.DeleteFolder(savedFolder.Id, withHidReorder: true);
 
-					var nextSibling = repository.GetNextSiblingFolder(savedFolder.Id);
+				sw.Stop();
 
-					Assert.AreEqual(nextSibling.Id, firstSubFolder.Id);
-					Assert.IsTrue(String.Compare(nextSibling.HidCode, firstSubFolder.HidCode, StringComparison.InvariantCultureIgnoreCase) > 0);
+				var deletedFolder = repository.GetFolderById(savedFolder.Id);
 
-					Console.WriteLine("The subfolder that was the first before the new folder was added:");
-					Console.Write(ToJson(nextSibling));
-					Console.WriteLine();
-					Console.WriteLine();
+				Assert.IsNull(deletedFolder);
 
-					sw.Restart();
-			
-					repository.DeleteFolder(savedFolder.Id, withHidReorder: true);
+				Console.WriteLine($"The new subfolder was deleted for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+				Console.WriteLine();
 
-					sw.Stop();
-				
-					var deletedFolder = repository.GetFolderById(savedFolder.Id);
 
-					Assert.IsNull(deletedFolder);
+				var newFirstSubFolder = repository.GetFolderById(firstSubFolder.Id);
 
-					Console.WriteLine($"The new subfolder was deleted for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-					Console.WriteLine();
-				
+				Assert.AreEqual(newFirstSubFolder.Id, firstSubFolder.Id);
+				Assert.AreEqual(newFirstSubFolder.HidCode, firstSubFolder.HidCode);
 
-					var newFirstSubFolder = repository.GetFolderById(firstSubFolder.Id);
+				Console.WriteLine("The subfolder that became first again after deleting of the new folder:");
+				Console.Write(ToJson(newFirstSubFolder));
 
-					Assert.AreEqual(newFirstSubFolder.Id, firstSubFolder.Id);
-					Assert.AreEqual(newFirstSubFolder.HidCode, firstSubFolder.HidCode);
+				Assert.AreEqual(originHidCode, firstSubFolder.HidCode);
 
-					Console.WriteLine("The subfolder that became first again after deleting of the new folder:");
-					Console.Write(ToJson(newFirstSubFolder));
+				// commit transaction tran.Commit();
 
-					Assert.AreEqual(originHidCode, firstSubFolder.HidCode);
-
-					// commit transaction tran.Commit();
-
-				});
-			}
+			});
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
@@ -448,60 +426,58 @@ namespace Tests.Tests
 		[TestMethod]
 		public void EditFolder()
 		{
-			using (var repository = new Repository())
+			using var repository = new Repository();
+			repository.BeginTransaction(tran =>
 			{
-				repository.BeginTransaction(tran =>
-				{
-					var folders = repository.GetFolderWithSubFolders(1);
+				var folders = repository.GetFolderWithSubFolders(1);
 
-					Console.WriteLine($"Quantity of folders found: {folders.Count}");
-					Console.WriteLine();
+				Console.WriteLine($"Quantity of folders found: {folders.Count}");
+				Console.WriteLine();
 
 
-					var firstSubFolder = folders.Skip(1).First();
+				var firstSubFolder = folders.Skip(1).First();
 
-					var originName = firstSubFolder.Name;
-					var originHidCode = firstSubFolder.HidCode;
+				var originName = firstSubFolder.Name;
+				var originHidCode = firstSubFolder.HidCode;
 
-					Console.WriteLine("First subfolder of the root:");
-					Console.Write(ToJson(firstSubFolder));
-					Console.WriteLine();
-					Console.WriteLine();
-			
-
-					firstSubFolder.Name = "ZZZ";
-
-					var sw = new Stopwatch();
-					sw.Start();
-
-					var lastSubFolder = repository.SaveFolder(firstSubFolder, withHidReorder: true);
-
-					sw.Stop();
-			
-					Console.WriteLine($"Change of Name to ZZZ made the firstSubFolder the last for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms:");
-					Console.Write(ToJson(lastSubFolder));
-					Console.WriteLine();
-					Console.WriteLine();
+				Console.WriteLine("First subfolder of the root:");
+				Console.Write(ToJson(firstSubFolder));
+				Console.WriteLine();
+				Console.WriteLine();
 
 
-					lastSubFolder.Name = originName;
-				
-					sw.Restart();
+				firstSubFolder.Name = "ZZZ";
 
-					firstSubFolder = repository.SaveFolder(lastSubFolder, withHidReorder: true);
+				var sw = new Stopwatch();
+				sw.Start();
 
-					sw.Stop();
+				var lastSubFolder = repository.SaveFolder(firstSubFolder, withHidReorder: true);
 
-					Console.WriteLine($"Change of Name to {originName} made the lastSubFolder the first again for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms:");
-					Console.Write(ToJson(firstSubFolder));
-					Console.WriteLine();
-					Console.WriteLine();
-			
-					Assert.AreEqual(originHidCode, firstSubFolder.HidCode);
+				sw.Stop();
 
-					// commit transaction tran.Commit();
-				});
-			}
+				Console.WriteLine($"Change of Name to ZZZ made the firstSubFolder the last for {sw.Elapsed.TotalMilliseconds:0.##} ms:");
+				Console.Write(ToJson(lastSubFolder));
+				Console.WriteLine();
+				Console.WriteLine();
+
+
+				lastSubFolder.Name = originName;
+
+				sw.Restart();
+
+				firstSubFolder = repository.SaveFolder(lastSubFolder, withHidReorder: true);
+
+				sw.Stop();
+
+				Console.WriteLine($"Change of Name to {originName} made the lastSubFolder the first again for {sw.Elapsed.TotalMilliseconds:0.##} ms:");
+				Console.Write(ToJson(firstSubFolder));
+				Console.WriteLine();
+				Console.WriteLine();
+
+				Assert.AreEqual(originHidCode, firstSubFolder.HidCode);
+
+				// commit transaction tran.Commit();
+			});
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
@@ -509,65 +485,63 @@ namespace Tests.Tests
 		[TestMethod]
 		public void ReorderSubFolders()
 		{
-			using (var repository = new Repository())
+			using var repository = new Repository();
+			repository.BeginTransaction(tran =>
 			{
-				repository.BeginTransaction(tran =>
-				{
-					var rootFolder = repository.GetUserRootFolder(14);
-
-				
-					var folderA = new Folder { ParentId = rootFolder.Id, Name = "A" };
-					folderA = repository.SaveFolder(folderA, withHidReorder: false);
-
-					var folderAA = new Folder { ParentId = folderA.Id, Name = "AA" };
-					folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
-
-					var folderAB = new Folder { ParentId = folderA.Id, Name = "AB" };
-					folderAB = repository.SaveFolder(folderAB, withHidReorder: false);
-
-					var folderB = new Folder { ParentId = rootFolder.Id, Name = "B" };
-					folderB = repository.SaveFolder(folderB, withHidReorder: false);
-					
-					var folderD = new Folder { ParentId = rootFolder.Id, Name = "D" };
-					folderD = repository.SaveFolder(folderD, withHidReorder: false);
+				var rootFolder = repository.GetUserRootFolder(14);
 
 
-					var folderTree = repository.GetFolderTree(rootFolder.Id);
+				var folderA = new Folder { ParentId = rootFolder.Id, Name = "A" };
+				folderA = repository.SaveFolder(folderA, withHidReorder: false);
 
-					Console.WriteLine("Just created folder tree: ");
-					Console.Write(ToJson(folderTree));
-					Console.WriteLine();
-					Console.WriteLine();
-					
+				var folderAA = new Folder { ParentId = folderA.Id, Name = "AA" };
+				folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
 
-					folderA.Name = "C";
-					folderA = repository.SaveFolder(folderA, withHidReorder: false);
+				var folderAB = new Folder { ParentId = folderA.Id, Name = "AB" };
+				folderAB = repository.SaveFolder(folderAB, withHidReorder: false);
 
-					Assert.AreEqual("/2.1/", folderA.HidPath);
+				var folderB = new Folder { ParentId = rootFolder.Id, Name = "B" };
+				folderB = repository.SaveFolder(folderB, withHidReorder: false);
 
-					folderTree = repository.GetFolderTree(rootFolder.Id);
-					
-					Console.WriteLine("Folder tree after rename Folder A to C without Hid reorder: ");
-					Console.Write(ToJson(folderTree));
-					Console.WriteLine();
-					Console.WriteLine();
+				var folderD = new Folder { ParentId = rootFolder.Id, Name = "D" };
+				folderD = repository.SaveFolder(folderD, withHidReorder: false);
 
 
-					folderA.Name = "Z";
-					folderA = repository.SaveFolder(folderA, withHidReorder: true);
+				var folderTree = repository.GetFolderTree(rootFolder.Id);
 
-					Assert.AreEqual("/3/", folderA.HidPath);
+				Console.WriteLine("Just created folder tree: ");
+				Console.Write(ToJson(folderTree));
+				Console.WriteLine();
+				Console.WriteLine();
 
-					folderTree = repository.GetFolderTree(rootFolder.Id);
 
-					Console.WriteLine("Folder tree after rename Folder A to Z with Hid reorder: ");
-					Console.Write(ToJson(folderTree));
-					Console.WriteLine();
-					Console.WriteLine();
-					
-					// commit transaction tran.Commit();
-				});
-			}
+				folderA.Name = "C";
+				folderA = repository.SaveFolder(folderA, withHidReorder: false);
+
+				Assert.AreEqual("/2.1/", folderA.HidPath);
+
+				folderTree = repository.GetFolderTree(rootFolder.Id);
+
+				Console.WriteLine("Folder tree after rename Folder A to C without Hid reorder: ");
+				Console.Write(ToJson(folderTree));
+				Console.WriteLine();
+				Console.WriteLine();
+
+
+				folderA.Name = "Z";
+				folderA = repository.SaveFolder(folderA, withHidReorder: true);
+
+				Assert.AreEqual("/3/", folderA.HidPath);
+
+				folderTree = repository.GetFolderTree(rootFolder.Id);
+
+				Console.WriteLine("Folder tree after rename Folder A to Z with Hid reorder: ");
+				Console.Write(ToJson(folderTree));
+				Console.WriteLine();
+				Console.WriteLine();
+
+				// commit transaction tran.Commit();
+			});
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
@@ -575,75 +549,72 @@ namespace Tests.Tests
 		[TestMethod]
 		public void ReparentSubFolders()
 		{
-			using (var repository = new Repository())
+			using var repository = new Repository();
+			repository.BeginTransaction(tran =>
 			{
-				repository.BeginTransaction(tran =>
-				{
-					var rootFolder = repository.GetUserRootFolder(14);
-
-				
-					var folderA = new Folder { ParentId = rootFolder.Id, Name = "A" };
-					folderA = repository.SaveFolder(folderA, withHidReorder: false);
-					
-						var folderAA = new Folder { ParentId = folderA.Id, Name = "AA" };
-						folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
-
-							var folderAAA = new Folder { ParentId = folderAA.Id, Name = "AAA" };
-							folderAAA = repository.SaveFolder(folderAAA, withHidReorder: false);
-
-							var folderAAB = new Folder { ParentId = folderAA.Id, Name = "AAB" };
-							folderAAB = repository.SaveFolder(folderAAB, withHidReorder: false);
-
-					var folderB = new Folder { ParentId = rootFolder.Id, Name = "B" };
-						folderB = repository.SaveFolder(folderB, withHidReorder: false);
-
-						var folderBA = new Folder { ParentId = folderB.Id, Name = "BA" };
-						folderBA = repository.SaveFolder(folderBA, withHidReorder: false);
-
-			
-					var folderTree = repository.GetFolderTree(rootFolder.Id);
-
-					Console.WriteLine("Just created folder tree: ");
-					Console.Write(ToJson(folderTree));
-					Console.WriteLine();
-					Console.WriteLine();
-					
-
-					folderAA.ParentId = folderB.Id;
-					folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
-
-					Assert.AreEqual("/2/0/", folderAA.HidPath);
-
-					folderTree = repository.GetFolderTree(rootFolder.Id);
-
-					Console.WriteLine("Folder tree after reparent Folder AA to Folder B without Hid reorder: ");
-					Console.Write(ToJson(folderTree));
-					Console.WriteLine();
-					Console.WriteLine();
+				var rootFolder = repository.GetUserRootFolder(14);
 
 
-					folderAA.ParentId = folderA.Id;
-					folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
-					Assert.AreEqual("/1/1/", folderAA.HidPath);
+				var folderA = new Folder { ParentId = rootFolder.Id, Name = "A" };
+				folderA = repository.SaveFolder(folderA, withHidReorder: false);
+
+				var folderAA = new Folder { ParentId = folderA.Id, Name = "AA" };
+				folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
+
+				var folderAAA = new Folder { ParentId = folderAA.Id, Name = "AAA" };
+				folderAAA = repository.SaveFolder(folderAAA, withHidReorder: false);
+
+				var folderAAB = new Folder { ParentId = folderAA.Id, Name = "AAB" };
+				folderAAB = repository.SaveFolder(folderAAB, withHidReorder: false);
+
+				var folderB = new Folder { ParentId = rootFolder.Id, Name = "B" };
+				folderB = repository.SaveFolder(folderB, withHidReorder: false);
+
+				var folderBA = new Folder { ParentId = folderB.Id, Name = "BA" };
+				folderBA = repository.SaveFolder(folderBA, withHidReorder: false);
+
+
+				var folderTree = repository.GetFolderTree(rootFolder.Id);
+
+				Console.WriteLine("Just created folder tree: ");
+				Console.Write(ToJson(folderTree));
+				Console.WriteLine();
+				Console.WriteLine();
+
+
+				folderAA.ParentId = folderB.Id;
+				folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
+
+				Assert.AreEqual("/2/0/", folderAA.HidPath);
+
+				folderTree = repository.GetFolderTree(rootFolder.Id);
+
+				Console.WriteLine("Folder tree after reparent Folder AA to Folder B without Hid reorder: ");
+				Console.Write(ToJson(folderTree));
+				Console.WriteLine();
+				Console.WriteLine();
+
+
+				folderAA.ParentId = folderA.Id;
+				folderAA = repository.SaveFolder(folderAA, withHidReorder: false);
+				Assert.AreEqual("/1/1/", folderAA.HidPath);
 
 
 
-					folderAA.ParentId = folderB.Id;
-					folderAA = repository.SaveFolder(folderAA, withHidReorder: true);
+				folderAA.ParentId = folderB.Id;
+				folderAA = repository.SaveFolder(folderAA, withHidReorder: true);
 
-					Assert.AreEqual("/2/1/", folderAA.HidPath);
+				Assert.AreEqual("/2/1/", folderAA.HidPath);
 
-					folderTree = repository.GetFolderTree(rootFolder.Id);
+				folderTree = repository.GetFolderTree(rootFolder.Id);
 
-					Console.WriteLine("Folder tree after reparent Folder AA to Folder B with Hid reorder: ");
-					Console.Write(ToJson(folderTree));
-					Console.WriteLine();
-					Console.WriteLine();
+				Console.WriteLine("Folder tree after reparent Folder AA to Folder B with Hid reorder: ");
+				Console.Write(ToJson(folderTree));
+				Console.WriteLine();
+				Console.WriteLine();
 
-					// commit transaction tran.Commit();
-				});
-
-			}
+				// commit transaction tran.Commit();
+			});
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
@@ -651,21 +622,21 @@ namespace Tests.Tests
 		[TestMethod]
 		public void FindFoldersWithParentTree()
 		{
-			using (var repository = new Repository())
-			{
-				var folderTree = repository.FindFoldersWithParentTree(userId: 1, level:2, folderName: "A");
+			using var repository = new Repository();
+			var folderTree = repository.FindFoldersWithParentTree(userId: 1, level: 2, folderName: "A");
 
-				Assert.IsTrue(folderTree.SubFolders.Count > 0);
+			Assert.IsTrue(folderTree.SubFolders.Count > 0);
 
-				Console.Write(ToJson(folderTree));
-			}
+			Console.Write(ToJson(folderTree));
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
 		}
 
 		private static string ToJson(object obj)
 		{
-			return JToken.Parse(JsonConvert.SerializeObject(obj)).ToString(Formatting.Indented);
+			//return JToken.Parse(JsonSerializer.Serialize(obj)).ToString();
+
+			return JsonSerializer.Serialize(obj);
 		}
 
 		private static string Repeat(string str, int n)

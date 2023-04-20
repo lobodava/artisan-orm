@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using Tests.DAL.Users;
 using Tests.DAL.Users.Models;
 
@@ -44,8 +39,8 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetUserById reads 14 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 14).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(user));
+			Console.WriteLine($"GetUserById reads 14 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 14:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(user));
 		}
 
 
@@ -66,8 +61,8 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetUserByIdAsync reads 14 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 14).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(user));
+			Console.WriteLine($"GetUserByIdAsync reads 14 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 14:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(user));
 		}
 		
 
@@ -88,8 +83,8 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetUserByIdWithSql reads 14 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 14).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(user));
+			Console.WriteLine($"GetUserByIdWithSql reads 14 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 14:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(user));
 		}
 
 
@@ -97,20 +92,20 @@ namespace Tests.Tests
 		[TestMethod]
 		public void GetUsers()
 		{
-			var users  = _repository.GetUsers();
+			_ = _repository.GetUsers();
 
 			var sw = new Stopwatch();
 			sw.Start();
 
-			users  = _repository.GetUsers();
-	
+			IList<User> users = _repository.GetUsers();
+
 			sw.Stop();
 
 			Assert.IsNotNull(users);
 			Assert.IsTrue(users.Count > 1);
 
-			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(users));
+			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(users));
 		}
 
 
@@ -127,8 +122,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(users);
 			Assert.IsTrue(users.Count > 1);
 
-			Console.WriteLine($"GetUsersAsync reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(users));
+			Console.WriteLine($"GetUsersAsync reads {users.Count} users for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(users));
 		}
 
 
@@ -145,8 +140,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(users);
 			Assert.IsTrue(users.Count > 1);
 
-			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(users));
+			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(users));
 
 		}
 
@@ -164,8 +159,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(users);
 			Assert.IsTrue(users.Count > 1);
 
-			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(users));
+			Console.WriteLine($"GetUsers reads {users.Count} users for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(users));
 
 		}
 
@@ -188,9 +183,9 @@ namespace Tests.Tests
 			Assert.IsTrue(savedUser.Id > 14);
 			Assert.AreEqual(savedUser.Login, user.Login);
 
-			Console.WriteLine($"Method SaveUser saved a User and read it back for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"Method SaveUser saved a User and read it back for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedUser));
+			Console.Write(JsonSerializer.Serialize(savedUser));
 		}
 
 
@@ -212,9 +207,9 @@ namespace Tests.Tests
 			Assert.IsTrue(savedUser.Id > 14);
 			Assert.AreEqual(savedUser.Login, user.Login);
 
-			Console.WriteLine($"Method SaveUserAsync saved a User and read it back for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"Method SaveUserAsync saved a User and read it back for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedUser));
+			Console.Write(JsonSerializer.Serialize(savedUser));
 		}
 
 
@@ -236,11 +231,11 @@ namespace Tests.Tests
 			Assert.IsTrue(savedUsers.Count == 3);
 			Assert.IsTrue(savedUsers.First().Id > 14);
 
-			Console.WriteLine($"Method SaveUsers saved and read back 3 Users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"Method SaveUsers saved and read back 3 Users for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 			Console.WriteLine();
 			Console.WriteLine("The saved Users look like: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedUsers.Take(10)));
+			Console.Write(JsonSerializer.Serialize(savedUsers.Take(10)));
 		}
 
 		[TestMethod]
@@ -259,11 +254,11 @@ namespace Tests.Tests
 			Assert.IsTrue(savedUsers.Count == 3);
 			Assert.IsTrue(savedUsers.First().Id > 14);
 
-			Console.WriteLine($"Method SaveUsers saved and read back 3 Users for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"Method SaveUsers saved and read back 3 Users for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 			Console.WriteLine();
 			Console.WriteLine("The saved Users look like: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedUsers.Take(10)));
+			Console.Write(JsonSerializer.Serialize(savedUsers.Take(10)));
 		}
 
 
@@ -289,7 +284,7 @@ namespace Tests.Tests
 
 				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.Messages));
+				Console.Write(JsonSerializer.Serialize(ex.Messages));
 			}
 			catch (Exception )
 			{
@@ -317,7 +312,7 @@ namespace Tests.Tests
 
 				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.Messages));
+				Console.Write(JsonSerializer.Serialize(ex.Messages));
 			}
 			catch (Exception )
 			{
@@ -349,7 +344,7 @@ namespace Tests.Tests
 
 				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.Messages));
+				Console.Write(JsonSerializer.Serialize(ex.Messages));
 			}
 			catch
 			{
@@ -381,7 +376,7 @@ namespace Tests.Tests
 
 				Console.WriteLine("DataReplyException.Messages: ");
 				Console.WriteLine();
-				Console.Write(JsonConvert.SerializeObject(ex.Messages));
+				Console.Write(JsonSerializer.Serialize(ex.Messages));
 			}
 			catch (Exception )
 			{
@@ -421,8 +416,7 @@ namespace Tests.Tests
 			Assert.AreEqual(savedUser.Login, user.Login);
 	
 			var userId = savedUser.Id;
-
-			var isSuccess = await _repository.DeleteUserAsync(userId);
+			_ = await _repository.DeleteUserAsync(userId);
 
 			user = await _repository.GetUserByIdAsync(userId);
 
@@ -445,7 +439,7 @@ namespace Tests.Tests
 
 					Console.WriteLine("DataValidationException.Messages: ");
 					Console.WriteLine();
-					Console.Write(JsonConvert.SerializeObject(ex.Messages));
+					Console.Write(JsonSerializer.Serialize(ex.Messages));
 				}
 				else if (ex.Status == DataReplyStatus.Missing)
 				{
@@ -453,7 +447,7 @@ namespace Tests.Tests
 
 					Console.WriteLine("DataValidationException.Messages: ");
 					Console.WriteLine();
-					Console.Write(JsonConvert.SerializeObject(ex.Messages));
+					Console.Write(JsonSerializer.Serialize(ex.Messages));
 				}
 				else
 				{
@@ -480,8 +474,8 @@ namespace Tests.Tests
 
 			Assert.IsTrue(users.Count > 1);
 
-			Console.WriteLine($"GetUsersWithRoles reads {users.Count} Users with their Roles for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms" );
-			Console.Write(JsonConvert.SerializeObject(users));
+			Console.WriteLine($"GetUsersWithRoles reads {users.Count} Users with their Roles for {sw.Elapsed.TotalMilliseconds:0.##} ms" );
+			Console.Write(JsonSerializer.Serialize(users));
 		}
 
 
@@ -587,7 +581,7 @@ namespace Tests.Tests
 		}
 
 		// http://stackoverflow.com/a/1344242/623190
-		private static Random random = new Random();
+		private static readonly Random random = new();
 		public static string RandomString(int length)
 		{
 			const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";

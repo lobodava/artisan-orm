@@ -19,36 +19,36 @@ namespace Tests.DataServices
 
 		public DataReply<User> GetById(int id)
 		{
-			return  base.Get(() => _repository.GetUserById(id));
+			return Get(() => _repository.GetUserById(id));
 		}
 
 		public DataReply<User> Save(User user)
 		{
-			return base.Get(() => _repository.SaveUser(user));
+			return Get(() => _repository.SaveUser(user));
 		}
 
 
 		public DataReply Delete(int userId)
 		{
-			return base.Execute(() => _repository.DeleteUser(userId));
+			return Execute(() => _repository.DeleteUser(userId));
 		}
 
 		// async
 
 		public async Task<DataReply<User>> GetByIdAsync(int id) 
 		{
-			return await base.GetAsync(() => _repository.GetUserByIdAsync(id));
+			return await GetAsync(() => _repository.GetUserByIdAsync(id));
 		}
 
 		public async Task<DataReply<User>> SaveAsync(User user) 
 		{
-			return await base.GetAsync(() => _repository.SaveUserAsync(user));
+			return await GetAsync(() => _repository.SaveUserAsync(user));
 		}
 
 
 		public async Task<DataReply> DeleteAsync(int userId) 
 		{
-			return await base.ExecuteAsync(() => _repository.DeleteUserAsync(userId));
+			return await ExecuteAsync(() => _repository.DeleteUserAsync(userId));
 		}
 
 	}

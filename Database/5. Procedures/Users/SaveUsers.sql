@@ -120,7 +120,7 @@ begin
 					Name	=	source.Name		, 
 					Email	=	source.Email	
 
-			when not matched by target then													 	
+			when not matched by target then
 				insert (	
 					[Login]	, 
 					Name	, 
@@ -151,7 +151,7 @@ begin
 				)
 				as source on source.UserId = target.UserId and source.RoleId = target.RoleId
 
-			when not matched by target then													 	
+			when not matched by target then
 				insert (	
 					UserId		,
 					RoleId	)

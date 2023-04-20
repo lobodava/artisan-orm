@@ -7,7 +7,7 @@ begin
 	declare @Path nvarchar(4000);
 
 	select
-		@Path = concat(coalesce(@Path, ''), a.Name, ' › ')
+		@Path = concat(coalesce(@Path, ''), a.[Name], ' › ')
 	from
 		dbo.Folders f
 		inner join dbo.Folders a on a.UserId = f.UserId and f.Hid.IsDescendantOf(a.Hid) = 1
@@ -17,11 +17,11 @@ begin
 		a.Hid;
 
 
-	select 
+	select
 		Id			,
 		ParentId	,
-		Name		,
-		[Level]		=	Hid.GetLevel(),		
+		[Name]		,
+		[Level]		=	Hid.GetLevel(),
 		HidCode		=	dbo.GetHidCode(Hid),
 		HidPath		=	Hid.ToString(),
 		[Path]		=	@Path

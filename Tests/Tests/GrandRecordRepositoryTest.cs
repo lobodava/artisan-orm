@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using Tests.DAL.GrandRecords;
 using Tests.DAL.GrandRecords.Models;
 
@@ -24,7 +19,6 @@ namespace Tests.Tests
 			_repository.ExecuteCommand(cmd => {
 				cmd.UseSql("delete from dbo.Records where Id > 676; delete from dbo.GrandRecords where Id > 26;");	
 			});
-
 		}
 
 		[TestMethod]
@@ -45,11 +39,11 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetGrandRecordById read 26 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 26).ToString("0.##")} ms for one read");
+			Console.WriteLine($"GetGrandRecordById read 26 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 26:0.##} ms for one read");
 			Console.WriteLine();
 			Console.WriteLine($"The last GrandRecord contains {grandRecord.Records.Count} Records and {grandRecord.Records.SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecord));
+			Console.Write(JsonSerializer.Serialize(grandRecord));
 		}
 
 
@@ -71,11 +65,11 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetGrandRecordByIdAsync read 26 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 26).ToString("0.##")} ms for one read");
+			Console.WriteLine($"GetGrandRecordByIdAsync read 26 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 26:0.##} ms for one read");
 			Console.WriteLine();
 			Console.WriteLine($"The last GrandRecord contains {grandRecord.Records.Count} Records and {grandRecord.Records.SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecord));
+			Console.Write(JsonSerializer.Serialize(grandRecord));
 		}
 
 
@@ -93,14 +87,14 @@ namespace Tests.Tests
 			Assert.IsTrue(grandRecords.Count >= 26);
 
 			Console.WriteLine("GetGrandRecords read & combined:");
-			Console.WriteLine($"    {grandRecords.Count} GrandRecords,");
-			Console.WriteLine($"    {grandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
-			Console.WriteLine($"    {grandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"	{grandRecords.Count} GrandRecords,");
+			Console.WriteLine($"	{grandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
+			Console.WriteLine($"	{grandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 			Console.WriteLine("The first GrandRecord looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(grandRecords.Take(1)));
 		}
 
 
@@ -118,14 +112,14 @@ namespace Tests.Tests
 			Assert.IsTrue(grandRecords.Count >= 26);
 
 			Console.WriteLine("GetRecordsAsync read & combined:");
-			Console.WriteLine($"    {grandRecords.Count} GrandRecords,");
-			Console.WriteLine($"    {grandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
-			Console.WriteLine($"    {grandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"	{grandRecords.Count} GrandRecords,");
+			Console.WriteLine($"	{grandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
+			Console.WriteLine($"	{grandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 			Console.WriteLine("The first GrandRecord looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(grandRecords.Take(1)));
 		}
 
 
@@ -146,14 +140,14 @@ namespace Tests.Tests
 			Assert.IsTrue(savedGrandRecords.Count == 3);
 
 			Console.WriteLine("SaveGrandRecords saved, read back and joined:");
-			Console.WriteLine($"    {savedGrandRecords.Count} GrandRecords,");
-			Console.WriteLine($"    {savedGrandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
-			Console.WriteLine($"    {savedGrandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"	{savedGrandRecords.Count} GrandRecords,");
+			Console.WriteLine($"	{savedGrandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
+			Console.WriteLine($"	{savedGrandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 			Console.WriteLine("The first of saved GrandRecords looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords.Take(1)));
 		}
 		
 
@@ -173,14 +167,14 @@ namespace Tests.Tests
 			Assert.IsTrue(grandRecords.Count == 3);
 
 			Console.WriteLine("SaveGrandRecords saved, read back and joined:");
-			Console.WriteLine($"    {savedGrandRecords.Count} GrandRecords,");
-			Console.WriteLine($"    {savedGrandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
-			Console.WriteLine($"    {savedGrandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
-			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms.");
+			Console.WriteLine($"	{savedGrandRecords.Count} GrandRecords,");
+			Console.WriteLine($"	{savedGrandRecords.SelectMany(gr => gr.Records).ToList().Count} Records,");
+			Console.WriteLine($"	{savedGrandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords");
+			Console.WriteLine($"for {sw.Elapsed.TotalMilliseconds:0.##} ms.");
 			Console.WriteLine();
 			Console.WriteLine("The first of saved GrandRecords looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords.Take(1)));
 		}
 
 
@@ -225,11 +219,11 @@ namespace Tests.Tests
 			Assert.IsTrue(savedGrandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count == 3);
 
 
-			Console.WriteLine($"Method SaveGrandRecords saved existing and changed entities for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms. ");
+			Console.WriteLine($"Method SaveGrandRecords saved existing and changed entities for {sw.Elapsed.TotalMilliseconds:0.##} ms. ");
 			Console.WriteLine();
 			Console.WriteLine("The saved GrandRecords look like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords));
 		}
 
 
@@ -274,11 +268,11 @@ namespace Tests.Tests
 			Assert.IsTrue(savedGrandRecords.SelectMany(gr => gr.Records).SelectMany(r => r.ChildRecords).ToList().Count == 3);
 
 
-			Console.WriteLine($"Method SaveGrandRecords saved existing and changed entities for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms. ");
+			Console.WriteLine($"Method SaveGrandRecords saved existing and changed entities for {sw.Elapsed.TotalMilliseconds:0.##} ms. ");
 			Console.WriteLine();
 			Console.WriteLine("The saved GrandRecords look like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords));
 		}
 
 

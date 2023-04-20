@@ -1,43 +1,41 @@
-﻿using System;
+﻿using Artisan.Orm;
 using Microsoft.Data.SqlClient;
-using Artisan.Orm;
 
-namespace Tests.DAL.GrandRecords.Models
+namespace Tests.DAL.GrandRecords.Models;
+
+public class RecordType
 {
-	public class RecordType
+	public byte Id { get; set; }
+
+	public string Code { get; set; }
+
+	public string Name { get; set; }
+}
+
+
+[MapperFor(typeof(RecordType), RequiredMethod.CreateObject)]
+public static class RecordTypeMapper 
+{
+	public static RecordType CreateObject(SqlDataReader dr)
 	{
-		public Byte Id { get; set; }
-
-		public String Code { get; set; }
-
-		public String Name { get; set; }
+		var index = 0;
+		return CreateObject(dr, ref index);
 	}
 
-
-	[MapperFor(typeof(RecordType), RequiredMethod.CreateObject)]
-	public static class RecordTypeMapper 
+	public static RecordType CreateObject(SqlDataReader dr, ref int index)
 	{
-		public static RecordType CreateObject(SqlDataReader dr)
+		if (dr.IsDBNull(++index))
 		{
-			var index = 0;
-			return CreateObject(dr, ref index);
-		}
-
-		public static RecordType CreateObject(SqlDataReader dr, ref int index)
+			index += 2;
+			return null;
+		}		
+		
+		return new RecordType 
 		{
-			if (dr.IsDBNull(++index))
-			{
-				index = index + 2;
-				return null;
-			}		
-			
-			return new RecordType 
-			{
-				Id		=	dr.GetByte(index)		,
-				Code	=	dr.GetString(++index)	,
-				Name	=	dr.GetString(++index)	
-			};
-		}
-
+			Id		=	dr.GetByte(index)		,
+			Code	=	dr.GetString(++index)	,
+			Name	=	dr.GetString(++index)	
+		};
 	}
+
 }

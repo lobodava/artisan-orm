@@ -1,9 +1,6 @@
-﻿using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using Tests.DAL.Users.Models;
 
 namespace Tests.Tests
@@ -17,7 +14,6 @@ namespace Tests.Tests
 		public void TestInitialize()
 		{
 			_repositoryBase = new RepositoryBase();
-
 		}
 		
 		[TestMethod]
@@ -47,10 +43,9 @@ namespace Tests.Tests
 
 			Assert.IsNotNull(dictionary);
 
-			Console.WriteLine($"Role name dictionary has been read for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
+			Console.WriteLine($"Role name dictionary has been read for {sw.Elapsed.TotalMilliseconds:0.####} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
-
+			Console.Write(JsonSerializer.Serialize(dictionary));
 		}
 
 		[TestMethod]
@@ -72,9 +67,9 @@ namespace Tests.Tests
 			Assert.IsNotNull(dictionary);
 			Assert.IsTrue(dictionary.Count > 1);
 
-			Console.WriteLine($"Role object dictionary has been read for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
+			Console.WriteLine($"Role object dictionary has been read for {sw.Elapsed.TotalMilliseconds:0.####} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
+			Console.Write(JsonSerializer.Serialize(dictionary));
 
 		}
 
@@ -91,8 +86,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetDictionaryOfObjectsAsync reads {records.Count} roles for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetDictionaryOfObjectsAsync reads {records.Count} roles for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 		[TestMethod]
@@ -119,22 +114,22 @@ namespace Tests.Tests
 			Assert.IsNotNull(dictionary);
 			Assert.IsTrue(dictionary.Count > 1);
 
-			Console.WriteLine($"Role object dictionary has been read with Handmapping for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
+			Console.WriteLine($"Role object dictionary has been read with Handmapping for {sw.Elapsed.TotalMilliseconds:0.####} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
+			Console.Write(JsonSerializer.Serialize(dictionary));
 
 		}
 
 		[TestMethod]
 		public void GetDictionaryWithAutomapping()
 		{
-			var dictionary = _repositoryBase.ReadAsDictionary<byte, Role>("select * from dbo.Roles");
+			_ = _repositoryBase.ReadAsDictionary<byte, Role>("select * from dbo.Roles");
 
 			var sw = new Stopwatch();
 			sw.Start();
-			
-			dictionary = _repositoryBase.ReadAsDictionary<byte, Role>("select * from dbo.Roles");
-				
+
+			IDictionary<byte, Role> dictionary = _repositoryBase.ReadAsDictionary<byte, Role>("select * from dbo.Roles");
+
 			//var dictionary = _repositoryBase.GetByCommand(cmd =>
 			//{
 			//	cmd.UseSql("select * from dbo.Roles");
@@ -146,9 +141,9 @@ namespace Tests.Tests
 			Assert.IsNotNull(dictionary);
 			Assert.IsTrue(dictionary.Count > 1);
 
-			Console.WriteLine($"Role object dictionary has been read with Automapping for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
+			Console.WriteLine($"Role object dictionary has been read with Automapping for {sw.Elapsed.TotalMilliseconds:0.####} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
+			Console.Write(JsonSerializer.Serialize(dictionary));
 
 		}
 	

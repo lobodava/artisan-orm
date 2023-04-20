@@ -1,33 +1,31 @@
-﻿using System;
+﻿using Artisan.Orm;
 using Microsoft.Data.SqlClient;
-using Artisan.Orm;
 
-namespace Tests.DAL.Users.Models
+namespace Tests.DAL.Users.Models;
+
+public class Role
 {
-	public class Role
+	public byte Id { get; set; }
+
+	public string Code { get; set; }
+
+	public string Name { get; set; }
+}
+
+
+[MapperFor(typeof(Role), RequiredMethod.CreateObject)]
+public static class RoleMapper
+{
+	public static Role CreateObject(SqlDataReader dr)
 	{
-		public Byte Id { get; set; }
+		var i = 0;
 
-		public String Code { get; set; }
-
-		public String Name { get; set; }
-	}
-
-
-	[MapperFor(typeof(Role), RequiredMethod.CreateObject)]
-	public static class RoleMapper
-	{
-		public static Role CreateObject(SqlDataReader dr)
+		return new Role
 		{
-			var i = 0;
-
-			return new Role
-			{
-				Id		=	dr.GetByte(i)		,
-				Code	=	dr.GetString(++i)	,
-				Name	=	dr.GetString(++i)
-			};
-		}
-
+			Id		=	dr.GetByte(i)		,
+			Code	=	dr.GetString(++i)	,
+			Name	=	dr.GetString(++i)
+		};
 	}
+
 }

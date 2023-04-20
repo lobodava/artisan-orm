@@ -1,9 +1,6 @@
-﻿using System.Threading.Tasks;
-using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Tests.DataServices;
+﻿using Artisan.Orm;
 using Tests.DAL.Users;
-
+using Tests.DataServices;
 
 namespace Tests.Tests
 {
@@ -20,10 +17,9 @@ namespace Tests.Tests
 			using (var repository = new Repository())
 			{
 				repository.ExecuteCommand(cmd => {
-					cmd.UseSql("delete from dbo.Users where Id > 14;");	
+					cmd.UseSql("delete from dbo.Users where Id > 14;");
 				});
 			};
-			
 
 		}
 		

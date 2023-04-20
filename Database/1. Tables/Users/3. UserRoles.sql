@@ -1,6 +1,6 @@
 ﻿create table dbo.UserRoles
 (
-	UserId			int		not null,	
+	UserId			int		not null,
 	RoleId		tinyint		not null,
 
 	constraint PK_UserRoles primary key clustered (UserId, RoleId),

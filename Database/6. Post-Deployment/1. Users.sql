@@ -26,18 +26,18 @@ merge into dbo.Users as target
 	) as source ([Login], Name, Email) on source.[Login] = target.[Login]
 
 when matched then
-	update set				
-		Name	=	source.Name	, 
-		Email	=	source.Email	
+	update set
+		[Name]	=	source.[Name]	,
+		Email	=	source.Email
 
-when not matched by target then													 	
+when not matched by target then
 	insert (	
-		[Login]	, 
-		Name	, 
+		[Login]	,
+		[Name]	,
 		Email	)
 	values (
-		source.[Login], 
-		source.Name	, 
+		source.[Login],
+		source.[Name]	,
 		source.Email)
 		
 when not matched by source then

@@ -292,6 +292,5 @@ namespace Tests.DAL.Records
 
 		#endregion
 
-
 	}
 }

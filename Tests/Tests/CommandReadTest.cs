@@ -1,9 +1,5 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Users.Models;
 
 namespace Tests.Tests
@@ -17,7 +13,6 @@ namespace Tests.Tests
 		public void TestInitialize()
 		{
 			_repository = new RepositoryBase();
-
 		}
 
 
@@ -35,7 +30,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(1 as bit)");
-				Assert.AreEqual(cmd.ReadTo<Boolean>(), true);
+				Assert.AreEqual(cmd.ReadTo<bool>(), true);
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select null");
@@ -50,7 +45,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(255 as tinyint)");
-				Assert.AreEqual(cmd.ReadTo<Byte>(), 255);
+				Assert.AreEqual(cmd.ReadTo<byte>(), 255);
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select null");
@@ -66,7 +61,7 @@ namespace Tests.Tests
 
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(127 as smallint)");
-				Assert.AreEqual(cmd.ReadTo<SByte>(), 127);
+				Assert.AreEqual(cmd.ReadTo<sbyte>(), 127);
 			});
 
 
@@ -78,7 +73,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(32767 as smallint)");
-				Assert.AreEqual(cmd.ReadTo<Int16>(), 32767);
+				Assert.AreEqual(cmd.ReadTo<short>(), 32767);
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select null");
@@ -95,7 +90,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select 65535 ");
-				Assert.AreEqual(cmd.ReadTo<UInt16>(), 65535);
+				Assert.AreEqual(cmd.ReadTo<ushort>(), 65535);
 			});
 
 
@@ -107,7 +102,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(2147483647 as int)");
-				Assert.AreEqual(cmd.ReadTo<Int32>(), 2147483647);
+				Assert.AreEqual(cmd.ReadTo<int>(), 2147483647);
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(null as int)");
@@ -123,7 +118,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(9223372036854775807 as bigint)");
-				Assert.AreEqual(cmd.ReadTo<Int64>(), 9223372036854775807);
+				Assert.AreEqual(cmd.ReadTo<long>(), 9223372036854775807);
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select null");
@@ -139,7 +134,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(99999.9999 as decimal(9,4))");
-				Assert.AreEqual(cmd.ReadTo<Decimal>(), 99999.9999m);
+				Assert.AreEqual(cmd.ReadTo<decimal>(), 99999.9999m);
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select null");
@@ -155,7 +150,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(79228162514264337593543950335 as decimal(29,0))");
-				Assert.AreEqual(cmd.ReadTo<Decimal>(), decimal.MaxValue);
+				Assert.AreEqual(cmd.ReadTo<decimal>(), decimal.MaxValue);
 			});
 
 
@@ -175,7 +170,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(214748.3647 as smallmoney)");
-				Assert.AreEqual(cmd.ReadTo<Decimal>(), 214748.3647m);
+				Assert.AreEqual(cmd.ReadTo<decimal>(), 214748.3647m);
 			});
 
 
@@ -187,7 +182,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(922337203685477.5807 as money)");
-				Assert.AreEqual(cmd.ReadTo<Decimal>(), 922337203685477.5807m);
+				Assert.AreEqual(cmd.ReadTo<decimal>(), 922337203685477.5807m);
 			});
 			
 
@@ -199,7 +194,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast('3.40E+38' as real)");
-				Assert.AreEqual(cmd.ReadTo<Single>(), 3.40E+38f);
+				Assert.AreEqual(cmd.ReadTo<float>(), 3.40E+38f);
 			});
 
 
@@ -211,7 +206,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast('1.79E+308' as float)");
-				Assert.AreEqual(cmd.ReadTo<Double>(), 1.79E+308d);
+				Assert.AreEqual(cmd.ReadTo<double>(), 1.79E+308d);
 			});
 
 
@@ -267,7 +262,7 @@ namespace Tests.Tests
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select cast(replicate(N'Ж', 3000) as nvarchar(max)) + cast(replicate(N'Ж', 3000) as nvarchar(max)) + cast(replicate(N'Ж', 4000) as nvarchar(max))");
-				Assert.IsTrue(String.Equals(cmd.ReadTo<string>(), new string('Ж', 10000)));
+				Assert.IsTrue(string.Equals(cmd.ReadTo<string>(), new string('Ж', 10000)));
 			});
 
 
@@ -370,6 +365,7 @@ namespace Tests.Tests
 				Assert.IsNull(cmd.ReadTo<Guid?>());
 			});
 
+
 			_repository.Connection.Close();
 		}
 
@@ -471,7 +467,7 @@ namespace Tests.Tests
 
 			Assert.AreEqual(user.Id, 1);
 
-			Console.WriteLine($"ReadToUser done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine($"ReadToUser done {times} times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / times:0.######} ms for one Read" );
 			Console.WriteLine();
 
 			_repository.Connection.Close();
@@ -511,7 +507,7 @@ namespace Tests.Tests
 
 			Assert.IsTrue(users.Count > 1);
 
-			Console.WriteLine($"ReadToUsers done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine($"ReadToUsers done {times} times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / times:0.######} ms for one Read" );
 			Console.WriteLine();
 
 			_repository.Connection.Close();
@@ -551,7 +547,7 @@ namespace Tests.Tests
 
 			Assert.AreEqual(user.Id, 1);
 
-			Console.WriteLine($"ReadToUser done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine($"ReadToUser done {times} times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / times:0.######} ms for one Read" );
 			Console.WriteLine();
 
 			_repository.Connection.Close();
@@ -591,13 +587,12 @@ namespace Tests.Tests
 
 			Assert.IsTrue(users.Count > 1);
 
-			Console.WriteLine($"ReadToUsers done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine($"ReadToUsers done {times} times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / times:0.######} ms for one Read" );
 			Console.WriteLine();
 
 			_repository.Connection.Close();
 		}
 		
-
 		[TestMethod]
 		public void ReadDynamicUsers()
 		{
@@ -632,7 +627,7 @@ namespace Tests.Tests
 
 			Assert.AreEqual(user.Id, 1);
 
-			Console.WriteLine($"ReadDynamicList done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one Read" );
+			Console.WriteLine($"ReadDynamicList done {times} times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / times:0.######} ms for one Read" );
 			Console.WriteLine();
 
 			_repository.RunCommand(cmd => {
@@ -645,8 +640,10 @@ namespace Tests.Tests
 			_repository.Connection.Close();
 		}
 		
+
+		
 		[TestCleanup]
-		public void Dispose()
+		public void TestCleanup()
 		{
 			_repository.Dispose();
 		}

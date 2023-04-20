@@ -7,7 +7,7 @@ begin
 	select 
 		Id			,
 		ParentId	,
-		Name		,
+		[Name]		,
 		[Level]		=	Hid.GetLevel(),
 		HidCode		=	dbo.GetHidCode(Hid),
 		HidPath		=	Hid.ToString()

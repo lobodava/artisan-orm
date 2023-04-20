@@ -14,7 +14,7 @@ begin
 			select
 				Id				, 
 				GrandRecordId	, 
-				Name			, 
+				[Name]			, 
 				RecordTypeId	,
 				Number			, 
 				[Date]			, 
@@ -28,33 +28,33 @@ begin
 
 	when matched then
 		update set				
-			GrandRecordId	=	source.GrandRecordId, 
-			Name			=	source.Name			, 
+			GrandRecordId	=	source.GrandRecordId,
+			[Name]			=	source.[Name]		,
 			RecordTypeId	=	source.RecordTypeId	,
-			Number			=	source.Number		, 
-			[Date]			=	source.[Date]		, 
-			Amount			=	source.Amount		, 
-			IsActive		=	source.IsActive		, 
-			Comment			=	source.Comment			
+			Number			=	source.Number		,
+			[Date]			=	source.[Date]		,
+			Amount			=	source.Amount		,
+			IsActive		=	source.IsActive		,
+			Comment			=	source.Comment
 
-	when not matched by target then													 	
+	when not matched by target then
 		insert (	
-			GrandRecordId	, 
-			Name			,
-			RecordTypeId	, 
-			Number			, 
-			[Date]			, 
-			Amount			, 
-			IsActive		, 
+			GrandRecordId	,
+			[Name]			,
+			RecordTypeId	,
+			Number			,
+			[Date]			,
+			Amount			,
+			IsActive		,
 			Comment			)
 		values (
-			source.GrandRecordId, 
-			source.Name			, 
+			source.GrandRecordId,
+			source.[Name]		,
 			source.RecordTypeId	,
-			source.Number		, 
-			source.[Date]		, 
-			source.Amount		, 
-			source.IsActive		, 
+			source.Number		,
+			source.[Date]		,
+			source.Amount		,
+			source.IsActive		,
 			source.Comment		)
 
 	output inserted.Id,	source.Id
@@ -67,6 +67,5 @@ begin
 	from
 		dbo.vwRecords fn
 		inner join @RecordIds ids on ids.InsertedId = fn.Id;
-
 
 end;

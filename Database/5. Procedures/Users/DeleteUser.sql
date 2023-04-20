@@ -12,5 +12,4 @@ begin
 	if @@rowcount = 0
 		return 2;
 
-
 end;

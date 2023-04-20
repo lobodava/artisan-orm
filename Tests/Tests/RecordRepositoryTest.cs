@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using Tests.DAL.Records;
 using Tests.DAL.Records.Models;
 
@@ -46,8 +41,8 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetRecordById With Mapper reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.WriteLine($"GetRecordById With Mapper reads 676 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 676:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 
 		[TestMethod]
@@ -69,8 +64,8 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetRecordById With AutoMapping reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.WriteLine($"GetRecordById With AutoMapping reads 676 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 676:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 		
 		[TestMethod]
@@ -92,8 +87,8 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetRecordByIdOnBaseLevel reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.WriteLine($"GetRecordByIdOnBaseLevel reads 676 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 676:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 
 
@@ -114,8 +109,8 @@ namespace Tests.Tests
 
 			sw.Stop();
 
-			Console.WriteLine($"GetRecordByIdAsync reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.WriteLine($"GetRecordByIdAsync reads 676 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 676:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 		
 		[TestMethod]
@@ -142,9 +137,9 @@ namespace Tests.Tests
 
 			Console.WriteLine("Just to compare with dapper-dot-net performance results: https://github.com/StackExchange/dapper-dot-net#performance");
 			Console.WriteLine();
-			Console.WriteLine($"GetRecordByIdWithOpenConnection reads 500 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 500).ToString("0.##")} ms for one read" );
+			Console.WriteLine($"GetRecordByIdWithOpenConnection reads 500 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 500:0.##} ms for one read" );
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 		
 
@@ -159,96 +154,94 @@ namespace Tests.Tests
 
 			for (var i = 1; i <= 676; i++)
 			{
-				using (var repository2 = new Repository())
-				{
-					record = await repository2.GetRecordByIdAsync(i);
+				using var repository2 = new Repository();
+				record = await repository2.GetRecordByIdAsync(i);
 
-					Assert.IsTrue(record.Id == i || record == null);
-				}
+				Assert.IsTrue(record.Id == i || record == null);
 			}
 			
 			sw.Stop();
 
-			Console.WriteLine($"GetRecordById reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.WriteLine($"GetRecordById reads 676 times for {sw.Elapsed.TotalMilliseconds:0.##} ms, or {sw.Elapsed.TotalMilliseconds / 676:0.##} ms for one read" );
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 
 		[TestMethod]
 		public void GetRecords()
 		{
-			var records  = _repository.GetRecords();
+			_ = _repository.GetRecords();
 
 			var sw = new Stopwatch();
 			sw.Start();
 
-			records  = _repository.GetRecords();
-	
+			IList<Record> records = _repository.GetRecords();
+
 			sw.Stop();
 
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 		[TestMethod]
 		public void GetRecordsWithAutoMapping()
 		{
-			var records  = _repository.GetRecordsWithAutoMapping();
+			_ = _repository.GetRecordsWithAutoMapping();
 
 			var sw = new Stopwatch();
 			sw.Start();
 
-			records  = _repository.GetRecordsWithAutoMapping();
-	
+			IList<Record> records = _repository.GetRecordsWithAutoMapping();
+
 			sw.Stop();
 
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecordsWithAutoMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecordsWithAutoMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
 		[TestMethod]
 		public async Task GetRecordsAsync()
 		{
-			var records  = await _repository.GetRecordsAsync();
+			_ = await _repository.GetRecordsAsync();
 
 			var sw = new Stopwatch();
 			sw.Start();
 
-			records  = await _repository.GetRecordsAsync();
-	
+			IList<Record> records = await _repository.GetRecordsAsync();
+
 			sw.Stop();
 
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecordsAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecordsAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
 		[TestMethod]
 		public async Task GetRecordsWithAutoMappingAsync()
 		{
-			var records  = await _repository.GetRecordsWithAutoMappingAsync();
+			_ = await _repository.GetRecordsWithAutoMappingAsync();
 
 			var sw = new Stopwatch();
 			sw.Start();
 
-			records  = await _repository.GetRecordsWithAutoMappingAsync();
-	
+			IList<Record> records = await _repository.GetRecordsWithAutoMappingAsync();
+
 			sw.Stop();
 
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecordsWithAutoMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecordsWithAutoMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -256,35 +249,35 @@ namespace Tests.Tests
 		public void GetRecordsToEnumerable()
 		{
 			var recordList = _repository.GetRecords();
-			var json = JsonConvert.SerializeObject(recordList);
-			
+			_ = JsonSerializer.Serialize(recordList);
+
 			var recordEnumerable  = _repository.GetRecordsToEnumerable();
-			json = JsonConvert.SerializeObject(recordEnumerable);
+			_ = JsonSerializer.Serialize(recordEnumerable);
 			
 
 			var sw = new Stopwatch();
 			sw.Start();
 			
 			recordEnumerable  = _repository.GetRecordsToEnumerable();
-			json = JsonConvert.SerializeObject(recordEnumerable);
-			
+			string json = JsonSerializer.Serialize(recordEnumerable);
+
 			sw.Stop();
 
 			Assert.IsNotNull(json);
 
-			Console.WriteLine($"GetRecordsAsEnumerable reads records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"GetRecordsAsEnumerable reads records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 
 
 			sw.Restart();
 			
 			recordList = _repository.GetRecords();
-			json = JsonConvert.SerializeObject(recordList);
+			json = JsonSerializer.Serialize(recordList);
 			
 			sw.Stop();
 
 			Assert.IsNotNull(json);
 
-			Console.WriteLine($"GetRecords reads records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"GetRecords reads records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 		}
 
 		[TestMethod]
@@ -313,8 +306,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecordsAsEnumerable reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecordsAsEnumerable reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -345,8 +338,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 		
 
@@ -363,8 +356,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecordRowsWithHandMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecordRowsWithHandMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 		[TestMethod]
@@ -380,8 +373,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(records);
 			Assert.IsTrue(records.Count > 1);
 
-			Console.WriteLine($"GetRecordRowsWithHandMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.WriteLine($"GetRecordRowsWithHandMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -422,8 +415,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(savedRecord);
 			Assert.IsTrue(savedRecord.Id > 676);
 
-			Console.WriteLine($"SaveRecord executes for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(savedRecord));
+			Console.WriteLine($"SaveRecord executes for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(savedRecord));
 		}
 
 		
@@ -444,8 +437,8 @@ namespace Tests.Tests
 			Assert.IsNotNull(savedRecord);
 			Assert.IsTrue(savedRecord.Id > 676);
 
-			Console.WriteLine($"SaveRecordAsync executes for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(savedRecord));
+			Console.WriteLine($"SaveRecordAsync executes for {sw.Elapsed.TotalMilliseconds:0.##} ms");
+			Console.Write(JsonSerializer.Serialize(savedRecord));
 		}
 
 
@@ -472,11 +465,11 @@ namespace Tests.Tests
 			Assert.IsTrue(savedRecords.Count == 1000 );
 			Assert.IsTrue(savedRecords.First().Id > 0 );
 
-			Console.WriteLine($"SaveRecords saved and read back 1000 Records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"SaveRecords saved and read back 1000 Records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 			Console.WriteLine();
 			Console.WriteLine("The first 10 of the saved Records look like: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedRecords.Take(10)));
+			Console.Write(JsonSerializer.Serialize(savedRecords.Take(10)));
 		}
 
 		
@@ -501,11 +494,11 @@ namespace Tests.Tests
 			Assert.IsTrue(savedRecords.Count == 1000 );
 			Assert.IsTrue(savedRecords.First().Id > 0 );
 
-			Console.WriteLine($"SaveRecords saved and read back 1000 Records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
+			Console.WriteLine($"SaveRecords saved and read back 1000 Records for {sw.Elapsed.TotalMilliseconds:0.##} ms");
 			Console.WriteLine();
 			Console.WriteLine("The first 10 of the saved Records look like: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedRecords.Take(10)));
+			Console.Write(JsonSerializer.Serialize(savedRecords.Take(10)));
 		}
 		
 		[TestMethod]
@@ -516,14 +509,14 @@ namespace Tests.Tests
 			var tableName = "Recods";
 			var columnNames = new string[]
 			{
-				"Id"                ,
-				"GrandRecordId"     ,
-				"Name"              ,
-				"RecordTypeId"      ,
-				"Number"            ,
-				"Date"              ,
-				"Amount"            ,
-				"IsActive"          ,
+				"Id"				,
+				"GrandRecordId"	 ,
+				"Name"			  ,
+				"RecordTypeId"	  ,
+				"Number"			,
+				"Date"			  ,
+				"Amount"			,
+				"IsActive"		  ,
 				"Comment"
 			};
 
@@ -534,18 +527,18 @@ namespace Tests.Tests
 				records.Add(CreateNewRecord(i.ToString()));
 			}
 
-			var recordDatatable = records.AsDataTable(tableName, columnNames);
-			
+			_ = records.AsDataTable(tableName, columnNames);
+
 			var sw = new Stopwatch();
 			sw.Start();
 
-			recordDatatable = records.AsDataTable(tableName, columnNames);
-			
+			System.Data.DataTable recordDatatable = records.AsDataTable(tableName, columnNames);
+
 			sw.Stop();
 
 			Assert.IsTrue(recordDatatable.Rows.Count == recordCount );
 
-			Console.WriteLine($"{recordCount} Records converted to DataTable with AsDataTable method for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms");
+			Console.WriteLine($"{recordCount} Records converted to DataTable with AsDataTable method for {sw.Elapsed.TotalMilliseconds:0.####} ms");
 			Console.WriteLine();
 
 			sw.Restart();
@@ -556,7 +549,7 @@ namespace Tests.Tests
 
 			Assert.IsTrue(recordDatatable.Rows.Count == recordCount );
 
-			Console.WriteLine($"{recordCount} Records converted to DataTable with ToDataTable method for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms");
+			Console.WriteLine($"{recordCount} Records converted to DataTable with ToDataTable method for {sw.Elapsed.TotalMilliseconds:0.####} ms");
 		}
 
 		private static Record CreateNewRecord(string suffix = "")

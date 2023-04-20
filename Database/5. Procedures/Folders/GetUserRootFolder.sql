@@ -14,7 +14,7 @@ begin
 			UserId		,
 			Hid			,
 			ParentId	,
-			Name		)
+			[Name]		)
 		values (
 			@UserId		,
 			@RootHid	,
@@ -26,8 +26,8 @@ begin
 	select 
 		Id			,
 		ParentId	,
-		Name		,
-		[Level]		=	Hid.GetLevel(),		
+		[Name]		,
+		[Level]		=	Hid.GetLevel(),
 		HidCode		=	'',
 		HidPath		=	Hid.ToString(),
 		[Path]		=	''

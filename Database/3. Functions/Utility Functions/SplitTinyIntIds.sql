@@ -1,5 +1,5 @@
 ﻿create function SplitTinyIntIds ( --[dbo].[DelimitedSplit8K] -- http://www.sqlservercentral.com/articles/Tally+Table/72993/
-        @Ids varchar(1000)
+	@Ids varchar(1000)
 )
 returns table with schemabinding as
 return
@@ -7,7 +7,7 @@ return
 	with N as
 	(
 		select n from (values (1),(2),(3),(4),(5),(6),(7),(8),(9),(10)) t(n)
-	), 
+	),
 	E3 as
 	( 
 		select-- top 8000
@@ -39,4 +39,3 @@ return
 	where
 		len(substring(@Ids, l.N1, l.L1)) > 0
 );
-

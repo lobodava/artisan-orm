@@ -104,7 +104,7 @@ when matched then
 
 raiserror(	
 '
-when not matched by target then													 	
+when not matched by target then
 	insert (	
 		%s)
 	values (

@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace Artisan.Orm;
 
-namespace Artisan.Orm
+public interface INode<T> where T: class
 {
+	int Id { get; set; }
 
-	public interface INode<T> where T: class
-	{
-		Int32 Id { get; set; }
+	int? ParentId { get; set; }
 
-		Int32? ParentId { get; set; }
-
-		IList<T> Children { get; set; }
-	}
-
+	IList<T> Children { get; set; }
 }

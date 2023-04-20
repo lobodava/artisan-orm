@@ -2,7 +2,7 @@
 (
 	Id				int				not null	primary key clustered,
 	GrandRecordId	int				not null	,
-	Name			varchar(30)		not null	,
+	[Name]			varchar(30)		not null	,
 	RecordTypeId	tinyint				null	,
 	Number			smallint			null	,
 	[Date]			datetime2			null	,

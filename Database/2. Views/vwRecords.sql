@@ -4,13 +4,13 @@ as
 	select
 		Id				,
 		GrandRecordId	,
-		Name			,
+		[Name]			,
 		RecordTypeId	,
 		Number			,
 		[Date]			,
 		Amount			,
 		IsActive		,
-		Comment			
+		Comment
 	from
 		dbo.Records
 );

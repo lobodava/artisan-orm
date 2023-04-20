@@ -4,7 +4,7 @@ as
 	select
 		Id			,
 		RecordId	,
-		Name		
+		[Name]
 	from
 		dbo.ChildRecords
 );

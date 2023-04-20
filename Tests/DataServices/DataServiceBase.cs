@@ -1,95 +1,95 @@
-﻿using System;
-using System.Threading.Tasks;
-using Artisan.Orm;
+﻿using Artisan.Orm;
 
-namespace Tests.DataServices
+namespace Tests.DataServices;
+
+public class DataServiceBase: IDisposable
 {
-	public class DataServiceBase: IDisposable
+	internal IDisposable Repository;
+
+
+	public static DataReply<T> Get<T>(Func<T> func) 
 	{
-		internal IDisposable Repository;
-
-
-		public DataReply<T> Get<T>(Func<T> func) 
+		try 
 		{
-			try 
-			{
-				T data = func();
-				return new DataReply<T>(data);
-			}
-			catch (DataReplyException ex)
-			{
-				return new DataReply<T>(ex.Status, ex.Messages);
-			}
-			catch (Exception ex) 
-			{
-				return new DataReply<T>(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
-			}
+			T data = func();
+			return new DataReply<T>(data);
 		}
-
-		public async Task<DataReply<T>> GetAsync<T>(Func<Task<T>> funcAsync) 
+		catch (DataReplyException ex)
 		{
-			try 
-			{
-				T data = await funcAsync();
-				return new DataReply<T>(data);
-			}
-			catch(DataReplyException ex)
-			{
-				return new DataReply<T>(ex.Status, ex.Messages);
-			}
-			catch(Exception ex) 
-			{
-				return new DataReply<T>(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
-			}
+			return new DataReply<T>(ex.Status, ex.Messages);
 		}
-
-		public DataReply Execute(Func<bool> func) 
+		catch (Exception ex) 
 		{
-			try 
-			{
-				return func() ? new DataReply() : new DataReply(DataReplyStatus.Fail);
-			}
-			catch(DataReplyException ex)
-			{
-				return new DataReply(ex.Status, ex.Messages);
-			}
-			catch(Exception ex) 
-			{
-				return new DataReply(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
-			}
+			return new DataReply<T>(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
 		}
+	}
 
-
-		public async Task<DataReply> ExecuteAsync(Func<Task<bool>> funcAsync) 
+	public static async Task<DataReply<T>> GetAsync<T>(Func<Task<T>> funcAsync) 
+	{
+		try 
 		{
-			try 
-			{
-				return await funcAsync() ? new DataReply() : new DataReply(DataReplyStatus.Fail);
-			}
-			catch(DataReplyException ex)
-			{
-				return new DataReply(ex.Status, ex.Messages);
-			}
-			catch(Exception ex) 
-			{
-				return new DataReply(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
-			}
+			T data = await funcAsync();
+			return new DataReply<T>(data);
 		}
+		catch(DataReplyException ex)
+		{
+			return new DataReply<T>(ex.Status, ex.Messages);
+		}
+		catch(Exception ex) 
+		{
+			return new DataReply<T>(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
+		}
+	}
+
+	public static DataReply Execute(Func<bool> func) 
+	{
+		try 
+		{
+			return func() ? new DataReply() : new DataReply(DataReplyStatus.Fail);
+		}
+		catch(DataReplyException ex)
+		{
+			return new DataReply(ex.Status, ex.Messages);
+		}
+		catch(Exception ex) 
+		{
+			return new DataReply(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
+		}
+	}
 
 
-		private DataReplyMessage [] GetErrorDataReplyMessages (Exception ex)
+	public static async Task<DataReply> ExecuteAsync(Func<Task<bool>> funcAsync) 
+	{
+		try 
 		{
-			return new []
-			{
-				new DataReplyMessage { Code = "ErrorMessage"	, Text = ex.Message },
-				new DataReplyMessage { Code = "StackTrace"	, Text = ex.StackTrace.Substring(0, 500) }
-			};
+			return await funcAsync() ? new DataReply() : new DataReply(DataReplyStatus.Fail);
 		}
-		
-		public void Dispose()
+		catch(DataReplyException ex)
 		{
-			Repository?.Dispose();
+			return new DataReply(ex.Status, ex.Messages);
 		}
+		catch(Exception ex) 
+		{
+			return new DataReply(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
+		}
+	}
+
+
+	private static DataReplyMessage [] GetErrorDataReplyMessages (Exception ex)
+	{
+		return new []
+		{
+			new DataReplyMessage { Code = "ErrorMessage"	, Text = ex.Message },
+			new DataReplyMessage { Code = "StackTrace"	, Text = ex.StackTrace[..500] }
+		};
+	}
+	
+	public void Dispose()
+	{
+		Repository?.Dispose();
+		Repository = null;
+
+		GC.SuppressFinalize(this);
 	}
 }
 

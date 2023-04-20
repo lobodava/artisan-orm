@@ -1,5 +1,5 @@
 ﻿create function SplitSmallIntIds ( --[dbo].[DelimitedSplit8K] -- http://www.sqlservercentral.com/articles/Tally+Table/72993/
-        @Ids varchar(1000)
+	@Ids varchar(1000)
 )
 returns table with schemabinding as
 return
@@ -39,4 +39,3 @@ return
 	where
 		len(substring(@Ids, l.N1, l.L1)) > 0
 );
-

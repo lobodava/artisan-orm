@@ -2,6 +2,5 @@
 (
 	Id			int				not null	primary key clustered,
 	ParentId	int				not null	,
-	Name		nvarchar(50)	not null
+	[Name]		nvarchar(50)	not null
 );
-

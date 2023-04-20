@@ -22,7 +22,7 @@ begin
 	from
 		cte
 	where
-		FolderId = @FolderId;	
+		FolderId = @FolderId;
 
 
 	exec dbo.GetFolderById @NextSiblingFolderId;

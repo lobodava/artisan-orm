@@ -51,7 +51,7 @@ begin
 
 
 			if @WithHidReculc = 1
-				exec dbo.ReculcSubFolderHids @UserId, @ParentId, @ParentHid;
+				exec dbo.RecalcSubFolderHids @UserId, @ParentId, @ParentHid;
 
 		end;
 

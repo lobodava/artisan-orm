@@ -43,7 +43,7 @@ begin
 		Name		,
 		Level		)
 	select 
-		UserId		=	u.Id	, 
+		UserId		=	u.Id	,
 		Hid			=	'/'		,
 		Name		=	'<root>',
 		Level		=	0

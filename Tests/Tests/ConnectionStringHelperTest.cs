@@ -1,8 +1,7 @@
-﻿using System;
-using System.Configuration;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Reflection;
+using System.Text.Json;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static System.String;
 
 namespace Tests.Tests
@@ -10,7 +9,9 @@ namespace Tests.Tests
 	[TestClass]
 	public class ConnectionStringHelperTest
 	{
-		private static readonly string  MachineName = Environment.MachineName.ToUpper();
+		private static readonly string MachineName = Environment.MachineName.ToUpper();
+		private static readonly string CurrentConfigurationName = GetCurrentConfigurationName();
+		private const string TestAppsettingJsonFileName = "test.appsettings.json";
 
 		[TestMethod]
 		public void ConnectionStringNotFoundException()
@@ -23,11 +24,11 @@ namespace Tests.Tests
 
 				Assert.Fail();
 			} 
-			catch(SettingsPropertyNotFoundException)
+			catch(AppSettingsPropertyNotFoundException)
 			{
 				connectionString = Empty;
 			}
-			catch(Exception)
+			catch(Exception ex)
 			{
 				Assert.Fail();
 			}
@@ -48,70 +49,68 @@ namespace Tests.Tests
 		[TestMethod]
 		public void MachineConnectionString()
 		{
-			var connectionStringName = $"{MachineName}.MachineConnectionString";
+			var testAppsettingJsonFileName = "machine.appsettings.json";
 
-			Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-
-			var connectionStringSettings = new ConnectionStringSettings
+			CreateTestAppsettingJson( new
 			{
-				Name = connectionStringName,
-				ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=MachineDb;Integrated Security=True"
-			};
-			
-			config.ConnectionStrings.ConnectionStrings.Add(connectionStringSettings);
-    
-			config.Save(ConfigurationSaveMode.Modified);
-			ConfigurationManager.RefreshSection("connectionStrings");
-			
-			var connectionString = ConnectionStringHelper.GetConnectionString("MachineConnectionString");
+				ConnectionStrings = new Dictionary<string, string>
+				{	
+					{ $"DatabaseConnection", "Data Source=.\\SQLEXPRESS;Initial Catalog=ArtisanDb;Integrated Security=True;" },
+					{ $"{MachineName}.DatabaseConnection", $"Data Source=.\\SQLEXPRESS;Initial Catalog={MachineName}Db;Integrated Security=True;" },
+					
+				}
+			}, testAppsettingJsonFileName);
+
+			var connectionString = ConnectionStringHelper.GetConnectionString(jsonSettingsFileRelativePath: testAppsettingJsonFileName);
 
 			Assert.IsNotNull(connectionString);
-			Assert.AreEqual(ConnectionStringHelper.GetDatabaseName(connectionString), "MachineDb");
-
+			Assert.AreEqual($"{MachineName}Db", ConnectionStringHelper.GetDatabaseName(connectionString));
 		}
 
 		[TestMethod]
 		public void MachineDebugConnectionString()
 		{
-			Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+			var testAppsettingJsonFileName = "machine.configuration.appsettings.json";
 
-			var connectionStringSettings = new ConnectionStringSettings
+			CreateTestAppsettingJson( new
 			{
-				Name = $"{MachineName}.Debug.MachineConnectionString",
-				ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=MachineDebugDb;Integrated Security=True"
-			};
-			
-			config.ConnectionStrings.ConnectionStrings.Add(connectionStringSettings);
-    
-			config.Save(ConfigurationSaveMode.Modified);
-			ConfigurationManager.RefreshSection("connectionStrings");
-			
-			var connectionString = ConnectionStringHelper.GetConnectionString("MachineConnectionString", "Debug");
+				ConnectionStrings = new Dictionary<string, string>
+				{	
+					{ $"DatabaseConnection", "Data Source=.\\SQLEXPRESS;Initial Catalog=ArtisanDb;Integrated Security=True;" },
+					{ $"{MachineName}.DatabaseConnection", $"Data Source=.\\SQLEXPRESS;Initial Catalog={MachineName}Db;Integrated Security=True;" },
+					{ $"{MachineName}.{CurrentConfigurationName}.DatabaseConnection", $"Data Source=.\\SQLEXPRESS;Initial Catalog={MachineName}{CurrentConfigurationName}Db;Integrated Security=True;" },
+				}
+			}, testAppsettingJsonFileName);
+
+			var connectionString = ConnectionStringHelper.GetConnectionString(activeSolutionConfiguration: CurrentConfigurationName, jsonSettingsFileRelativePath: testAppsettingJsonFileName);
 
 			Assert.IsNotNull(connectionString);
-			Assert.AreEqual(ConnectionStringHelper.GetDatabaseName(connectionString), "MachineDebugDb");
+			Assert.AreEqual($"{MachineName}{CurrentConfigurationName}Db", ConnectionStringHelper.GetDatabaseName(connectionString));
 		}
 
 		[TestMethod]
-		public void DebugConnectionString()
+		public void SolutionConfigurationConnectionString()
 		{
-			Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+			var testAppsettingJsonFileName = "configuration.appsettings.json";
 
-			var connectionStringSettings = new ConnectionStringSettings
+			CreateTestAppsettingJson( new
 			{
-				Name = "Debug.DebugConnectionString",
-				ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=DebugDb;Integrated Security=True"
-			};
-			
-			config.ConnectionStrings.ConnectionStrings.Add(connectionStringSettings);
-    
-			config.Save(ConfigurationSaveMode.Modified);
-			ConfigurationManager.RefreshSection("connectionStrings");
+				ConnectionStrings = new Dictionary<string, string>
+				{
+					{ $"{CurrentConfigurationName}.DatabaseConnection", $"Data Source=.\\SQLEXPRESS;Initial Catalog={CurrentConfigurationName}Db;Integrated Security=True;" },
+					{ $"DatabaseConnection", "Data Source=.\\SQLEXPRESS;Initial Catalog=ArtisanDb;Integrated Security=True;" }
+				}
+			}, testAppsettingJsonFileName);
 
-			var connectionString = ConnectionStringHelper.GetConnectionString("DebugConnectionString", "Debug");
+			var connectionString = ConnectionStringHelper.GetConnectionString(jsonSettingsFileRelativePath: testAppsettingJsonFileName);
 
 			Assert.IsNotNull(connectionString);
-			Assert.AreEqual(ConnectionStringHelper.GetDatabaseName(connectionString), "DebugDb");
+			Assert.AreEqual("ArtisanDb", ConnectionStringHelper.GetDatabaseName(connectionString));
+
+			connectionString = ConnectionStringHelper.GetConnectionString(activeSolutionConfiguration: CurrentConfigurationName, jsonSettingsFileRelativePath: testAppsettingJsonFileName);
+			
+			Assert.IsNotNull(connectionString);
+			Assert.AreEqual($"{CurrentConfigurationName}Db", ConnectionStringHelper.GetDatabaseName(connectionString));
 		}
 
 
@@ -124,7 +123,7 @@ namespace Tests.Tests
 			sw.Start();
 			for (var i = 0; i < 10000; i++)
 			{
-				connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
+				connectionString = ConnectionStringHelper.GetConnectionString("DatabaseConnection");
 			}
 			sw.Stop();
 
@@ -151,31 +150,53 @@ namespace Tests.Tests
 	
 		}
 
-		[TestMethod]
-		public void ConnectionStringContainsStopwatch()
-		{
-			var connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=MachineDebugDb;Integrated Security=True";
-			bool f = false;
+		//[TestMethod]
+		//public void ConnectionStringContainsStopwatch()
+		//{
+		//	var connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=MachineDebugDb;Integrated Security=True";
+		//	bool f = false;
 
-			var sw = new Stopwatch();
+		//	var sw = new Stopwatch();
 
-			sw.Start();
-			for (var i = 0; i < 1000; i++)
-			{
-				if (connectionString.Contains(";") && connectionString.Contains("="))
-				{
-					f = true;
-				}
-			}
-			sw.Stop();
+		//	sw.Start();
+		//	for (var i = 0; i < 1000; i++)
+		//	{
+		//		if (connectionString.Contains(";") && connectionString.Contains("="))
+		//		{
+		//			f = true;
+		//		}
+		//	}
+		//	sw.Stop();
 			
-			Assert.IsTrue(f);
-			Console.WriteLine("Contains (1000 times) = " + new TimeSpan(sw.Elapsed.Ticks).TotalMilliseconds + " ms");
-	
+		//	Assert.IsTrue(f);
+		//	Console.WriteLine("Contains (1000 times) = " + new TimeSpan(sw.Elapsed.Ticks).TotalMilliseconds + " ms");
 
+		//}
+
+
+		private static void CreateTestAppsettingJson (dynamic appsettings, string appsettingsFileName)
+		{
+			DeleteTestAppsettingsJson(appsettingsFileName);
+
+			var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, appsettingsFileName);
+			string json = JsonSerializer.Serialize(appsettings);
+
+			File.WriteAllText(path, json);
 		}
 
 
+		private static void DeleteTestAppsettingsJson(string appsettingsFileName)
+		{
+			var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, appsettingsFileName);
 
+			if (File.Exists(path))
+				File.Delete(path);
+		}
+
+		private static string GetCurrentConfigurationName()
+		{
+			var assemblyConfigurationAttribute = typeof(ConnectionStringHelperTest).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>();
+			return assemblyConfigurationAttribute?.Configuration;
+		}
 	}
 }

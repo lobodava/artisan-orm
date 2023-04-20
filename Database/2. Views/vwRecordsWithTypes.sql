@@ -4,7 +4,7 @@ as
 	select
 		r.Id			,
 		GrandRecordId	,
-		r.Name			,
+		r.[Name]		,
 		RecordTypeId	,
 		Number			,
 		[Date]			,
@@ -14,7 +14,7 @@ as
 
 		rt_Id			=	rt.Id	,
 		rt_Code			=	rt.Code	,
-		rt_Name			=	rt.Name
+		rt_Name			=	rt.[Name]
 		
 	from
 		dbo.Records r

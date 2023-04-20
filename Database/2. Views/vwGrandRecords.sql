@@ -3,7 +3,7 @@ as
 (
 	select
 		Id		,
-		Name	
+		[Name]
 	from
 		dbo.GrandRecords
 );

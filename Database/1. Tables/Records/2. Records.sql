@@ -2,7 +2,7 @@
 (
 	Id				int				not null	identity,
 	GrandRecordId	int				not null	,
-	Name			varchar(30)		not null	,
+	[Name]			varchar(30)		not null	,
 	RecordTypeId	tinyint				null	,	
 	Number			smallint			null	,
 	[Date]			datetime2(0)		null	,
@@ -10,9 +10,6 @@
 	IsActive		bit					null	,
 	Comment			nvarchar(500)		null	,
 
-			
-
-	
 	constraint PK_Records primary key clustered (Id),
 
 	constraint FK_GrandRecords_GrandRecordId foreign key (GrandRecordId) references dbo.GrandRecords (Id) on delete cascade,

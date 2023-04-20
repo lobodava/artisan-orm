@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Data;
 using Artisan.Orm;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 
 namespace Tests.Tests
 {
@@ -18,7 +12,6 @@ namespace Tests.Tests
 		public void TestInitialize()
 		{
 			_repository = new RepositoryBase();
-
 		}
 
 
@@ -106,120 +99,6 @@ namespace Tests.Tests
 
 		}
 
-		[TestMethod]
-		public void GetWholeNumberDictionaryParams()
-		{
-			bool		bit					=	true	;
-			bool?		bitNull				=	null	;
-			bool?		bitNullable			=	false	;
-					
-			byte		tinyInt				=	byte.MaxValue		;
-			byte?		tinyIntNull			=	null				;
-			byte?		tinyIntNullable		=	byte.MinValue		;
-
-			short		smallInt			=	short.MaxValue		;
-			short?		smallIntNull		=	null				;
-			short?		smallIntNullable	=	short.MinValue		;
-
-			int			int_				=	int.MaxValue		;
-			int?		intNull				=	null				;
-			int?		intNullable			=	int.MinValue		;
-
-			long		bigInt				=	long.MaxValue		;
-			long?		bigIntNull			=	null				;
-			long?		bigIntNullable		=	long.MinValue		;
-
-			var paramDict = new Dictionary<string, object>
-			{
-				{"Bit"				, bit				},
-				{"BitNull"			, bitNull			},
-				{"BitNullable"		, bitNullable		},
-				{"TinyInt"			, tinyInt			},
-				{"TinyIntNull"		, tinyIntNull		},
-				{"TinyIntNullable"	, tinyIntNullable	},
-				{"SmallInt"			, smallInt			},
-				{"SmallIntNull"		, smallIntNull		},
-				{"SmallIntNullable"	, smallIntNullable	},
-				{"Int"				, int_				},
-				{"IntNull"			, intNull			},
-				{"IntNullable"		, intNullable		},
-				{"BigInt"			, bigInt			},
-				{"BigIntNull"		, bigIntNull		},
-				{"BigIntNullable"	, bigIntNullable	}
-			};
-
-			dynamic paramDynamic = new {
-				Bit					= bit				,
-				BitNull				= bitNull			,
-				BitNullable			= bitNullable		,
-				TinyInt				= tinyInt			,
-				TinyIntNull			= tinyIntNull		,
-				TinyIntNullable		= tinyIntNullable	,
-				SmallInt			= smallInt			,
-				SmallIntNull		= smallIntNull		,
-				SmallIntNullable	= smallIntNullable	,
-				Int					= int_				,
-				IntNull				= intNull			,
-				IntNullable			= intNullable		,
-				BigInt				= bigInt			,
-				BigIntNull			= bigIntNull		,
-				BigIntNullable		= bigIntNullable
-			};
-
-			var sw = new Stopwatch();
-
-			for (int j = 0; j < 5; j++)
-			{
-				sw.Restart();
-				
-				_repository.RunCommand(cmd =>
-				{
-					cmd.UseProcedure("dbo.GetWholeNumberParams");
-
-					if (j < 3)
-						cmd.AddParams(paramDict);
-					else
-						_repository.AddParams(cmd, paramDynamic);
-
-					cmd.ExecuteReader(reader =>
-					{
-						var i = 0;
-
-						reader.Read(r =>
-						{
-							Assert.AreEqual(r.GetBoolean(i++),			paramDict["Bit"],				"bit");
-							Assert.AreEqual(r.GetBooleanNullable(i++),	paramDict["BitNull"],			"bitNull");
-							Assert.AreEqual(r.GetBooleanNullable(i++),	paramDict["BitNullable"],		"bitNullable");
-
-							Assert.AreEqual(r.GetByte(i++),				paramDict["TinyInt"],			"tinyInt");
-							Assert.AreEqual(r.GetByteNullable(i++),		paramDict["TinyIntNull"],		"tinyIntNull");
-							Assert.AreEqual(r.GetByteNullable(i++),		paramDict["TinyIntNullable"], "tinyIntNullable");
-
-							Assert.AreEqual(r.GetInt16(i++),			paramDict["SmallInt"],		"smallInt");
-							Assert.AreEqual(r.GetInt16Nullable(i++),	paramDict["SmallIntNull"],	"smallIntNull");
-							Assert.AreEqual(r.GetInt16Nullable(i++),	paramDict["SmallIntNullable"],"smallIntNullable");
-
-							Assert.AreEqual(r.GetInt32(i++),			paramDict["Int"],				"int_");
-							Assert.AreEqual(r.GetInt32Nullable(i++),	paramDict["IntNull"],			"intNull");
-							Assert.AreEqual(r.GetInt32Nullable(i++),	paramDict["IntNullable"],		"intNullable");
-
-							Assert.AreEqual(r.GetInt64(i++),			paramDict["BigInt"],			"bigInt");
-							Assert.AreEqual(r.GetInt64Nullable(i++),	paramDict["BigIntNull"],		"bigIntNull");
-							Assert.AreEqual(r.GetInt64Nullable(i++),	paramDict["BigIntNullable"],	"bigIntNullable");
-
-						});
-
-					});
-
-				});
-
-				sw.Stop();
-
-				Console.WriteLine($"dbo.GetWholeNumberParams execution # {j + 1} took {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms" );
-			}
-	
-		}
-
 
 		[TestMethod]
 		public void GetFractionalNumberParams()
@@ -305,101 +184,6 @@ namespace Tests.Tests
 		}
 
 		[TestMethod]
-		public void GetFractionalNumberDictionaryParams()
-		{
-			decimal		decimal_			=	decimal.MaxValue		; //  79228162514264337593543950335
-			decimal?	decimalNull			=	null					;
-			decimal?	decimalNullable		=	decimal.MinValue		; // -79228162514264337593543950335
-
-			decimal		smallMoney			=	214748.3647m			;
-			decimal?	smallMoneyNull		=	null					;
-			decimal?	smallMoneyNullable	=	-214748.3648m			;
-
-			decimal		money				=	-922337203685477.5808m	;
-			decimal?	moneyNull			=	null					;
-			decimal?	moneyNullable		=	922337203685477.5807m	;
-
-			float		real				=	3.40E+38f				;
-			float?		realNull			=	null					;
-			float?		realNullable		=	-3.40E+38f				;
-
-			double		float_				=	-1.79E+308d				;
-			double?		floatNull			=	null					;
-			double?		floatNullable		=	1.79E+308d				;
-
-			var paramDict = new Dictionary<string, object>
-			{
-				{"Decimal"				,	decimal_			},
-				{"DecimalNull"			,	decimalNull			},
-				{"DecimalNullable"		,	decimalNullable		},
-				{"SmallMoney"			,	smallMoney			},
-				{"SmallMoneyNull"		,	smallMoneyNull		},
-				{"SmallMoneyNullable"	,	smallMoneyNullable	},
-				{"Money"				,	money				},
-				{"MoneyNull"			,	moneyNull			},
-				{"MoneyNullable"		,	moneyNullable		},
-				{"Real"					,	real				},
-				{"RealNull"				,	realNull			},
-				{"RealNullable"			,	realNullable		},
-				{"Float"				,	float_				},
-				{"FloatNull"			,	floatNull			},
-				{"FloatNullable"		,	floatNullable		}
-			};
-
-			var sw = new Stopwatch();
-			
-			for (int j = 0; j < 5; j++)
-			{
-				sw.Restart();
-				
-				_repository.RunCommand(cmd =>
-				{
-					cmd.UseProcedure("dbo.GetFractionalNumberParams");
-
-					cmd.AddParams(paramDict);
-
-					cmd.ExecuteReader(reader =>
-					{
-						var i = 0;
-
-						reader.Read(r =>
-						{
-							Assert.AreEqual( r.GetDecimal(i++)			,	paramDict["Decimal"]				,	"decimal_"			);	
-							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["DecimalNull"]			,	"decimalNull"		);	
-							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["DecimalNullable"]		,	"decimalNullable"	);	
-
-							Assert.AreEqual( r.GetDecimal(i++)			,	paramDict["SmallMoney"]			,	"smallMoney"			);	
-							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["SmallMoneyNull"]		,	"smallMoneyNull"		);	
-							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["SmallMoneyNullable"]	,	"smallMoneyNullable");	
-
-							Assert.AreEqual( r.GetDecimal(i++)			,	paramDict["Money"]				,	"money"				);	
-							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["MoneyNull"]			,	"moneyNull"			);	
-							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["MoneyNullable"]		,	"moneyNullable"		);	
-
-							Assert.AreEqual( r.GetFloat(i++)			,	paramDict["Real"]					,	"real"				);	
-							Assert.AreEqual( r.GetFloatNullable(i++)	,	paramDict["RealNull"]				,	"realNull"			);	
-							Assert.AreEqual( r.GetFloatNullable(i++)	,	paramDict["RealNullable"]			,	"realNullable"		);	
-
-							Assert.AreEqual( r.GetDouble(i++)			,	paramDict["Float"]				,	"float_"				);	
-							Assert.AreEqual( r.GetDoubleNullable(i++)	,	paramDict["FloatNull"]			,	"floatNull"			);	
-							Assert.AreEqual( r.GetDoubleNullable(i++)	,	paramDict["FloatNullable"]		,	"floatNullable"		);
-
-						});
-
-					});
-
-				});
-
-				sw.Stop();
-
-				Console.WriteLine($"dbo.GetFractionalNumberParams execution # {j + 1} took {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms" );
-			}
-
-		}
-
-
-		
-		[TestMethod]
 		public void GetStringParams()
 		{
 			char		char_			=	'W';
@@ -410,16 +194,16 @@ namespace Tests.Tests
 			char?		ncharNull		=	null;
 			char?		ncharNullable	=	'Ж';
 
-			string		varchar			=	new string('W', 8000);
+			string		varchar			=	new('W', 8000);
 			string		varcharNull		=	null;
 
-			string		nvarchar			=	new string('Ж', 4000);
+			string		nvarchar			=	new('Ж', 4000);
 			string		nvarcharNull		=	null;
 
-			string		varcharmax			=	new string('W', 10000);
+			string		varcharmax			=	new('W', 10000);
 			string		varcharmaxNull		=	null;
 
-			string		nvarcharmax			=	new string('Ж', 10000);
+			string		nvarcharmax			=	new('Ж', 10000);
 			string		nvarcharmaxNull		=	null;
 
 			
@@ -496,27 +280,27 @@ namespace Tests.Tests
 			var o = now.Offset;
 
 
-			DateTime		date					=	new DateTime(Y,M,D)			;
+			DateTime		date					=	new(Y,M,D)					;
 			DateTime?		dateNull				=	null						;
-			DateTime?		dateNullable			=	new DateTime(Y,M,D)			; 
+			DateTime?		dateNullable			=	new DateTime(Y,M,D)			;
 
-			TimeSpan		time					=	new TimeSpan(h,m,s)			;
+			TimeSpan		time					=	new(h,m,s)					;
 			TimeSpan?		timeTimeNull			=	null						;
-			TimeSpan?		timeTimeNullable		=	new TimeSpan(h,m,s)			; 
+			TimeSpan?		timeTimeNullable		=	new TimeSpan(h,m,s)			;
 
-			DateTime		smallDateTime			=	new DateTime(Y,M,D,h,m,0)	;
+			DateTime		smallDateTime			=	new(Y,M,D,h,m,0)			;
 			DateTime?		smallDateTimeNull		=	null						;
-			DateTime?		smallDateTimeNullable	=	new DateTime(Y,M,D,h,m,0)	; 
+			DateTime?		smallDateTimeNullable	=	new DateTime(Y,M,D,h,m,0)	;
 
-			DateTime		dateTime				=	new DateTime(Y,M,D,h,m,s)	;
+			DateTime		dateTime				=	new(Y,M,D,h,m,s)			;
 			DateTime?		dateTimeNull			=	null						;
-			DateTime?		dateTimeNullable		=	new DateTime(Y,M,D,h,m,s)	; 
+			DateTime?		dateTimeNullable		=	new DateTime(Y,M,D,h,m,s)	;
 
-			DateTime		dateTime2				=	new DateTime(Y,M,D,h,m,s)	;
+			DateTime		dateTime2				=	new(Y,M,D,h,m,s)			;
 			DateTime?		dateTime2Null			=	null						;
-			DateTime?		dateTime2Nullable		=	new DateTime(Y,M,D,h,m,s)	; 
+			DateTime?		dateTime2Nullable		=	new DateTime(Y,M,D,h,m,s)	;
 
-			DateTimeOffset	dateTimeOffset			=	new DateTimeOffset(Y,M,D,h,m,s,o)	;
+			DateTimeOffset	dateTimeOffset			=	new(Y,M,D,h,m,s,o)					;
 			DateTimeOffset?	dateTimeOffsetNull		=	null								;
 			DateTimeOffset?	dateTimeOffsetNullable	=	new DateTimeOffset(Y,M,D,h,m,s,o)	;
 
@@ -647,7 +431,7 @@ namespace Tests.Tests
 						Assert.AreEqual( r.GetBase64StringFromRowVersion(i++)	,	rowVersionBase64		,	"rowVersionBase64"			);
 						Assert.AreEqual( r.GetBase64StringFromRowVersion(i++)	,	rowVersionBase64Null	,	"rowVersionBase64Null"		);
 
-						Console.WriteLine($"Byte[8]: [{String.Join(",", r.GetBytesFromRowVersion(i))}]");
+						Console.WriteLine($"Byte[8]: [{string.Join(",", r.GetBytesFromRowVersion(i))}]");
 						Console.WriteLine($"Int64: {r.GetInt64FromRowVersion(i)}");
 						Console.WriteLine($"Base64String: {r.GetBase64StringFromRowVersion(i)}");
 
@@ -670,7 +454,7 @@ namespace Tests.Tests
 				
 				cmd.AddTableParam("@Numbers", numbers);
 
-				var readNumbers = cmd.ReadToArray<Byte>();
+				var readNumbers = cmd.ReadToArray<byte>();
 				
 				CollectionAssert.AreEqual(numbers, readNumbers);
 			});
@@ -681,7 +465,7 @@ namespace Tests.Tests
 				
 				cmd.AddTableParam("@Numbers", numbers, "TinyIntIdTableType", "Id");
 
-				var readNumbers = cmd.ReadToArray<Byte>();
+				var readNumbers = cmd.ReadToArray<byte>();
 				
 				CollectionAssert.AreEqual(numbers, readNumbers);
 			});
@@ -690,9 +474,9 @@ namespace Tests.Tests
 			{
 				cmd.UseSql("select Id from @Numbers;");
 
-				cmd.AddTableRowParam("@Numbers", (Byte)123);
+				cmd.AddTableRowParam("@Numbers", (byte)123);
 				
-				Assert.AreEqual(cmd.ReadTo<Byte>(), 123);
+				Assert.AreEqual(cmd.ReadTo<byte>(), 123);
 			});
 		}
 
@@ -707,7 +491,7 @@ namespace Tests.Tests
 
 				cmd.AddTableParam("@Numbers", numbers);
 
-				var readNumbers = cmd.ReadToArray<Int16>();
+				var readNumbers = cmd.ReadToArray<short>();
 				
 				CollectionAssert.AreEqual(numbers, readNumbers);
 			});
@@ -718,7 +502,7 @@ namespace Tests.Tests
 
 				cmd.AddTableParam("@Numbers", numbers, "SmallIntIdTableType", "Id");
 
-				var readNumbers = cmd.ReadToArray<Int16>();
+				var readNumbers = cmd.ReadToArray<short>();
 				
 				CollectionAssert.AreEqual(numbers, readNumbers);
 			});
@@ -727,11 +511,13 @@ namespace Tests.Tests
 			{
 				cmd.UseSql("select Id from @Numbers;");
 
-				cmd.AddTableRowParam("@Numbers", (Int16)123);
+				cmd.AddTableRowParam("@Numbers", (short)123);
 				
-				Assert.AreEqual(cmd.ReadTo<Int16>(), 123);
+				Assert.AreEqual(cmd.ReadTo<short>(), 123);
 			});
 		}
+
+
 
 
 		[TestMethod]
@@ -745,7 +531,7 @@ namespace Tests.Tests
 
 				cmd.AddTableParam("@Numbers", numbers);
 
-				var readNumbers = cmd.ReadToArray<Int32>();
+				var readNumbers = cmd.ReadToArray<int>();
 				
 				CollectionAssert.AreEqual(numbers, readNumbers);
 			});
@@ -756,7 +542,7 @@ namespace Tests.Tests
 
 				cmd.AddTableParam("@Numbers", numbers, "IntIdTableType", "Id");
 
-				var readNumbers = cmd.ReadToArray<Int32>();
+				var readNumbers = cmd.ReadToArray<int>();
 				
 				CollectionAssert.AreEqual(numbers, readNumbers);
 			});
@@ -767,7 +553,7 @@ namespace Tests.Tests
 
 				cmd.AddTableRowParam("@Numbers", 123);
 				
-				Assert.AreEqual(cmd.ReadTo<Int32>(), 123);
+				Assert.AreEqual(cmd.ReadTo<int>(), 123);
 			});
 		}
 
@@ -781,7 +567,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void AsDataTable()
 		{
-			List<A> aList = new List<A>
+			List<A> aList = new()
 			{
 				new A {Id = 1, Name ="A" },
 				new A {Id = 2, Name ="AA" },
@@ -793,40 +579,40 @@ namespace Tests.Tests
 
 			Assert.AreEqual(tableName, dt.TableName);
 			Assert.AreEqual("Id", dt.Columns[0].ColumnName);
-			Assert.AreEqual(typeof(Int32), dt.Columns[0].DataType);
+			Assert.AreEqual(typeof(int), dt.Columns[0].DataType);
 			Assert.AreEqual("Name", dt.Columns[1].ColumnName);
 			Assert.AreEqual(typeof(string), dt.Columns[1].DataType);
 
-			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Id, (int)dt.Rows[0]["Id"]);
 			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
-			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Id, (int)dt.Rows[1]["Id"]);
 			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
 
 
 			dt = aList.AsDataTable(tableName, new [] { "Id", "Name" });
 
 			Assert.AreEqual(dt.TableName, tableName);
-			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Id, (int)dt.Rows[0]["Id"]);
 			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
-			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Id, (int)dt.Rows[1]["Id"]);
 			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
 
 			
 			dt = aList.AsDataTable(tableName);
 
 			Assert.AreEqual(dt.TableName, tableName);
-			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Id, (int)dt.Rows[0]["Id"]);
 			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
-			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Id, (int)dt.Rows[1]["Id"]);
 			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
 
 
 			dt = aList.AsDataTable();
 
 			Assert.AreEqual(dt.TableName, "");
-			Assert.AreEqual(aList.First().Id, (Int32)dt.Rows[0]["Id"]);
+			Assert.AreEqual(aList.First().Id, (int)dt.Rows[0]["Id"]);
 			Assert.AreEqual(aList.First().Name, dt.Rows[0]["Name"].ToString());
-			Assert.AreEqual(aList.Last().Id, (Int32)dt.Rows[1]["Id"]);
+			Assert.AreEqual(aList.Last().Id, (int)dt.Rows[1]["Id"]);
 			Assert.AreEqual(aList.Last().Name, dt.Rows[1]["Name"].ToString());
 
 			var numbers = new int[] {1,3,5,7,11,13};

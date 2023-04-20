@@ -1,6 +1,6 @@
 ﻿create function dbo.GetUserRoleIds
 (
-    @UserId int
+	@UserId int
 )
 returns varchar(100)
 as
@@ -15,5 +15,5 @@ begin
 	where
 		UserId = @UserId;
 
-    return @UserRoleIds;    
+	return @UserRoleIds;
 end

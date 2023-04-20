@@ -23,18 +23,18 @@ begin
 				using 
 				(
 					select
-						Id		, 
-						Name	
+						Id		,
+						[Name]
 					from
 						@GrandRecords
 				) 
 				as source on source.Id = target.Id
 
 			when matched then
-				update set				
-					Name	=	source.Name		
+				update set
+					Name	=	source.Name
 
-			when not matched by target then													 	
+			when not matched by target then
 				insert (	
 					Name	)
 				values (
@@ -69,33 +69,33 @@ begin
 
 			when matched then
 				update set				
-					GrandRecordId	=	source.GrandRecordId, 
-					Name			=	source.Name			, 
+					GrandRecordId	=	source.GrandRecordId,
+					[Name]			=	source.[Name]		,
 					RecordTypeId	=	source.RecordTypeId	,
-					Number			=	source.Number		, 
-					[Date]			=	source.[Date]		, 
-					Amount			=	source.Amount		, 
-					IsActive		=	source.IsActive		, 
-					Comment			=	source.Comment			
+					Number			=	source.Number		,
+					[Date]			=	source.[Date]		,
+					Amount			=	source.Amount		,
+					IsActive		=	source.IsActive		,
+					Comment			=	source.Comment
 
-			when not matched by target then													 	
-				insert (	
-					GrandRecordId	, 
-					Name			,
-					RecordTypeId	, 
-					Number			, 
-					[Date]			, 
-					Amount			, 
-					IsActive		, 
+			when not matched by target then
+				insert (
+					GrandRecordId	,
+					[Name]			,
+					RecordTypeId	,
+					Number			,
+					[Date]			,
+					Amount			,
+					IsActive		,
 					Comment			)
 				values (
-					source.GrandRecordId, 
-					source.Name			, 
+					source.GrandRecordId,
+					source.[Name]		,
 					source.RecordTypeId	,
-					source.Number		, 
-					source.[Date]		, 
-					source.Amount		, 
-					source.IsActive		, 
+					source.Number		,
+					source.[Date]		,
+					source.Amount		,
+					source.IsActive		,
 					source.Comment		)
 
 			when not matched by source and target.GrandRecordId in (select InsertedId from @GrandRecordIds) then
@@ -115,8 +115,8 @@ begin
 				using 
 				(
 					select
-						Id			, 
-						RecordId	=	ids.InsertedId, 
+						Id			,
+						RecordId	=	ids.InsertedId,
 						Name		
 					from
 						@ChildRecords cr
@@ -126,16 +126,16 @@ begin
 
 			when matched then
 				update set				
-					RecordId	=	source.RecordId	, 
-					Name		=	source.Name			
+					RecordId	=	source.RecordId	,
+					[Name]		=	source.[Name]
 
-			when not matched by target then													 	
+			when not matched by target then
 				insert (	
-					RecordId	, 
-					Name		)
+					RecordId	,
+					[Name]		)
 				values (
-					source.RecordId	, 
-					source.Name		)
+					source.RecordId	,
+					source.[Name]	)
 		
 			when not matched by source and target.RecordId in (select InsertedId from @RecordIds) then
 				delete;
@@ -159,7 +159,7 @@ begin
 	begin -- output saved Grand Records and its descendants
 
 		select
-			fn.*	
+			fn.*
 		from
 			dbo.vwGrandRecords fn
 			inner join @GrandRecordIds ids on ids.InsertedId = fn.Id
@@ -178,7 +178,7 @@ begin
 
 
 		select
-			fn.*	
+			fn.*
 		from
 			dbo.vwChildRecords fn
 			inner join dbo.Records r on r.Id = fn.RecordId
@@ -189,7 +189,5 @@ begin
 			fn.Id;
 
 	end;
-
-
 
 end;

@@ -1,4 +1,4 @@
-﻿create procedure dbo.ReculcSubFolderHids
+﻿create procedure dbo.RecalcSubFolderHids
 	@UserId			int				,
 	@ParentId		int				,
 	@ParentHid		hierarchyid		,
