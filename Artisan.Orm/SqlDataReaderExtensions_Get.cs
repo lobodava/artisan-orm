@@ -1,3 +1,4 @@
+using System.Data.SqlTypes;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 
@@ -227,5 +228,15 @@ public static partial class SqlDataReaderExtensions
 			return Array.Empty<int>();
 
 		return ids.Split(',').Select(s => Convert.ToInt32(s)).ToArray();
+	}
+
+	public static SqlXml GetSqlXmlNullable(this SqlDataReader reader, int ordinal)
+	{
+		return reader.IsDBNull(ordinal) ? default : reader.GetSqlXml(ordinal);
+	}
+	
+	public static SqlXml GetSqlXml(this SqlDataReader reader, int ordinal, SqlXml defaultValue)
+	{
+		return reader.IsDBNull(ordinal) ? defaultValue : reader.GetSqlXml(ordinal);
 	}
 }

@@ -1,3 +1,4 @@
+using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Text.Json;
 using Artisan.Orm;
@@ -313,7 +314,55 @@ namespace Tests.Tests
 			Console.WriteLine("SomeClass:");
 			Console.WriteLine(JsonSerializer.Serialize(someclass));
 		}
-		
+
+		[TestMethod]
+		public void GetXml()
+		{
+			_repositoryBase.Connection.Open();
+
+			SqlXml xmlValue = null;
+
+			_repositoryBase.RunCommand(cmd => {
+				cmd.UseSql( "select cast('<a><b>test</b></a>' as xml) as XmlValue;" );
+
+				cmd.ExecuteReader(reader=>
+				{
+					xmlValue = reader.ReadTo<SqlXml>(r =>  r.GetSqlXml(0));
+				});
+			});
+
+			Assert.IsNotNull(xmlValue);
+			Console.WriteLine("XmlValue:");
+			Console.WriteLine(JsonSerializer.Serialize(xmlValue));
+
+
+			_repositoryBase.RunCommand(cmd => {
+				cmd.UseSql( "select cast('<a><b>test</b></a>' as xml) as XmlValue;" );
+
+				cmd.ExecuteReader(reader=>
+				{
+					xmlValue = reader.ReadTo<SqlXml>(r =>  r.GetSqlXmlNullable(0));
+				});
+			});
+
+			Assert.IsNotNull(xmlValue);
+			Console.WriteLine("Nullable XmlValue:");
+			Console.WriteLine(JsonSerializer.Serialize(xmlValue));
+
+
+			_repositoryBase.RunCommand(cmd => {
+				cmd.UseSql( "select cast(null as xml) as XmlValue;" );
+
+				cmd.ExecuteReader(reader=>
+				{
+					xmlValue = reader.ReadTo<SqlXml>(r =>  r.GetSqlXmlNullable(0));
+				});
+			});
+
+			Assert.IsNull(xmlValue);
+			Console.WriteLine("Nullable XmlValue is null");
+			Console.WriteLine(JsonSerializer.Serialize(xmlValue));
+		}
 
 		//[TestMethod]
 		//public void TryCatchPerformanceCost()
