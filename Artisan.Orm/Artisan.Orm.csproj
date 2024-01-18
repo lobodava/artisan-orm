@@ -6,7 +6,7 @@
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Artisan.ORM</Title>
-    <Version>3.1.0</Version>
+    <Version>3.1.1</Version>
     <Authors>Vadim Loboda</Authors>
     <Description>ADO.NET Micro-ORM to SQL Server, implemented as a .Net Core 6.0 library (since version 3.x.x).
 Use version 2.x.x, which was built with Net Standard 2.0, if you want to utilise this library with the .Net Framework or a previous version of .NET Core.
@@ -20,7 +20,7 @@ Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-re
     <RepositoryUrl>https://github.com/lobodava/artisan-orm</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>ado.net orm micro-orm sql server mssql</PackageTags>
-    <PackageReleaseNotes>NuGet dependencies have been updated to the latest. Added GetSqlXmlNullable method.</PackageReleaseNotes>
+    <PackageReleaseNotes>Upgrading the Microsoft.Data.SqlClient package to version 5.1.4 for vulnerability fixing.</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <ApplicationIcon>Logo.ico</ApplicationIcon>
     <PackageId>Artisan.ORM</PackageId>
@@ -44,7 +44,7 @@ Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-re
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
   </ItemGroup>
