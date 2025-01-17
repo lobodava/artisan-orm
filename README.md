@@ -1,8 +1,6 @@
-
-
 # [![Artisan.Orm Logo](https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png)](http://www.nuget.org/packages/Artisan.ORM) Artisan.ORM
 
-ADO.NET Micro-ORM to SQL Server, implemented as a .Net Core 6.0 library (since version 3.x.x).
+ADO.NET Micro-ORM to SQL Server, implemented as .NET Standard 2.1 (since version 3.5.x) or a .Net Core 6.0 library (since version 3.0.0).
 Use version 2.x.x, which was built with Net Standard 2.0, if you want to utilise this library with the .Net Framework or a previous version of .NET Core.
 
 ## ADO.NET Micro-ORM to SQL Server.
@@ -52,10 +50,4 @@ To achieve these goals Artisan.ORM uses:
 
 Artisan.ORM is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
 
-[![NuGet Logo](https://www.nuget.org/Content/Logos/nugetlogo.png)](http://www.nuget.org/packages/Artisan.ORM)
-
 More examples of the Artisan.ORM usage are available in the [Tests](https://github.com/lobodava/artisan-orm/tree/master/Tests) and [Database](https://github.com/lobodava/artisan-orm/tree/master/Database) projects.
-
-
-
-

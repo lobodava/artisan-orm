@@ -1,4 +1,4 @@
-﻿using Artisan.Orm;
+using Artisan.Orm;
 using Microsoft.Data.SqlClient;
 using Tests.DAL.GrandRecords.Models;
 
@@ -6,6 +6,8 @@ namespace Tests.DAL.GrandRecords;
 
 public class Repository: RepositoryBase
 {
+	public Repository(string connectionString) : base(connectionString) { }
+
 
 	#region [ Get ONE Grand Record (with its descendants) ]
 

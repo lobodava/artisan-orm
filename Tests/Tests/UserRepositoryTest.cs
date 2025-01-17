@@ -1,8 +1,9 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using Artisan.Orm;
 using Tests.DAL.Users;
 using Tests.DAL.Users.Models;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Tests
 {
@@ -14,7 +15,9 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new Repository();
+			var appSettings = new AppSettings();
+
+			_repository = new Repository(appSettings.ConnectionStrings.DatabaseConnection);
 
 			_repository.ExecuteCommand(cmd => {
 				cmd.UseSql("delete from dbo.Users where Id > 14;");	

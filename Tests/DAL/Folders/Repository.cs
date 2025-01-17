@@ -1,4 +1,4 @@
-﻿using Artisan.Orm;
+using Artisan.Orm;
 using Tests.DAL.Folders.Models;
 // https://github.com/lobodava/artisan-orm
 
@@ -6,6 +6,9 @@ namespace Tests.DAL.Folders;
 
 public class Repository: RepositoryBase
 {
+	public Repository(string connectionString) : base(connectionString) { }
+
+
 	public Folder GetFolderById(int id)
 	{
 		return ReadTo<Folder>("dbo.GetFolderById", cmd => cmd.AddIntParam("@Id", id)); 

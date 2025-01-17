@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using Artisan.Orm;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Records;
 using Tests.DAL.Records.Models;
 
@@ -14,7 +15,9 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new Repository();
+			var appSettings = new AppSettings();
+
+			_repository = new Repository(appSettings.ConnectionStrings.DatabaseConnection);
 
 			_repository.ExecuteCommand(cmd => {
 				cmd.UseSql("delete from dbo.Records where Id > 676;");	
@@ -146,6 +149,8 @@ namespace Tests.Tests
 		[TestMethod]
 		public async Task GetRecordByIdAsync2()
 		{
+			var appSettings = new AppSettings();
+
 			Record record = null;
 
 			var sw = new Stopwatch();
@@ -154,7 +159,7 @@ namespace Tests.Tests
 
 			for (var i = 1; i <= 676; i++)
 			{
-				using var repository2 = new Repository();
+				using var repository2 = new Repository(appSettings.ConnectionStrings.DatabaseConnection);
 				record = await repository2.GetRecordByIdAsync(i);
 
 				Assert.IsTrue(record.Id == i || record == null);

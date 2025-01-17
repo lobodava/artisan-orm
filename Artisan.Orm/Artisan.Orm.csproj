@@ -1,37 +1,43 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+<PropertyGroup>
+  <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Artisan.ORM</Title>
-    <Version>3.1.1</Version>
+    <Version>3.5.0</Version>
     <Authors>Vadim Loboda</Authors>
-    <Description>ADO.NET Micro-ORM to SQL Server, implemented as a .Net Core 6.0 library (since version 3.x.x).
-Use version 2.x.x, which was built with Net Standard 2.0, if you want to utilise this library with the .Net Framework or a previous version of .NET Core.
+    <Description>
+    ADO.NET Micro-ORM to SQL Server, implemented as .NET Standard 2.1 (since version 3.5.x) or a .Net Core 6.0 library (since version 3.0.0).
+    Use version 2.x.x, which was built with Net Standard 2.0, if you want to utilise this library with the .Net Framework or a previous version of .NET Core.
 
-This library is designed to use stored procedures, table-valued parameters and structured static mappers, with the goal of reading and saving of complex object graphs at once in the fast, convinient and efficient way.
+    This library is designed to use stored procedures, table-valued parameters and structured static mappers, with the goal of reading and saving of complex object graphs at once in the fast, convinient and efficient way.
 
-Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-reinvent-the-wheel</Description>
-    <Copyright>Copyright 2016-2024</Copyright>
+    Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-reinvent-the-wheel
+    </Description>
+    <Copyright>Copyright 2016-2025</Copyright>
     <PackageProjectUrl>https://github.com/lobodava/artisan-orm</PackageProjectUrl>
     <PackageIcon>Logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/lobodava/artisan-orm</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>ado.net orm micro-orm sql server mssql</PackageTags>
-    <PackageReleaseNotes>Upgrading the Microsoft.Data.SqlClient package to version 5.1.4 for vulnerability fixing.</PackageReleaseNotes>
+    <PackageReleaseNotes>
+      Built as .NET Standard 2.1. 
+      Upgraded the Microsoft.Data.SqlClient package to version 5.2.2. 
+      Removed ConnectionStringHelper.
+	</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <ApplicationIcon>Logo.ico</ApplicationIcon>
     <PackageId>Artisan.ORM</PackageId>
     <Product>Artisan.ORM</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="Logo.ico" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <None Include="..\Logo.png">
       <Pack>True</Pack>
@@ -41,27 +47,14 @@ Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-re
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.4" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="LICENSE.txt">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Update="Logo.ico">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Update="README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 
 </Project>

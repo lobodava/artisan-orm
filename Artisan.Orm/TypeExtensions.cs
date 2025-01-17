@@ -1,68 +1,73 @@
-﻿namespace Artisan.Orm;
+using System;
+using System.Linq;
 
-// taken from http://stackoverflow.com/a/15578098/623190
-
-internal static class TypeExtensions
+namespace Artisan.Orm
 {
-	private static readonly Type[] SimpleTypes;
+	// taken from http://stackoverflow.com/a/15578098/623190
+
+	internal static class TypeExtensions
+	{
+		private static readonly Type[] SimpleTypes;
 	
-	static TypeExtensions()
-	{
-		var types = new[]
+		static TypeExtensions()
 		{
-			//typeof (Enum),
-			typeof (String),
-			typeof (Char),
-			typeof (Guid),
+			var types = new[]
+			{
+				//typeof (Enum),
+				typeof (String),
+				typeof (Char),
+				typeof (Guid),
 
-			typeof (Boolean),
-			typeof (Byte),
-			typeof (Int16),
-			typeof (Int32),
-			typeof (Int64),
-			typeof (Single),
-			typeof (Double),
-			typeof (Decimal),
+				typeof (Boolean),
+				typeof (Byte),
+				typeof (Int16),
+				typeof (Int32),
+				typeof (Int64),
+				typeof (Single),
+				typeof (Double),
+				typeof (Decimal),
 
-			typeof (SByte),
-			typeof (UInt16),
-			typeof (UInt32),
-			typeof (UInt64),
+				typeof (SByte),
+				typeof (UInt16),
+				typeof (UInt32),
+				typeof (UInt64),
 
-			typeof (DateTime),
-			typeof (DateTimeOffset),
-			typeof (TimeSpan),
-		};
+				typeof (DateTime),
+				typeof (DateTimeOffset),
+				typeof (TimeSpan),
+			};
 		
-		var nullTypes =	types
-						.Where(t => t.IsValueType)
-						.Select(t => typeof (Nullable<>)
-						.MakeGenericType(t));
+			var nullTypes =	types
+							.Where(t => t.IsValueType)
+							.Select(t => typeof (Nullable<>)
+							.MakeGenericType(t));
 
-		SimpleTypes = types.Concat(nullTypes).ToArray();
-	}
+			SimpleTypes = types.Concat(nullTypes).ToArray();
+		}
 
-	internal static bool IsSimpleType(this Type type)
-	{
-		if (SimpleTypes.Any(x => x.IsAssignableFrom(type)))
-			return true;
+		internal static bool IsSimpleType(this Type type)
+		{
+			if (SimpleTypes.Any(x => x.IsAssignableFrom(type)))
+				return true;
 
-		var nut = Nullable.GetUnderlyingType(type);
-		return nut != null && nut.IsEnum;
-	}
+			var nut = Nullable.GetUnderlyingType(type);
+			return nut != null && nut.IsEnum;
+		}
 
-	internal static bool IsNullableValueType(this Type type)
-	{
-		//type.IsValueType && Nullable.GetUnderlyingType(type) != null || type == typeof(String)
+		internal static bool IsNullableValueType(this Type type)
+		{
+			//type.IsValueType && Nullable.GetUnderlyingType(type) != null || type == typeof(String)
 
-		return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)
-			|| type == typeof(String);
-	}
+			return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)
+				|| type == typeof(String);
+		}
 
 
-	internal static Type GetUnderlyingType(this Type type)
-	{
-		return Nullable.GetUnderlyingType(type) ?? type;
+		internal static Type GetUnderlyingType(this Type type)
+		{
+			return Nullable.GetUnderlyingType(type) ?? type;
+		}
+
 	}
 
 }

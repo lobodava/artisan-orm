@@ -1,56 +1,61 @@
-﻿namespace Artisan.Orm;
+using System;
 
-public enum RequiredMethod
-{
-	/// <summary>
-	/// Check if all four methods exists: CreateObject, CreateObjectRow, CreateDataTable and CreateDataRow.
-	/// </summary>
-	All,
+namespace Artisan.Orm
+{ 
 
-	/// <summary>
-	/// Check if all three main methods exists: CreateObject, CreateObjectRow and CreateDataTable.
-	/// </summary>
-	AllMain,
+	public enum RequiredMethod
+	{
+		/// <summary>
+		/// Check if all four methods exists: CreateObject, CreateObjectRow, CreateDataTable and CreateDataRow.
+		/// </summary>
+		All,
 
-	/// <summary>
-	/// Check if both CreateObject and CreateObjectRow methods exist.
-	/// </summary>
-	BothForObject,
+		/// <summary>
+		/// Check if all three main methods exists: CreateObject, CreateObjectRow and CreateDataTable.
+		/// </summary>
+		AllMain,
 
-	/// <summary>
-	/// Check if CreateDataTable and CreateDataRow methods exist.
-	/// </summary>
-	BothForDataTable,
+		/// <summary>
+		/// Check if both CreateObject and CreateObjectRow methods exist.
+		/// </summary>
+		BothForObject,
 
-	/// <summary>
-	/// Check if CreateObject method exists.
-	/// </summary>
-	CreateObject,
+		/// <summary>
+		/// Check if CreateDataTable and CreateDataRow methods exist.
+		/// </summary>
+		BothForDataTable,
 
-	/// <summary>
-	/// Check if CreateObjectRow method exists.
-	/// </summary>
-	CreateObjectRow,
+		/// <summary>
+		/// Check if CreateObject method exists.
+		/// </summary>
+		CreateObject,
 
-	//CreateDataTable,
-	//CreateDataRow,
-}
+		/// <summary>
+		/// Check if CreateObjectRow method exists.
+		/// </summary>
+		CreateObjectRow,
 
-
-[AttributeUsage(AttributeTargets.Class)] // , AllowMultiple = true
-public class MapperForAttribute: Attribute
-{
-	public Type MapperForType { get; }
-
-	public RequiredMethod[] RequiredMethods { get; }
-
-	public MapperForAttribute(Type mapperForType) {
-		MapperForType = mapperForType;
-		RequiredMethods = Array.Empty<RequiredMethod>();
+		//CreateDataTable,
+		//CreateDataRow,
 	}
 
-	public MapperForAttribute(Type mapperForType, params RequiredMethod[] requiredMethods) {
-		MapperForType = mapperForType;
-		RequiredMethods = requiredMethods;
+
+	[AttributeUsage(AttributeTargets.Class)] // , AllowMultiple = true
+	public class MapperForAttribute: Attribute
+	{
+		public Type MapperForType { get; }
+
+		public RequiredMethod[] RequiredMethods { get; }
+
+		public MapperForAttribute(Type mapperForType) {
+			MapperForType = mapperForType;
+			RequiredMethods = Array.Empty<RequiredMethod>();
+		}
+
+		public MapperForAttribute(Type mapperForType, params RequiredMethod[] requiredMethods) {
+			MapperForType = mapperForType;
+			RequiredMethods = requiredMethods;
+		}
 	}
 }
+

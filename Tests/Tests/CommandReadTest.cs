@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Artisan.Orm;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Users.Models;
 
 namespace Tests.Tests
@@ -12,7 +13,9 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new RepositoryBase();
+			var appSettings = new AppSettings();
+
+			_repository = new RepositoryBase(appSettings.ConnectionStrings.DatabaseConnection);
 		}
 
 

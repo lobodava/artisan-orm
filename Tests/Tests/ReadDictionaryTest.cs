@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using Artisan.Orm;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Users.Models;
 
 namespace Tests.Tests
@@ -13,7 +14,9 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repositoryBase = new RepositoryBase();
+			var appSettings = new AppSettings();
+
+			_repositoryBase = new RepositoryBase(appSettings.ConnectionStrings.DatabaseConnection);
 		}
 		
 		[TestMethod]

@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using Artisan.Orm;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.GrandRecords;
 using Tests.DAL.GrandRecords.Models;
 
@@ -14,7 +15,9 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new Repository();
+			var appSettings = new AppSettings();
+
+			_repository = new Repository(appSettings.ConnectionStrings.DatabaseConnection);
 
 			_repository.ExecuteCommand(cmd => {
 				cmd.UseSql("delete from dbo.Records where Id > 676; delete from dbo.GrandRecords where Id > 26;");	

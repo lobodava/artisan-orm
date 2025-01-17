@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Artisan.Orm;
 using Microsoft.Data.SqlClient;
 using Tests.DAL.Users.Models;
@@ -8,6 +8,9 @@ namespace Tests.DAL.Users;
 
 public class Repository: RepositoryBase
 {
+	public Repository(string connectionString) : base(connectionString) { }
+
+
 	#region [ GetUserById ]
 
 

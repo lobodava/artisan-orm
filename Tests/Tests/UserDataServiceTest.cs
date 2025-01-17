@@ -1,6 +1,7 @@
-﻿using Artisan.Orm;
+using Artisan.Orm;
 using Tests.DAL.Users;
 using Tests.DataServices;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Tests
 {
@@ -13,8 +14,10 @@ namespace Tests.Tests
 		public void TestInitialize()
 		{
 			_service = new UserDataService();
-		
-			using (var repository = new Repository())
+
+			var appSettings = new AppSettings();
+
+			using (var repository = new Repository(appSettings.ConnectionStrings.DatabaseConnection))
 			{
 				repository.ExecuteCommand(cmd => {
 					cmd.UseSql("delete from dbo.Users where Id > 14;");
