@@ -642,6 +642,55 @@ namespace Tests.Tests
 
 			_repository.Connection.Close();
 		}
+
+
+		[TestMethod]
+		public async Task RunCommandAsyncWithCancellationToken1()
+		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+			CancellationToken cancellationToken = cts.Token;
+
+			var appSettings = new AppSettings();
+			var repo  = new RepositoryBase(appSettings.ConnectionStrings.DatabaseConnection);
+
+			try
+			{
+				await repo.RunCommandAsync(async (cmd, token) => {
+					cmd.UseSql("WAITFOR DELAY '00:00:05'; select cast(1 as bit);");
+					var value = await cmd.ReadToAsync<bool>(token);
+				}, cancellationToken);
+
+				Assert.Fail();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}			
+		}
+
+		[TestMethod]
+		public async Task GetByCommandAsyncWithCancellationToken()
+		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+			CancellationToken token = cts.Token;
+
+			var appSettings = new AppSettings();
+			var repo  = new RepositoryBase(appSettings.ConnectionStrings.DatabaseConnection);
+
+			try
+			{
+				var value = await repo.GetByCommandAsync((cmd, tkn) => {
+					cmd.UseSql("WAITFOR DELAY '00:00:05'; select cast(1 as bit);");
+					return cmd.ReadToAsync<bool>(tkn);
+				}, token);
+
+				Assert.Fail();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}			
+		}
 		
 
 		

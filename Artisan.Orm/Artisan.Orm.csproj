@@ -5,7 +5,7 @@
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Artisan.ORM</Title>
-    <Version>3.5.0</Version>
+    <Version>3.5.1</Version>
     <Authors>Vadim Loboda</Authors>
     <Description>
     ADO.NET Micro-ORM to SQL Server, implemented as .NET Standard 2.1 (since version 3.5.x) or a .Net Core 6.0 library (since version 3.0.0).
@@ -21,11 +21,8 @@
     <RepositoryUrl>https://github.com/lobodava/artisan-orm</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>ado.net orm micro-orm sql server mssql</PackageTags>
-    <PackageReleaseNotes>
-      Built as .NET Standard 2.1. 
-      Upgraded the Microsoft.Data.SqlClient package to version 5.2.2. 
-      Removed ConnectionStringHelper.
-	</PackageReleaseNotes>
+    <PackageReleaseNotes>Added support for CancellationToken in asynchronous methods.
+Upgraded the Microsoft.Data.SqlClient package to version 5.2.3.</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <ApplicationIcon>Logo.ico</ApplicationIcon>
     <PackageId>Artisan.ORM</PackageId>
@@ -54,7 +51,11 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.3" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>
