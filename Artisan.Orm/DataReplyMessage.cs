@@ -1,9 +1,10 @@
-﻿using System;
-using Microsoft.Data.SqlClient;
+using System;
 using System.Runtime.Serialization;
+using Microsoft.Data.SqlClient;
 
 namespace Artisan.Orm
-{
+{ 
+
 	[DataContract]
 	public class DataReplyMessage
 	{
@@ -29,12 +30,13 @@ namespace Artisan.Orm
 
 			return new DataReplyMessage
 			{
-				Code	=	dr.GetString(i++)				,
-				Text	=	dr.GetStringNullable(i++)		,
-				Id		=	dr.GetValueNullable<long>(i++)	,
-				Value	=	dr.GetValueNullable<object>(i)
+				Code	=	dr.GetString				(i)		,
+				Text	=	dr.GetStringNullable		(++i)	,
+				Id		=	dr.GetValueNullable<long>	(++i)	,
+				Value	=	dr.GetValueNullable<object>	(++i)
 			};
 		}
 	}
 
 }
+

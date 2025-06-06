@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using System.Text.Json.Serialization;
 using Artisan.Orm;
-using Newtonsoft.Json;
+using Microsoft.Data.SqlClient;
 
 namespace Tests.DAL.Folders.Models
 {
-	public class Folder: INode<Folder>
+	public class Folder : INode<Folder>
 	{
 
 		public Int32 Id { get; set; }
@@ -18,22 +18,22 @@ namespace Tests.DAL.Folders.Models
 		public Folder Parent { get; set; }
 
 		public String Name { get; set; }
-		
+
 		public Int16 Level { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public String Path { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public String HidCode { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public String HidPath { get; set; }
 
 		[JsonIgnore]
 		public IList<Folder> Children { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public IList<Folder> SubFolders
 		{
 			get { return Children; }

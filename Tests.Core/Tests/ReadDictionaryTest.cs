@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Artisan.Orm;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using Tests.DAL.Users.Models;
 
 namespace Tests.Tests
@@ -16,8 +18,14 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repositoryBase = new RepositoryBase();
+			var configuration = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json")
+				.Build();
 
+			string connectionString = configuration.GetConnectionString("DatabaseConnection");
+
+			_repositoryBase = new RepositoryBase(connectionString);
 		}
 		
 		[TestMethod]
@@ -49,7 +57,7 @@ namespace Tests.Tests
 
 			Console.WriteLine($"Role name dictionary has been read for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
+			Console.Write(JsonSerializer.Serialize(dictionary));
 
 		}
 
@@ -74,7 +82,7 @@ namespace Tests.Tests
 
 			Console.WriteLine($"Role object dictionary has been read for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
+			Console.Write(JsonSerializer.Serialize(dictionary));
 
 		}
 
@@ -92,7 +100,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetDictionaryOfObjectsAsync reads {records.Count} roles for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 		[TestMethod]
@@ -121,7 +129,7 @@ namespace Tests.Tests
 
 			Console.WriteLine($"Role object dictionary has been read with Handmapping for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
+			Console.Write(JsonSerializer.Serialize(dictionary));
 
 		}
 
@@ -148,7 +156,7 @@ namespace Tests.Tests
 
 			Console.WriteLine($"Role object dictionary has been read with Automapping for {sw.Elapsed.TotalMilliseconds.ToString("0.####")} ms: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(dictionary));
+			Console.Write(JsonSerializer.Serialize(dictionary));
 
 		}
 	

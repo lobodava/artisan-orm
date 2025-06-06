@@ -1,8 +1,10 @@
-﻿using System.Threading.Tasks;
+using System.IO;
+using System.Threading.Tasks;
 using Artisan.Orm;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Tests.DataServices;
 using Tests.DAL.Users;
+using Tests.DataServices;
 
 
 namespace Tests.Tests
@@ -15,9 +17,17 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
+			var configuration = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json")
+				.Build();
+
+			var connectionString = configuration.GetConnectionString("DatabaseConnection");
+
+
 			_service = new UserDataService();
 		
-			using (var repository = new Repository())
+			using (var repository = new Repository(connectionString))
 			{
 				repository.ExecuteCommand(cmd => {
 					cmd.UseSql("delete from dbo.Users where Id > 14;");	

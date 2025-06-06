@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using Microsoft.Data.SqlClient;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 
 namespace Artisan.Orm
 {
+
 	public static partial class SqlCommandExtensions
 	{
 		#region [ GetReaderFlagsAndOpenConnectionAsync ]
@@ -22,46 +24,46 @@ namespace Artisan.Orm
 				if (defaultReaderFlag == CommandBehavior.Default)
 					readerFlags = CommandBehavior.CloseConnection;
 				else
-					readerFlags = readerFlags | CommandBehavior.CloseConnection;
+					readerFlags |= CommandBehavior.CloseConnection;
 			}
 
 			return readerFlags;
 		}
-		
+
 		#endregion
 
 
 		#region [ GetByReaderAsync, ExecuteReaderAsync ]
 
-		public static async Task<T> GetByReaderAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, T> func)
+		public static async Task<T> GetByReaderAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, T> func, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return func(dr);
 			}
 		}
 
-		public static async Task<T> GetByReaderAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, SqlParameter, T> func)
+		public static async Task<T> GetByReaderAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, SqlParameter, T> func, CancellationToken cancellationToken = default)
 		{
 			var returnValueParam = cmd.ReturnValueParam();
 
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return func(dr, returnValueParam);
 			}
 		}
 
-		public static async Task<int> ExecuteReaderAsync(this SqlCommand cmd, Action<SqlDataReader> action)
+		public static async Task<int> ExecuteReaderAsync(this SqlCommand cmd, Action<SqlDataReader> action, CancellationToken cancellationToken = default)
 		{
 			var returnValueParam = cmd.ReturnValueParam();
 
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				action(dr);
 			}
@@ -73,83 +75,80 @@ namespace Artisan.Orm
 
 
 		#region [ ReadToAsync, ReadAsAsync ]
-		
-		private static async Task<T> ReadToValueAsync<T>(this SqlCommand cmd)
+
+		private static async Task<T> ReadToValueAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				if (dr.Read())
 				{
 					if (typeof(T).IsNullableValueType() && dr.IsDBNull(0))
-						return default(T);
-					
+						return default;
+
 					return dr.GetValue<T>();
 				}
-
-				return default(T);
 			}
-		}
-		
 
-		public static async Task<T> ReadToAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, T> createFunc)
+			return default;
+		}
+
+
+		public static async Task<T> ReadToAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, T> createFunc, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
-				return dr.Read() ? createFunc(dr) : default(T);
+				return dr.Read() ? createFunc(dr) : default;
 			}
 		}
-		
-		public static async Task<T> ReadToAsync<T>(this SqlCommand cmd)
+
+		public static async Task<T> ReadToAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToValueAsync<T>();
+				return await cmd.ReadToValueAsync<T>(cancellationToken);
 
-			return await cmd.ReadToAsync(MappingManager.GetCreateObjectFunc<T>());
+			return await cmd.ReadToAsync(MappingManager.GetCreateObjectFunc<T>(), cancellationToken);
 		}
 
 
-		public static async Task<T> ReadAsAsync<T>(this SqlCommand cmd)
+		public static async Task<T> ReadAsAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToValueAsync<T>();
+				return await cmd.ReadToValueAsync<T>(cancellationToken);
 
 			var key = SqlDataReaderExtensions.GetAutoCreateObjectFuncKey<T>(cmd.CommandText);
 			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key);
 
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
-				return dr.Read() ? dr.CreateObject(autoMappingFunc, key) : default(T);
+				return dr.Read() ? dr.CreateObject(autoMappingFunc, key) : default;
 			}
 		}
 
-		#endregion
-
-
-		#region [ ReadToListAsync, ReadAsListAsync, ReadToArrayAsync, ReadAsArrayAsync ]
-		
-		private static async Task<IList<T>> ReadToListOfValuesAsync<T>(this SqlCommand cmd, IList<T> list)
+		private static async Task<IList<T>> ReadToListOfValuesAsync<T>(this SqlCommand cmd, IList<T> list, CancellationToken cancellationToken = default)
 		{
 			if (list == null)
+			{
 				list = new List<T>();
+			}
 
 			var type = typeof(T);
 			var isNullableValueType = type.IsNullableValueType();
-			
+
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				if (isNullableValueType)
 				{
 					var underlyingType = type.GetUnderlyingType();
 					while (dr.Read())
-						list.Add(dr.IsDBNull(0) ? default(T) : SqlDataReaderExtensions.GetValue<T>(dr, underlyingType));
+						list.Add(dr.IsDBNull(0) ? default : SqlDataReaderExtensions.GetValue<T>(dr, underlyingType));
 				}
 				else
 				{
@@ -160,38 +159,44 @@ namespace Artisan.Orm
 
 			return list;
 		}
-		
-		private static async Task<IList<T>> ReadToListOfObjectsAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list)
+
+		private static async Task<IList<T>> ReadToListOfObjectsAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, CancellationToken cancellationToken = default)
 		{
 			if (list == null)
+			{
 				list = new List<T>();
+			}
 
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
+			{
 				while (dr.Read())
 					list.Add(createFunc(dr));
+			}
 
 			return list;
 		}
-		
-	
-		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list) 
+
+
+		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, CancellationToken cancellationToken = default)
 		{
 			if (list == null)
+			{
 				list = new List<T>();
+			}
 
 			var isNullableValueType = typeof(T).IsNullableValueType();
 
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				while (dr.Read())
 				{
 					if (isNullableValueType && dr.IsDBNull(0))
-						list.Add(default(T));
-					else 
+						list.Add(default);
+					else
 						list.Add(createFunc(dr));
 				}
 			}
@@ -199,32 +204,32 @@ namespace Artisan.Orm
 			return list;
 		}
 
-		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc) 
+		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToListOfValuesAsync<T>(null);
+				return await cmd.ReadToListOfValuesAsync<T>(null, cancellationToken);
 
-			return await cmd.ReadToListOfObjectsAsync<T>(createFunc, null);
+			return await cmd.ReadToListOfObjectsAsync<T>(createFunc, null, cancellationToken);
 		}
 
-		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, IList<T> list) 
+		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, IList<T> list, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToListOfValuesAsync<T>(list);
+				return await cmd.ReadToListOfValuesAsync<T>(list, cancellationToken);
 
-			return await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list);
+			return await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list, cancellationToken);
 		}
-		
-		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd) 
+
+		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToListOfValuesAsync<T>(null);
+				return await cmd.ReadToListOfValuesAsync<T>(null, cancellationToken);
 
-			return await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null);
+			return await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null, cancellationToken);
 		}
 
 
-		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd, IList<T> list) 
+		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd, IList<T> list, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
 				return await cmd.ReadToListOfValuesAsync<T>(list);
@@ -234,7 +239,7 @@ namespace Artisan.Orm
 
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				list = dr.ReadAsList(list, autoMappingFunc, key);
 			}
@@ -242,180 +247,180 @@ namespace Artisan.Orm
 			return list;
 		}
 
-		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd) 
+		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToListOfValuesAsync<T>(null);
+				return await cmd.ReadToListOfValuesAsync<T>(null, cancellationToken);
 
-			return await cmd.ReadAsListAsync<T>(null);
-		}
-		
-
-		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
-		{
-			return (await cmd.ReadToListAsync<T>(createFunc)).ToArray();
+			return await cmd.ReadAsListAsync<T>(null, cancellationToken);
 		}
 
-		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd)
+
+		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, CancellationToken cancellationToken = default)
 		{
-			return (await cmd.ReadToListAsync<T>()).ToArray();
+			return (await cmd.ReadToListAsync<T>(createFunc, cancellationToken)).ToArray();
 		}
-		
-		public static async Task<T[]> ReadAsArrayAsync<T>(this SqlCommand cmd)
+
+		public static async Task<T[]> ReadToArrayAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			return (await cmd.ReadAsListAsync<T>()).ToArray();
+			return (await cmd.ReadToListAsync<T>(cancellationToken)).ToArray();
+		}
+
+		public static async Task<T[]> ReadAsArrayAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
+		{
+			return (await cmd.ReadAsListAsync<T>(cancellationToken)).ToArray();
 		}
 
 		#endregion
 
-		
+
 		#region [ ReadToObjectRow(s)Async, ReadAsObjectRow(s)Async ]
 
-		public static async Task<ObjectRow> ReadToObjectRowAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
+		public static async Task<ObjectRow> ReadToObjectRowAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadToObjectRow(createFunc, false);
 			}
 		}
 
-		public static async Task<ObjectRow> ReadToObjectRowAsync<T>(this SqlCommand cmd)
+		public static async Task<ObjectRow> ReadToObjectRowAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadToObjectRow<T>();
 			}
 		}
 
 
-		public static async Task<ObjectRows> ReadToObjectRowsAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc)
+		public static async Task<ObjectRows> ReadToObjectRowsAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadToObjectRows(createFunc, false);
 			}
 		}
 
-		public static async Task<ObjectRows> ReadAsObjectRowsAsync(this SqlCommand cmd)
+		public static async Task<ObjectRows> ReadAsObjectRowsAsync(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadAsObjectRows();
 			}
 		}
 
 
-		public static async Task<ObjectRow> ReadAsObjectRowAsync(this SqlCommand cmd)
+		public static async Task<ObjectRow> ReadAsObjectRowAsync(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadAsObjectRow();
 			}
 		}
 
-		public static async Task<ObjectRows> ReadToObjectRowsAsync<T>(this SqlCommand cmd)
+		public static async Task<ObjectRows> ReadToObjectRowsAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadToObjectRows<T>();
 			}
 		}
-		
+
 		#endregion
 
 
 		#region [ ReadToDictionaryAsync, ReadAsDictionaryAsync ]
 
-		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc) 
+		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadToDictionary<TKey, TValue>(createFunc);
 			}
 		}
 
 
-		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd) 
+		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			 using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadToDictionary<TKey, TValue>();
 			}
 		}
 
-		public static async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(this SqlCommand cmd) 
+		public static async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
 			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult);
 
-			 using (var dr = await cmd.ExecuteReaderAsync(readerFlags).ConfigureAwait(false))
+			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
 			{
 				return dr.ReadAsDictionary<TKey, TValue>();
 			}
 		}
 
-		#endregion 
+		#endregion
 
 
 		#region [ ReadToTree, ReadToTreeList ]
-		
-		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false) where T: class, INode<T>
+
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false, CancellationToken cancellationToken = default) where T: class, INode<T>
 		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, list)).ToTree(hierarchicallySorted);
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, list, cancellationToken)).ToTree(hierarchicallySorted);
 		}
 
-		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false) where T: class, INode<T>
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false, CancellationToken cancellationToken = default) where T: class, INode<T>
 		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, null)).ToTree(hierarchicallySorted);
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, null, cancellationToken)).ToTree(hierarchicallySorted);
 		}
 
-		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false)  where T: class, INode<T>
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false, CancellationToken cancellationToken = default)  where T: class, INode<T>
 		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list)).ToTree(hierarchicallySorted);
-		}
-		
-		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, bool hierarchicallySorted = false) where T: class, INode<T>
-		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null)).ToTree(hierarchicallySorted);
-		}
-		
-		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false) where T: class, INode<T>
-		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, list)).ToTreeList(hierarchicallySorted);
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list, cancellationToken)).ToTree(hierarchicallySorted);
 		}
 
-		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false) where T: class, INode<T>
+		public static async Task<T> ReadToTreeAsync<T>(this SqlCommand cmd, bool hierarchicallySorted = false, CancellationToken cancellationToken = default) where T: class, INode<T>
 		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, null)).ToTreeList(hierarchicallySorted);
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null, cancellationToken)).ToTree(hierarchicallySorted);
 		}
 
-		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false)  where T: class, INode<T>
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T> list, bool hierarchicallySorted = false, CancellationToken cancellationToken = default) where T: class, INode<T>
 		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list)).ToTreeList(hierarchicallySorted);
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, list, cancellationToken)).ToTreeList(hierarchicallySorted);
 		}
-		
-		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, bool hierarchicallySorted = false) where T: class, INode<T>
+
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false, CancellationToken cancellationToken = default) where T: class, INode<T>
 		{
-			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null)).ToTreeList(hierarchicallySorted);
+			return (await cmd.ReadToListOfObjectsAsync<T>(createFunc, null, cancellationToken)).ToTreeList(hierarchicallySorted);
+		}
+
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, IList<T> list, bool hierarchicallySorted = false, CancellationToken cancellationToken = default)  where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), list, cancellationToken)).ToTreeList(hierarchicallySorted);
+		}
+
+		public static async Task<IList<T>> ReadToTreeListAsync<T>(this SqlCommand cmd, bool hierarchicallySorted = false, CancellationToken cancellationToken = default) where T: class, INode<T>
+		{
+			return (await cmd.ReadToListOfObjectsAsync<T>(MappingManager.GetCreateObjectFunc<T>(), null, cancellationToken)).ToTreeList(hierarchicallySorted);
 		}
 
 		#endregion
 
 	}
-}
 
+}

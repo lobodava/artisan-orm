@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Artisan.Orm;
 using Tests.DAL.Folders.Models;
@@ -10,8 +10,9 @@ namespace Tests.DAL.Folders
 
 	public class Repository: RepositoryBase
 	{
-
-
+		public Repository(string connectionString) : base(connectionString)
+		{
+		}
 
 		public Folder GetFolderById(int id)
 		{

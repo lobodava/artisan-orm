@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using Artisan.Orm;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Users.Models;
 
@@ -15,8 +17,14 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new RepositoryBase();
+			var configuration = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json")
+				.Build();
 
+			string connectionString = configuration.GetConnectionString("DatabaseConnection");
+
+			_repository = new RepositoryBase(connectionString);
 		}
 
 

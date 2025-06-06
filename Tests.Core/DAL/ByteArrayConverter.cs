@@ -1,37 +1,35 @@
-﻿// http://stackoverflow.com/questions/15226921/how-to-serialize-byte-as-simple-json-array-and-not-as-base64-in-json-net
+// http://stackoverflow.com/questions/15226921/how-to-serialize-byte-as-simple-json-array-and-not-as-base64-in-json-net
 
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Tests.DAL
 {
-	public class ByteArrayConverter : JsonConverter
+	public class ByteArrayConverter : JsonConverter<byte[]>
 	{
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		public override void Write(Utf8JsonWriter writer, byte[] value, JsonSerializerOptions options)
 		{
 			if (value == null)
 			{
-				writer.WriteNull();
+				writer.WriteNullValue();
 				return;
 			}
 
-			byte[] data = (byte[])value;
-
-			// Compose an array.
 			writer.WriteStartArray();
 
-			for (var i = 0; i < data.Length; i++)
+			for (var i = 0; i < value.Length; i++)
 			{
-				writer.WriteValue(data[i]);
+				writer.WriteNumberValue(value[i]);
 			}
 
 			writer.WriteEndArray();
 		}
 
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+		public override byte[] Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 		{
-			if (reader.TokenType == JsonToken.StartArray)
+			if (reader.TokenType == JsonTokenType.StartArray)
 			{
 				var byteList = new List<byte>();
 
@@ -39,32 +37,26 @@ namespace Tests.DAL
 				{
 					switch (reader.TokenType)
 					{
-						case JsonToken.Integer:
-							byteList.Add(Convert.ToByte(reader.Value));
+						case JsonTokenType.Number:
+							byteList.Add(reader.GetByte());
 							break;
-						case JsonToken.EndArray:
+						case JsonTokenType.EndArray:
 							return byteList.ToArray();
-						case JsonToken.Comment:
-							// skip
+						case JsonTokenType.Comment:
 							break;
 						default:
-							throw new Exception(
+							throw new JsonException(
 								$"Unexpected token when reading bytes: {reader.TokenType}");
 					}
 				}
 
-				throw new Exception("Unexpected end when reading bytes.");
+				throw new JsonException("Unexpected end when reading bytes.");
 			}
 			else
 			{
-				throw new Exception(
+				throw new JsonException(
 					"Unexpected token parsing binary. " + $"Expected StartArray, got {reader.TokenType}.");
 			}
-		}
-
-		public override bool CanConvert(Type objectType)
-		{
-			return objectType == typeof(byte[]);
 		}
 	}
 }

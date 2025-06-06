@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
 using System.Linq;
+using Microsoft.Data.SqlClient;
 
 namespace Artisan.Orm
-{
+{ 
+
 	public static partial class SqlDataReaderExtensions
 	{
-
 		public static void Read(this SqlDataReader dr, Action<SqlDataReader> action, bool getNextResult = true) 
 		{
 			if (dr.Read()) 
@@ -25,11 +25,11 @@ namespace Artisan.Orm
 
 			if (dr.Read())
 				if (typeof(T).IsNullableValueType() && dr.IsDBNull(0))
-					obj = default(T);
+					obj = default;
 				else
 					obj = dr.GetValue<T>();
 			else
-				obj = default(T);
+				obj = default;
 
 			if (getNextResult) dr.NextResult();
 
@@ -39,7 +39,7 @@ namespace Artisan.Orm
 
 		public static T ReadTo<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
 		{
-			var obj = dr.Read() ? createFunc(dr) : default(T);
+			var obj = dr.Read() ? createFunc(dr) : default;
 
 			if (getNextResult) dr.NextResult();
 
@@ -72,24 +72,21 @@ namespace Artisan.Orm
 			return obj;
 		}
 
-		#endregion
-		
-
-		#region [ ReadToList, ReadAsList, ReadToArray, ReadAsArray ]
-		
 		private static IList<T> ReadToListOfValues<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
 		{
 			if (list == null)
+			{
 				list = new List<T>();
+			}
 
 			var type = typeof(T);
 			var isNullableValueType = type.IsNullableValueType();
-			
+
 			if (isNullableValueType)
 			{
 				var underlyingType = type.GetUnderlyingType();
 				while (dr.Read())
-					list.Add(dr.IsDBNull(0) ? default(T) : GetValue<T>(dr, underlyingType));
+					list.Add(dr.IsDBNull(0) ? default : GetValue<T>(dr, underlyingType));
 			}
 			else
 			{
@@ -105,9 +102,11 @@ namespace Artisan.Orm
 		private static IList<T> ReadToListOfObjects<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true)
 		{
 			if (list == null)
+			{
 				list = new List<T>();
-			
-			while (dr.Read()) 
+			}
+
+			while (dr.Read())
 				list.Add(createFunc(dr));
 
 			if (getNextResult) dr.NextResult();
@@ -115,18 +114,20 @@ namespace Artisan.Orm
 			return list;
 		}
 
-		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true) 
+		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T> list, bool getNextResult = true)
 		{
 			if (list == null)
+			{
 				list = new List<T>();
+			}
 
 			var isNullableValueType = typeof(T).IsNullableValueType();
 
 			while (dr.Read())
 			{
 				if (isNullableValueType && dr.IsDBNull(0))
-					list.Add(default(T));
-				else 
+					list.Add(default);
+				else
 					list.Add(createFunc(dr));
 			}
 
@@ -161,11 +162,16 @@ namespace Artisan.Orm
 
 		public static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
 		{
+			if (list == null)
+			{
+				list = new List<T>();
+			}
+
 			if (typeof(T).IsSimpleType())
 				return dr.ReadToListOfValues<T>(list, getNextResult);
-			
+
 			var key = GetAutoCreateObjectFuncKey<T>(dr);
-			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key); 
+			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key);
 
 			list = dr.ReadAsList(list, autoMappingFunc, key);
 
@@ -176,8 +182,10 @@ namespace Artisan.Orm
 
 		internal static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, Func<SqlDataReader, T> autoMappingFunc, string key)
 		{
-			if (list == null) 
+			if (list == null)
+			{
 				list = new List<T>();
+			}
 
 			if (dr.Read())
 			{
@@ -202,15 +210,16 @@ namespace Artisan.Orm
 		{
 			if (typeof(T).IsSimpleType())
 				return dr.ReadToListOfValues<T>(null, getNextResult);
-				
+			
 			return dr.ReadAsList<T>(null, getNextResult);
 		}
 
-		public static IList<dynamic> ReadDynamicList(this SqlDataReader dr, IList<dynamic> list, bool getNextResult = true) 
+		public static IList<dynamic> ReadDynamicList(this SqlDataReader dr, IList<dynamic> list, bool getNextResult = true)
 		{
 			if (list == null)
+			{
 				list = new List<dynamic>();
-
+			}
 
 			while (dr.Read())
 			{
@@ -246,22 +255,22 @@ namespace Artisan.Orm
 		{
 			return dr.ReadDynamicList(getNextResult).ToArray();
 		}
-		
+	
 		#endregion
-		
+	
 
 		#region [ ReadToEnumerable, ReadAsEnumerable ]
-		
+	
 		private static IEnumerable<T> ReadToEnumerableOfValues<T>(this SqlDataReader dr, bool getNextResult = true)
 		{
 			var type = typeof(T);
 			var isNullableValueType = type.IsNullableValueType();
-			
+		
 			if (isNullableValueType)
 			{
 				var underlyingType = type.GetUnderlyingType();
 				while (dr.Read())
-					yield return dr.IsDBNull(0) ? default(T) : GetValue<T>(dr, underlyingType);
+					yield return dr.IsDBNull(0) ? default : GetValue<T>(dr, underlyingType);
 			}
 			else
 			{
@@ -279,7 +288,7 @@ namespace Artisan.Orm
 
 			if (getNextResult) dr.NextResult();
 		}
-		
+	
 		public static IEnumerable<T> ReadToEnumerable<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true) 
 		{
 			if (typeof(T).IsSimpleType())
@@ -287,7 +296,7 @@ namespace Artisan.Orm
 
 			return dr.ReadToEnumerableOfObjects<T>(createFunc, getNextResult);
 		}
-		
+	
 		public static IEnumerable<T> ReadToEnumerable<T>(this SqlDataReader dr, bool getNextResult = true)
 		{
 			if (typeof(T).IsSimpleType())
@@ -295,20 +304,20 @@ namespace Artisan.Orm
 
 			return dr.ReadToEnumerableOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), getNextResult);
 		}
-		
+	
 		public static IEnumerable<T> ReadAsEnumerable<T>(this SqlDataReader dr, bool getNextResult = true)
 		{
 			if (typeof(T).IsSimpleType())
 				return dr.ReadToEnumerableOfValues<T>(getNextResult);
-			
+		
 			var key = GetAutoCreateObjectFuncKey<T>(dr);
 			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key); 
 
 			return dr.ReadToEnumerableOfObjects<T>(autoMappingFunc, getNextResult);
 		}
-		
+	
 		#endregion
-		
+	
 
 
 		#region [ ReadToObjectRow(s), ReadAsObjectRow(s) ]
@@ -326,7 +335,7 @@ namespace Artisan.Orm
 		{
 			return dr.ReadToObjectRow(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
 		}
-		
+	
 
 		public static ObjectRows ReadToObjectRows(this SqlDataReader dr, Func<SqlDataReader, ObjectRow> createFunc, bool getNextResult = true) 
 		{
@@ -339,7 +348,7 @@ namespace Artisan.Orm
 
 			return objectRows;
 		}
-		
+	
 		public static ObjectRows ReadToObjectRows<T>(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			return dr.ReadToObjectRows(MappingManager.GetCreateObjectRowFunc<T>(), getNextResult);
@@ -366,14 +375,14 @@ namespace Artisan.Orm
 		public static ObjectRows ReadAsObjectRows(this SqlDataReader dr, bool getNextResult = true) 
 		{
 			var objectRows = new ObjectRows();
-		
+	
 			while (dr.Read())
 			{
 				var objectRow = new ObjectRow(dr.FieldCount);
 
 				for (var i = 0; i < dr.FieldCount; i++)
 					objectRow.Add(dr.GetValue(i));
-				
+			
 				objectRows.Add(objectRow);
 			}
 
@@ -381,7 +390,7 @@ namespace Artisan.Orm
 
 			return objectRows;
 		}
-		
+	
 		#endregion
 
 
@@ -450,7 +459,7 @@ namespace Artisan.Orm
 			Dictionary<TKey,TValue> dictionary;
 
 			var underlyingType = typeof(TValue).GetUnderlyingType();
-			
+		
 			if (underlyingType.IsSimpleType())
 				dictionary = ReadToDictionaryOfValues<TKey, TValue>(dr, underlyingType);
 			else
@@ -466,7 +475,7 @@ namespace Artisan.Orm
 			Dictionary<TKey,TValue> dictionary;
 
 			var underlyingType = typeof(TValue).GetUnderlyingType();
-			
+		
 			if (underlyingType.IsSimpleType())
 				dictionary = ReadToDictionaryOfValues<TKey, TValue>(dr, underlyingType);
 			else
@@ -487,9 +496,9 @@ namespace Artisan.Orm
 
 			return dictionary;
 		}
-		
+	
 		#endregion 
-		
+	
 
 		#region [ ReadToTree, ReadToTreeList ]
 
@@ -497,7 +506,7 @@ namespace Artisan.Orm
 		{
 			return dr.ReadToListOfObjects<T>(createFunc, list, getNextResult).ToTree(hierarchicallySorted);
 		}
-		
+	
 		public static T ReadToTree<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
 		{
 			return dr.ReadToEnumerableOfObjects<T>(createFunc, getNextResult).ToTree(hierarchicallySorted);
@@ -513,7 +522,7 @@ namespace Artisan.Orm
 		{
 			return dr.ReadToListOfObjects<T>(createFunc, list, getNextResult).ToTreeList(hierarchicallySorted);
 		}
-		
+	
 		public static IList<T> ReadToTreeList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true, bool hierarchicallySorted = false) where T: class, INode<T>
 		{
 			return dr.ReadToEnumerableOfObjects<T>(createFunc, getNextResult).ToTreeList(hierarchicallySorted);
@@ -524,8 +533,9 @@ namespace Artisan.Orm
 			return dr.ReadToEnumerableOfObjects<T>(MappingManager.GetCreateObjectFunc<T>(), getNextResult).ToTreeList(hierarchicallySorted);
 		}
 
-		
+	
 		#endregion 
 
 	}
+
 }

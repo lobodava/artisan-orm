@@ -1,5 +1,5 @@
-﻿namespace Artisan.Orm
-{
+namespace Artisan.Orm
+{ 
 
 	public static class Int64NegativeIdentity
 	{
@@ -21,4 +21,6 @@
 
 		public static short Next => _identity++;
 	}
+
 }
+

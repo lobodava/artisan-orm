@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+using System.IO;
+using System.Threading.Tasks;
 using Artisan.Orm;
+using Microsoft.Extensions.Configuration;
 using Tests.DAL.Users;
 using Tests.DAL.Users.Models;
 
@@ -11,7 +13,14 @@ namespace Tests.DataServices
 
 		public UserDataService()
 		{
-			base.Repository = _repository = new Repository();
+			var configuration = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json")
+				.Build();
+
+			string connectionString = configuration.GetConnectionString("DatabaseConnection");
+
+			base.Repository = _repository = new Repository(connectionString);
 		}
 
 

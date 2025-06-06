@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using System.Text.Json.Serialization;
 using Artisan.Orm;
-using Newtonsoft.Json;
+using Microsoft.Data.SqlClient;
 
 namespace Tests.DAL.Users.Models
 {
@@ -19,17 +19,16 @@ namespace Tests.DAL.Users.Models
 
 		public String RowVersion { get; set; }
 
-
 		[JsonConverter(typeof(ByteArrayConverter))]
 		public Byte[] RoleIds { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public IList<Role> Roles { get; set; }
 	}
 
 
 	[MapperFor(typeof(User), RequiredMethod.All)]
-	public static class UserMapper 
+	public static class UserMapper
 	{
 		public static User CreateObject(SqlDataReader dr)
 		{

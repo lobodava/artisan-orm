@@ -1,22 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.Data.SqlClient;
 
 namespace Artisan.Orm
-{
+{ 
+
 	public static partial class SqlDataReaderExtensions
 	{
 
 		#region [ CreateObject ]
-		
+	
 		public static T CreateObject<T>(this SqlDataReader dr)
 		{
 			var key = GetAutoCreateObjectFuncKey<T>(dr);
-			
+		
 			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key); 
 
 			return CreateObject(dr, autoMappingFunc, key);
@@ -37,7 +38,7 @@ namespace Artisan.Orm
 		{
 			dynamic expando = new ExpandoObject();
 			var dict = expando as IDictionary<string, object>;
-			
+		
 			for (var i = 0; i < dr.FieldCount; i++)
 			{
 				var columnName = dr.GetName(i);
@@ -53,13 +54,13 @@ namespace Artisan.Orm
 		#region [ private members ] 
 
 		private static readonly PropertyInfo CommandProperty = typeof(SqlDataReader).GetProperties(BindingFlags.NonPublic | BindingFlags.Instance).First(p => p.Name == "Command");
-		
+	
 		internal static string GetCommandText(this SqlDataReader dr)
 		{
 			var command = (SqlCommand)CommandProperty.GetValue(dr);
 			return command.CommandText;
 		}
-		
+	
 		internal static string GetAutoCreateObjectFuncKey<T>(SqlDataReader dr)
 		{
 			return GetAutoCreateObjectFuncKey<T>(dr.GetCommandText());
@@ -69,8 +70,8 @@ namespace Artisan.Orm
 		{
 			return $"{commandText}+{typeof(T).FullName}";
 		}
-		
-		private static readonly Dictionary<Type, string> ReaderGetMethodNames = new Dictionary<Type, string>
+	
+		private static readonly Dictionary<Type, string> ReaderGetMethodNames = new Dictionary<Type, string>()
 		{
 			{ typeof(Boolean)		 , "GetBoolean"			},
 			{ typeof(Byte)			 , "GetByte"			},
@@ -95,12 +96,10 @@ namespace Artisan.Orm
 
 			if (propertyType == fieldType)
 			{
-				string methodName;
-
-				if(ReaderGetMethodNames.TryGetValue(underlyingType, out methodName))
+				if (ReaderGetMethodNames.TryGetValue(underlyingType, out string methodName))
 					return Expression.Call(
-						sqlDataReaderParam, 
-						typeof(SqlDataReader).GetMethod(methodName, new[] { typeof(int) }), 
+						sqlDataReaderParam,
+						typeof(SqlDataReader).GetMethod(methodName, new[] { typeof(int) }),
 						indexConst
 					);
 
@@ -126,7 +125,7 @@ namespace Artisan.Orm
 				Expression.Constant(underlyingType, typeof(Type))
 			);
 		}
-		
+	
 		internal static Func<SqlDataReader, T> CreateAutoMappingFunc<T>(SqlDataReader dr)
 		{ 
 			var properties = typeof(T)
@@ -140,15 +139,14 @@ namespace Artisan.Orm
 			{
 				var columnName = dr.GetName(i);
 				var prop = properties.FirstOrDefault(p => p.Name == columnName);
-				
+			
 				if (prop != null)
 				{
 					var indexConst = Expression.Constant(i, typeof(int));
 					var fieldType = dr.GetFieldType(i);
-					
-					bool isDefaultGetValueMethod;
-					MethodCallExpression getTypedValueExp = GetTypedValueMethodCallExpression(prop.PropertyType, fieldType, readerParam, indexConst, out isDefaultGetValueMethod);
-					
+
+					MethodCallExpression getTypedValueExp = GetTypedValueMethodCallExpression(prop.PropertyType, fieldType, readerParam, indexConst, out bool isDefaultGetValueMethod);
+
 					Expression getValueExp = null;
 
 					if (prop.PropertyType.IsNullableValueType())
@@ -159,7 +157,7 @@ namespace Artisan.Orm
 								typeof(SqlDataReader).GetMethod("IsDBNull", new[] { typeof(int) }),
 								indexConst
 							),
-			
+		
 							Expression.Default(prop.PropertyType),
 
 							Expression.Convert(getTypedValueExp, prop.PropertyType)
@@ -173,7 +171,7 @@ namespace Artisan.Orm
 					{
 						getValueExp = getTypedValueExp;
 					}
-			
+		
 					var binding = Expression.Bind(prop, getValueExp);
 					memberBindings.Add(binding);
 				}
@@ -181,7 +179,7 @@ namespace Artisan.Orm
 
 			if (memberBindings.Count == 0)
 				throw new ApplicationException($"Creation of AutoMapping Func failed. No property-field name matching found for class = '{typeof(T).FullName}' and CommandText = '{dr.GetCommandText()}'");
-			
+		
 
 			var ctor = Expression.New(typeof(T));
 			var memberInit = Expression.MemberInit(ctor, memberBindings);
@@ -191,82 +189,8 @@ namespace Artisan.Orm
 
 			return func;
 		}
-		
+	
 		#endregion
 	}
+
 }
-/* Old implementations with reflection:
- 
-  
-	internal static T CreateObject<T>(SqlDataReader dr)
-	{
-		var obj = Activator.CreateInstance<T>();
-		
-		for (var i = 0; i < dr.FieldCount; i++)
-		{
-			var columnName = dr.GetName(i);
-
-			var prop = obj.GetType().GetProperty(columnName, BindingFlags.Public | BindingFlags.Instance);
-
-			if (prop != null && prop.CanWrite)
-			{
-				var t = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-
-				var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), t);
-
-				prop.SetValue(obj, value, null);
-			}
-		}
-
-		return obj;
-	}
-
-	public static IList<T> ReadAsList<T>(this SqlDataReader dr, IList<T> list, bool getNextResult = true)
-	{
-		if (list == null) 
-			list = new List<T>();
-
-		if (typeof(T).IsSimpleType())
-			return dr.ReadToListOfValues<T>(list, getNextResult);
-
-
-		var dict = new Dictionary<string, Tuple<PropertyInfo, Type>>();
-
-		var properties = typeof(T)
-			.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-			.Where(p => p.CanWrite && p.PropertyType.IsSimpleType()).ToList();
-
-		foreach (var property in properties)
-		{
-			var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-			dict.Add(property.Name, new Tuple<PropertyInfo, Type>(property, type));
-		}
-
-
-		while (dr.Read())
-		{
-			var item = Activator.CreateInstance<T>();
-			
-			for (var i = 0; i < dr.FieldCount; i++)
-			{
-				var columnName = dr.GetName(i);
-
-				Tuple<PropertyInfo, Type> propTuple;
-
-				if (dict.TryGetValue(columnName, out propTuple))
-				{
-					var value = dr.IsDBNull(i) ? null : Convert.ChangeType(dr.GetValue(i), propTuple.Item2);
-
-					propTuple.Item1.SetValue(item, value, null);
-				}
-			}
-
-			list.Add(item);
-		}
-
-		if (getNextResult) dr.NextResult();
-
-		return list;
-	}	
-		
-*/

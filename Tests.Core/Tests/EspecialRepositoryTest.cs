@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 using Artisan.Orm;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 
 namespace Tests.Tests
 {
@@ -16,8 +18,14 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repositoryBase = new RepositoryBase();
+			var configuration = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json")
+				.Build();
 
+			string connectionString = configuration.GetConnectionString("DatabaseConnection");
+
+			_repositoryBase = new RepositoryBase(connectionString);
 		}
 
 		[TestMethod]
@@ -291,7 +299,7 @@ namespace Tests.Tests
 
 			Assert.IsNotNull(someclass);
 			Console.WriteLine("SomeClass:");
-			Console.WriteLine(JsonConvert.SerializeObject(someclass));
+			Console.WriteLine(JsonSerializer.Serialize(someclass));
 		}
 
 		[TestMethod]
@@ -317,7 +325,7 @@ namespace Tests.Tests
 
 			Assert.IsNotNull(someclass);
 			Console.WriteLine("SomeClass:");
-			Console.WriteLine(JsonConvert.SerializeObject(someclass));
+			Console.WriteLine(JsonSerializer.Serialize(someclass));
 		}
 		
 

@@ -1,12 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Artisan.Orm
-{
+{ 
 
 	// https://github.com/lobodava/artisan-orm/wiki/INode-Interface-and-ToTree-Methods
-
 
 	public static class TreeExtensions
 	{
@@ -83,7 +82,9 @@ namespace Artisan.Orm
 				else if (node.ParentId == parent.Id)
 				{
 					if (parent.Children == null)
+					{
 						parent.Children = new List<T>();
+					}
 
 					parent.Children.Add(node);
 				}
@@ -94,7 +95,9 @@ namespace Artisan.Orm
 					parent = prevNode;
 
 					if (parent.Children == null)
+					{
 						parent.Children = new List<T>();
+					}
 
 					parent.Children.Add(node);
 				}
@@ -120,7 +123,7 @@ namespace Artisan.Orm
 						parent = node;
 					}
 				}
-				
+			
 				prevNode = node;
 			}
 
@@ -189,13 +192,13 @@ namespace Artisan.Orm
 						parent = node;
 					}
 				}
-				
+			
 				prevNode = node;
 			}
 
 			return rootNodes;
 		}
-		
+	
 
 		private static IList<T> ConvertHierarchicallyUnsortedNodeListToTrees<T>(IEnumerable<T> nodes) where T: class, INode<T>
 		{
@@ -204,12 +207,12 @@ namespace Artisan.Orm
 
 			foreach (var node in dictionary.Select(item => item.Value))
 			{
-				T parent;
-
-				if (node.ParentId.HasValue && dictionary.TryGetValue(node.ParentId.Value, out parent))
+				if (node.ParentId.HasValue && dictionary.TryGetValue(node.ParentId.Value, out T parent))
 				{
 					if (parent.Children == null)
+					{
 						parent.Children = new List<T>();
+					}
 
 					parent.Children.Add(node);
 				}
@@ -229,21 +232,18 @@ namespace Artisan.Orm
 			Func<TNode, TId> idSelector,
 			Func<TNode, TId?> parentIdSelector,
 			Action<TNode, TNode> linkParentAndNodeAction
-		)	
-			where TNode: class 
-			where TId: struct 
-		{
-
+		)
+			where TNode: class
+			where TId: struct
 		{
 			var dictionary = nodes.ToDictionary(idSelector, n => n);
 			var rootNodes = new List<TNode>();
 
 			foreach (var node in dictionary.Select(item => item.Value))
 			{
-				TNode parent;
 				var paretnId = parentIdSelector(node);
 
-				if (paretnId.HasValue && dictionary.TryGetValue(paretnId.Value, out parent))
+				if (paretnId.HasValue && dictionary.TryGetValue(paretnId.Value, out TNode parent))
 				{
 					linkParentAndNodeAction(parent, node);
 				}
@@ -255,11 +255,6 @@ namespace Artisan.Orm
 
 			return rootNodes;
 		}
-
-
-
-
-	}
 
 	}
 

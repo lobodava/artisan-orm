@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 
 namespace Artisan.Orm
-{
+{ 
 
 	public enum RequiredMethod
 	{
-
 		/// <summary>
 		/// Check if all four methods exists: CreateObject, CreateObjectRow, CreateDataTable and CreateDataRow.
 		/// </summary>
@@ -40,7 +39,7 @@ namespace Artisan.Orm
 		//CreateDataRow,
 	}
 
-	
+
 	[AttributeUsage(AttributeTargets.Class)] // , AllowMultiple = true
 	public class MapperForAttribute: Attribute
 	{
@@ -48,16 +47,15 @@ namespace Artisan.Orm
 
 		public RequiredMethod[] RequiredMethods { get; }
 
-
 		public MapperForAttribute(Type mapperForType) {
 			MapperForType = mapperForType;
-			RequiredMethods = new RequiredMethod[]{ };
+			RequiredMethods = Array.Empty<RequiredMethod>();
 		}
 
 		public MapperForAttribute(Type mapperForType, params RequiredMethod[] requiredMethods) {
 			MapperForType = mapperForType;
 			RequiredMethods = requiredMethods;
 		}
-
 	}
 }
+

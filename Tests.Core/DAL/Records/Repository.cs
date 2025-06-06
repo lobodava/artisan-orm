@@ -1,13 +1,16 @@
-﻿using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Artisan.Orm;
+using Microsoft.Data.SqlClient;
 using Tests.DAL.Records.Models;
 
 namespace Tests.DAL.Records
 {
 	public class Repository: RepositoryBase
 	{
+		public Repository(string connectionString) : base(connectionString)
+		{
+		}
 
 		#region [ GetRecordById ]
 

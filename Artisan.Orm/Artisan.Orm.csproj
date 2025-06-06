@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.2.0</Version>
+    <Version>2.5.0</Version>
     <Authors>Vadim Loboda</Authors>
     <Description>ADO.NET Micro-ORM to SQL Server, implemented as a .Net Standard 2.0.3 library.
 
@@ -10,7 +10,7 @@ This library is designed to use stored procedures, table-valued parameters and s
 
 Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-reinvent-the-wheel     
 </Description>
-    <Copyright>Copyright 2016-2021</Copyright>
+    <Copyright>Copyright 2016-2025</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/lobodava/artisan-orm</PackageProjectUrl>
     <PackageIconUrl></PackageIconUrl>
@@ -20,23 +20,27 @@ Read more: https://www.codeproject.com/articles/1155836/artisan-orm-or-how-to-re
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AssemblyVersion>2.2.0.0</AssemblyVersion>
     <FileVersion>2.2.0.0</FileVersion>
-    <PackageReleaseNotes>Added ReadDynamic and ReadDynamicList methods
+    <PackageReleaseNotes>Switched to Microsoft.Data.SqlClient 5.2.3.
+Added support for CancellationToken in asynchronous methods.
+Removed ConnectionStringBuilder.
 </PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageIcon>Logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.3" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\Logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
     <None Include="LICENSE.txt">
       <Pack>True</Pack>

@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using System.Text.Json.Serialization;
 using Artisan.Orm;
-using Newtonsoft.Json;
+using Microsoft.Data.SqlClient;
 
 namespace Tests.DAL.GrandRecords.Models
 {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 
 namespace Artisan.Orm
@@ -8,10 +8,10 @@ namespace Artisan.Orm
 	internal static class TypeExtensions
 	{
 		private static readonly Type[] SimpleTypes;
-		
+	
 		static TypeExtensions()
 		{
-			var types = new[] 
+			var types = new[]
 			{
 				//typeof (Enum),
 				typeof (String),
@@ -36,7 +36,7 @@ namespace Artisan.Orm
 				typeof (DateTimeOffset),
 				typeof (TimeSpan),
 			};
-			
+		
 			var nullTypes =	types
 							.Where(t => t.IsValueType)
 							.Select(t => typeof (Nullable<>)
@@ -69,4 +69,5 @@ namespace Artisan.Orm
 		}
 
 	}
+
 }

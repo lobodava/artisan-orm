@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Artisan.Orm
-{
+{ 
+
 	public class ObjectRow: List<object>
 	{
 		public ObjectRow() : base(new List<object>())

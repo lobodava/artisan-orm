@@ -2,17 +2,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Dynamic;
-using Microsoft.Data.SqlClient;
-using System.Globalization;
 using System.Linq;
+using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.Data.SqlClient;
 
 namespace Artisan.Orm
-{
+{ 
+
 	public static partial class SqlCommandExtensions
 	{
-
 		public static void UseProcedure(this SqlCommand cmd, string procedureName)
 		{
 			cmd.CommandType = CommandType.StoredProcedure;
@@ -167,7 +166,7 @@ namespace Artisan.Orm
 				Direction = ParameterDirection.Input,
 				SqlDbType = SqlDbType.Decimal,
 				Scale = scale,
- 				Precision = precision,
+ 					Precision = precision,
 				Value = value
 			});
 		}
@@ -251,7 +250,7 @@ namespace Artisan.Orm
 		{
 			if (value < -3.40E+38f || 3.40E+38f < value) 
 				throw new ArgumentOutOfRangeException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server real type range [3.40E+38, 3.40E+38]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
-			
+		
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
@@ -280,7 +279,7 @@ namespace Artisan.Orm
 		{
 			if (value < -1.79E+308d || 1.79E+308d < value) 
 				throw new ArgumentOutOfRangeException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server float type range [-1.79E+308, 1.79E+308]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
-	
+
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
@@ -379,7 +378,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value,
 			});
 		}
-		
+	
 		public static void AddNVarcharParam(this SqlCommand cmd, string parameterName, int size, string value, bool trimToNull = false, bool truncate = false )
 		{
 			if (value != null)
@@ -392,7 +391,7 @@ namespace Artisan.Orm
 				else if (size < value.Length)
 					throw new ArgumentException($"String value of SqlParameter {parameterName} is {value.Length} character length that exceeds size of nvarchar({size}) type and would be truncated. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
 			}
-			
+		
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
@@ -458,7 +457,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 		public static void AddVarbinaryMaxParam(this SqlCommand cmd, string parameterName, byte[] value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -493,7 +492,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddTimeParam(this SqlCommand cmd, string parameterName, TimeSpan value )
 		{
@@ -528,7 +527,7 @@ namespace Artisan.Orm
 				Value = value
 			});
 		}
-		
+	
 		public static void AddSmallDateTimeParam(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -539,7 +538,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddDateTimeParam(this SqlCommand cmd, string parameterName, DateTime value )
 		{
@@ -551,7 +550,7 @@ namespace Artisan.Orm
 				Value = value
 			});
 		}
-		
+	
 		public static void AddDateTimeParam(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -562,7 +561,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddDateTime2Param(this SqlCommand cmd, string parameterName, DateTime value )
 		{
@@ -574,7 +573,7 @@ namespace Artisan.Orm
 				Value = value
 			});
 		}
-		
+	
 		public static void AddDateTime2Param(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -608,7 +607,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddGuidParam(this SqlCommand cmd, string parameterName, Guid value )
 		{
@@ -683,7 +682,7 @@ namespace Artisan.Orm
 					Value = DBNull.Value
 				});
 		}
-		
+	
 
 		public static void AddSqlVariantParam(this SqlCommand cmd, string parameterName, object value )
 		{
@@ -695,7 +694,7 @@ namespace Artisan.Orm
 				Value = value ?? DBNull.Value
 			});
 		}
-		
+	
 		public static void AddXmlParam(this SqlCommand cmd, string parameterName, string value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -831,8 +830,8 @@ namespace Artisan.Orm
 			{ 
 				ParameterName = parameterName,
 				Direction = ParameterDirection.Output,
-				SqlDbType = SqlDbType.NVarChar, 
-				Size = size,					
+				SqlDbType = SqlDbType.NVarChar,
+				Size = size,
 			});
 		}
 
@@ -871,7 +870,7 @@ namespace Artisan.Orm
 			if (sqlParameters == null)
 			{
 				var isConnectionClosed = true;
-				
+			
 				try
 				{
 					isConnectionClosed = cmd.Connection.State == ConnectionState.Closed;
@@ -888,7 +887,7 @@ namespace Artisan.Orm
 				}
 
 				cmd.Parameters.Remove(cmd.Parameters["@RETURN_VALUE"]);
-				
+			
 				sqlParameters = new SqlParameter[cmd.Parameters.Count];
 				cmd.Parameters.CopyTo(sqlParameters, 0);
 
@@ -947,6 +946,6 @@ namespace Artisan.Orm
 			action(cmd);
 		}
 
-
 	}
+
 }

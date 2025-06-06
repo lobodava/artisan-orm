@@ -1,19 +1,18 @@
-﻿using System;
+using System;
 using System.Runtime.Serialization;
 using static System.String;
 
 namespace Artisan.Orm
-{
+{ 
 	[DataContract]
 	public class DataReply {
-
 
 		[DataMember]
 		public DataReplyStatus Status { get; set; }
 
 		[DataMember(EmitDefaultValue = false)]
 		public DataReplyMessage[] Messages { get; set; }
-		
+	
 		public DataReply()
 		{
 			Status = DataReplyStatus.Ok;
@@ -31,7 +30,7 @@ namespace Artisan.Orm
 			Status = status;
 			Messages = new [] { new DataReplyMessage { Code = code, Text = text } };
 		}
-		
+	
 		public DataReply(DataReplyStatus status, DataReplyMessage message)
 		{
 			Status = status;
@@ -57,18 +56,16 @@ namespace Artisan.Orm
 		{
 			if (IsNullOrWhiteSpace(statusCode))
 				return null;
-	
-			DataReplyStatus status;
 
-			if (Enum.TryParse(statusCode, true, out status))
+			if (Enum.TryParse(statusCode, true, out DataReplyStatus status))
 				return status;
-	
+
 			throw new InvalidCastException(
 					$"Cannot cast string '{statusCode}' to DataReplyStatus Enum. " +
 					$"Available values: {Join(", ", Enum.GetNames(typeof(DataReplyStatus)))}");
 		}
-
 	}
+
 
 	[DataContract]
 	public class DataReply<TData>: DataReply {
@@ -83,7 +80,7 @@ namespace Artisan.Orm
 
 		public DataReply()
 		{
-			Data = default(TData);
+			Data = default;
 		}
 
 		public DataReply(DataReplyStatus status, string code, string text, TData data)  :base(status, code, text) 
@@ -98,22 +95,23 @@ namespace Artisan.Orm
 
 		public DataReply(DataReplyStatus status) :base(status) 
 		{
-			Data = default(TData);
+			Data = default;
 		}
 
 		public DataReply(DataReplyStatus status, string code, string text) :base(status, code, text) 
 		{
-			Data = default(TData);
+			Data = default;
 		}
 
 		public DataReply(DataReplyStatus status, DataReplyMessage replyMessage) :base(status, replyMessage)
 		{
-			Data = default(TData);
+			Data = default;
 		}
 
 		public DataReply(DataReplyStatus status, DataReplyMessage[] replyMessages) :base(status, replyMessages)
 		{
-			Data = default(TData);
+			Data = default;
 		}
 	}
 }
+
