@@ -1,4 +1,4 @@
-﻿namespace Artisan.Orm
+namespace Artisan.Orm
 {
 	public static class StringExtensions
 	{
@@ -8,7 +8,8 @@
 			return value.Trim();
 		}
 
-		public static string TruncateTo(this string value, int length) {
+		public static string TruncateTo(this string value, int length)
+		{
 			if (value == null) return null;
 			if (value.Length <= length) return value;
 			return value.Substring(0, length);

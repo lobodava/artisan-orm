@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
 using Tests.DAL.Folders;
 using Tests.DAL.Folders.Models;
 
@@ -14,6 +14,13 @@ namespace Tests.Tests
 	[TestClass]
 	public class FolderTests
 	{
+		private string _connectionString;
+
+		[TestInitialize]
+		public void TestInitialize()
+		{
+			_connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
+		}
 
 		// Use dbo.GenerateFolders stored procedure to generate (and regenerate) test data into database
 		// If you used publish profile (Hierarchy.DB.publish.xml) to deploy database - test data is already generated 
@@ -23,7 +30,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void GetFolderById()
 		{
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				var folder = repository.GetFolderById(5);
 
@@ -46,14 +53,14 @@ namespace Tests.Tests
 			IList<Folder> folders;
 
 			// just to eliminate time for test preparation and make a cold run before time measure
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 				folders = repository.GetFolderWithSubFolders(1);
 
 
 			var sw = new Stopwatch();
 			sw.Start();
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 				folders = repository.GetFolderWithSubFolders(1);
 
 			sw.Stop();
@@ -95,14 +102,14 @@ namespace Tests.Tests
 			ObjectRows rows;
 
 			// just to eliminate time for test preparation and make a cold run before time measure
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 				rows = repository.GetFolderWithSubFoldersAsObjectRows(1);
 
 
 			var sw = new Stopwatch();
 			sw.Start();
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 				rows = repository.GetFolderWithSubFoldersAsObjectRows(1);
 
 			sw.Stop();
@@ -121,7 +128,7 @@ namespace Tests.Tests
 			{
 				var level = Convert.ToInt32(row[3]);
 
-				Console.WriteLine($"{Repeat("    ", level)}{JsonConvert.SerializeObject(row)}");
+				Console.WriteLine($"{Repeat("    ", level)}{JsonSerializer.Serialize(row)}");
 			}
 
 			// !!!!!   SEE CONSOLE OUTPUT  !!!!!!!!
@@ -130,7 +137,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void GetTreeOfFolderParents()
 		{
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				var folders = repository.GetFolderWithSubFolders(1);
 
@@ -158,7 +165,7 @@ namespace Tests.Tests
 		{
 			IList<Folder> folders;
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 				folders = repository.GetFolderWithSubFolders(1);
 
 			Folder folderTree;
@@ -166,7 +173,7 @@ namespace Tests.Tests
 			var sw = new Stopwatch();
 			sw.Start();
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				folderTree = repository.GetFolderTree(1);
 			}
@@ -202,7 +209,7 @@ namespace Tests.Tests
 		{
 			IList<Folder> folders;
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 				folders = repository.GetFolderWithSubFolders(1);
 
 			var sw = new Stopwatch();
@@ -245,7 +252,7 @@ namespace Tests.Tests
 		{
 			IList<Folder> folders;
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 				folders = repository.GetImmediateSubFolders(1);
 
 			var firstSubFolder = folders.First();
@@ -254,7 +261,7 @@ namespace Tests.Tests
 
 			var sw = new Stopwatch();
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				folders = repository.GetFolderWithSubFolders(firstSubFolder.Id);
 
@@ -282,7 +289,7 @@ namespace Tests.Tests
 		{
 			IList<Folder> folders1, folders2;
 	
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				folders1 = repository.GetFolderWithSubFolders(1);
 				folders2 = repository.GetFolderWithSubFolders(2);
@@ -293,7 +300,7 @@ namespace Tests.Tests
 
 			var sw = new Stopwatch();
 			
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				folders1 = repository.GetFolderWithSubFolders(firstSubFolder1.Id);
 				folders2 = repository.GetFolderWithSubFolders(firstSubFolder2.Id);
@@ -324,7 +331,7 @@ namespace Tests.Tests
 		{
 			IList<Folder> folders1, folders2;
 	
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				folders1 = repository.GetFolderWithSubFolders(1);
 				folders2 = repository.GetFolderWithSubFolders(2);
@@ -335,7 +342,7 @@ namespace Tests.Tests
 
 			var sw = new Stopwatch();
 
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				folders1 = repository.GetFolderWithSubFolders(firstSubFolder1.Id);
 				folders2 = repository.GetFolderWithSubFolders(firstSubFolder2.Id);
@@ -364,7 +371,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void AddAndDeleteFolder()
 		{
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				repository.BeginTransaction(tran =>
 				{
@@ -448,7 +455,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void EditFolder()
 		{
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				repository.BeginTransaction(tran =>
 				{
@@ -509,7 +516,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void ReorderSubFolders()
 		{
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				repository.BeginTransaction(tran =>
 				{
@@ -575,7 +582,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void ReparentSubFolders()
 		{
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				repository.BeginTransaction(tran =>
 				{
@@ -651,7 +658,7 @@ namespace Tests.Tests
 		[TestMethod]
 		public void FindFoldersWithParentTree()
 		{
-			using (var repository = new Repository())
+			using (var repository = new Repository(_connectionString))
 			{
 				var folderTree = repository.FindFoldersWithParentTree(userId: 1, level:2, folderName: "A");
 
@@ -665,7 +672,7 @@ namespace Tests.Tests
 
 		private static string ToJson(object obj)
 		{
-			return JToken.Parse(JsonConvert.SerializeObject(obj)).ToString(Formatting.Indented);
+			return JsonSerializer.Serialize(obj);
 		}
 
 		private static string Repeat(string str, int n)

@@ -1,6 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,8 +17,9 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new RepositoryBase();
+			var connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
 
+			_repository = new RepositoryBase(connectionString);
 		}
 
 
@@ -104,6 +107,119 @@ namespace Tests.Tests
 
 		}
 
+		[TestMethod]
+		public void GetWholeNumberDictionaryParams()
+		{
+			bool		bit					=	true	;
+			bool?		bitNull				=	null	;
+			bool?		bitNullable			=	false	;
+					
+			byte		tinyInt				=	byte.MaxValue		;
+			byte?		tinyIntNull			=	null				;
+			byte?		tinyIntNullable		=	byte.MinValue		;
+
+			short		smallInt			=	short.MaxValue		;
+			short?		smallIntNull		=	null				;
+			short?		smallIntNullable	=	short.MinValue		;
+
+			int			int_				=	int.MaxValue		;
+			int?		intNull				=	null				;
+			int?		intNullable			=	int.MinValue		;
+
+			long		bigInt				=	long.MaxValue		;
+			long?		bigIntNull			=	null				;
+			long?		bigIntNullable		=	long.MinValue		;
+
+			var paramDict = new Dictionary<string, object>
+			{
+				{"Bit"				, bit				},
+				{"BitNull"			, bitNull			},
+				{"BitNullable"		, bitNullable		},
+				{"TinyInt"			, tinyInt			},
+				{"TinyIntNull"		, tinyIntNull		},
+				{"TinyIntNullable"	, tinyIntNullable	},
+				{"SmallInt"			, smallInt			},
+				{"SmallIntNull"		, smallIntNull		},
+				{"SmallIntNullable"	, smallIntNullable	},
+				{"Int"				, int_				},
+				{"IntNull"			, intNull			},
+				{"IntNullable"		, intNullable		},
+				{"BigInt"			, bigInt			},
+				{"BigIntNull"		, bigIntNull		},
+				{"BigIntNullable"	, bigIntNullable	}
+			};
+
+			dynamic paramDynamic = new {
+				Bit					= bit				,
+				BitNull				= bitNull			,
+				BitNullable			= bitNullable		,
+				TinyInt				= tinyInt			,
+				TinyIntNull			= tinyIntNull		,
+				TinyIntNullable		= tinyIntNullable	,
+				SmallInt			= smallInt			,
+				SmallIntNull		= smallIntNull		,
+				SmallIntNullable	= smallIntNullable	,
+				Int					= int_				,
+				IntNull				= intNull			,
+				IntNullable			= intNullable		,
+				BigInt				= bigInt			,
+				BigIntNull			= bigIntNull		,
+				BigIntNullable		= bigIntNullable
+			};
+
+			var sw = new Stopwatch();
+
+			for (int j = 0; j < 5; j++)
+			{
+				sw.Restart();
+				
+				_repository.RunCommand(cmd =>
+				{
+					cmd.UseProcedure("dbo.GetWholeNumberParams");
+
+					if (j < 3)
+						cmd.AddParams(paramDict);
+					else
+						RepositoryBase.AddParams(cmd, paramDynamic);
+
+					cmd.ExecuteReader(reader =>
+					{
+						var i = 0;
+
+						reader.Read(r =>
+						{
+							Assert.AreEqual(r.GetBoolean(i++),			paramDict["Bit"],				"bit");
+							Assert.AreEqual(r.GetBooleanNullable(i++),	paramDict["BitNull"],			"bitNull");
+							Assert.AreEqual(r.GetBooleanNullable(i++),	paramDict["BitNullable"],		"bitNullable");
+
+							Assert.AreEqual(r.GetByte(i++),				paramDict["TinyInt"],			"tinyInt");
+							Assert.AreEqual(r.GetByteNullable(i++),		paramDict["TinyIntNull"],		"tinyIntNull");
+							Assert.AreEqual(r.GetByteNullable(i++),		paramDict["TinyIntNullable"], "tinyIntNullable");
+
+							Assert.AreEqual(r.GetInt16(i++),			paramDict["SmallInt"],		"smallInt");
+							Assert.AreEqual(r.GetInt16Nullable(i++),	paramDict["SmallIntNull"],	"smallIntNull");
+							Assert.AreEqual(r.GetInt16Nullable(i++),	paramDict["SmallIntNullable"],"smallIntNullable");
+
+							Assert.AreEqual(r.GetInt32(i++),			paramDict["Int"],				"int_");
+							Assert.AreEqual(r.GetInt32Nullable(i++),	paramDict["IntNull"],			"intNull");
+							Assert.AreEqual(r.GetInt32Nullable(i++),	paramDict["IntNullable"],		"intNullable");
+
+							Assert.AreEqual(r.GetInt64(i++),			paramDict["BigInt"],			"bigInt");
+							Assert.AreEqual(r.GetInt64Nullable(i++),	paramDict["BigIntNull"],		"bigIntNull");
+							Assert.AreEqual(r.GetInt64Nullable(i++),	paramDict["BigIntNullable"],	"bigIntNullable");
+						});
+
+					});
+
+				});
+
+				sw.Stop();
+
+				Console.WriteLine($"dbo.GetWholeNumberParams execution # {j + 1} took {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms" );
+			}
+	
+		}
+
 
 		[TestMethod]
 		public void GetFractionalNumberParams()
@@ -188,6 +304,101 @@ namespace Tests.Tests
 
 		}
 
+		[TestMethod]
+		public void GetFractionalNumberDictionaryParams()
+		{
+			decimal		decimal_			=	decimal.MaxValue		; //  79228162514264337593543950335
+			decimal?	decimalNull			=	null					;
+			decimal?	decimalNullable		=	decimal.MinValue		; // -79228162514264337593543950335
+
+			decimal		smallMoney			=	214748.3647m			;
+			decimal?	smallMoneyNull		=	null					;
+			decimal?	smallMoneyNullable	=	-214748.3648m			;
+
+			decimal		money				=	-922337203685477.5808m	;
+			decimal?	moneyNull			=	null					;
+			decimal?	moneyNullable		=	922337203685477.5807m	;
+
+			float		real				=	3.40E+38f				;
+			float?		realNull			=	null					;
+			float?		realNullable		=	-3.40E+38f				;
+
+			double		float_				=	-1.79E+308d				;
+			double?		floatNull			=	null					;
+			double?		floatNullable		=	1.79E+308d				;
+
+			var paramDict = new Dictionary<string, object>
+			{
+				{"Decimal"				,	decimal_			},
+				{"DecimalNull"			,	decimalNull			},
+				{"DecimalNullable"		,	decimalNullable		},
+				{"SmallMoney"			,	smallMoney			},
+				{"SmallMoneyNull"		,	smallMoneyNull		},
+				{"SmallMoneyNullable"	,	smallMoneyNullable	},
+				{"Money"				,	money				},
+				{"MoneyNull"			,	moneyNull			},
+				{"MoneyNullable"		,	moneyNullable		},
+				{"Real"					,	real				},
+				{"RealNull"				,	realNull			},
+				{"RealNullable"			,	realNullable		},
+				{"Float"				,	float_				},
+				{"FloatNull"			,	floatNull			},
+				{"FloatNullable"		,	floatNullable		}
+			};
+
+			var sw = new Stopwatch();
+			
+			for (int j = 0; j < 5; j++)
+			{
+				sw.Restart();
+				
+				_repository.RunCommand(cmd =>
+				{
+					cmd.UseProcedure("dbo.GetFractionalNumberParams");
+
+					cmd.AddParams(paramDict);
+
+					cmd.ExecuteReader(reader =>
+					{
+						var i = 0;
+
+						reader.Read(r =>
+						{
+							Assert.AreEqual( r.GetDecimal(i++)			,	paramDict["Decimal"]				,	"decimal_"			);	
+							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["DecimalNull"]			,	"decimalNull"		);	
+							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["DecimalNullable"]		,	"decimalNullable"	);	
+
+							Assert.AreEqual( r.GetDecimal(i++)			,	paramDict["SmallMoney"]			,	"smallMoney"			);	
+							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["SmallMoneyNull"]		,	"smallMoneyNull"		);	
+							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["SmallMoneyNullable"]	,	"smallMoneyNullable");	
+
+							Assert.AreEqual( r.GetDecimal(i++)			,	paramDict["Money"]				,	"money"				);	
+							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["MoneyNull"]			,	"moneyNull"			);	
+							Assert.AreEqual( r.GetDecimalNullable(i++)	,	paramDict["MoneyNullable"]		,	"moneyNullable"		);	
+
+							Assert.AreEqual( r.GetFloat(i++)			,	paramDict["Real"]					,	"real"				);	
+							Assert.AreEqual( r.GetFloatNullable(i++)	,	paramDict["RealNull"]				,	"realNull"			);	
+							Assert.AreEqual( r.GetFloatNullable(i++)	,	paramDict["RealNullable"]			,	"realNullable"		);	
+
+							Assert.AreEqual( r.GetDouble(i++)			,	paramDict["Float"]				,	"float_"				);	
+							Assert.AreEqual( r.GetDoubleNullable(i++)	,	paramDict["FloatNull"]			,	"floatNull"			);	
+							Assert.AreEqual( r.GetDoubleNullable(i++)	,	paramDict["FloatNullable"]		,	"floatNullable"		);
+
+						});
+
+					});
+
+				});
+
+				sw.Stop();
+
+				Console.WriteLine($"dbo.GetFractionalNumberParams execution # {j + 1} took {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms" );
+			}
+
+		}
+
+
+		
 		[TestMethod]
 		public void GetStringParams()
 		{
@@ -521,8 +732,6 @@ namespace Tests.Tests
 				Assert.AreEqual(cmd.ReadTo<Int16>(), 123);
 			});
 		}
-
-
 
 
 		[TestMethod]

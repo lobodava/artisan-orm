@@ -1,7 +1,6 @@
-﻿using System.Runtime.Serialization;
-
 namespace Artisan.Orm
-{
+{ 
+
 	public enum DataReplyStatus
 	{
 		Ok			,
@@ -14,3 +13,4 @@ namespace Artisan.Orm
 	}
 
 }
+

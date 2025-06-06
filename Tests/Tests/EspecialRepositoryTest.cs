@@ -1,10 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Configuration;
 using System.Diagnostics;
 using Artisan.Orm;
+using System.Data.SqlClient;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace Tests.Tests
 {
@@ -16,8 +18,9 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repositoryBase = new RepositoryBase();
+			var connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
 
+			_repositoryBase = new RepositoryBase(connectionString);
 		}
 
 		[TestMethod]
@@ -125,7 +128,22 @@ namespace Tests.Tests
 						Console.WriteLine($"GetInt32 done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one GetInt32" );
 						Console.WriteLine();
 
+						
+						// GetValue
 
+						sw.Restart();
+
+						for (int i = 0; i < times; i++)
+						{
+							var id = r.GetValue(0);
+						}
+
+						sw.Stop();
+
+						Console.WriteLine($"GetValue done {times} times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / times).ToString("0.######")} ms for one GetValue" );
+						Console.WriteLine();
+
+						
 						// (Int32) + GetValue
 
 						sw.Restart();
@@ -277,7 +295,7 @@ namespace Tests.Tests
 
 			Assert.IsNotNull(someclass);
 			Console.WriteLine("SomeClass:");
-			Console.WriteLine(JsonConvert.SerializeObject(someclass));
+			Console.WriteLine(JsonSerializer.Serialize(someclass));
 		}
 
 		[TestMethod]
@@ -303,7 +321,7 @@ namespace Tests.Tests
 
 			Assert.IsNotNull(someclass);
 			Console.WriteLine("SomeClass:");
-			Console.WriteLine(JsonConvert.SerializeObject(someclass));
+			Console.WriteLine(JsonSerializer.Serialize(someclass));
 		}
 		
 

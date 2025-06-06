@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Artisan.Orm;
+using System.Data.SqlClient;
 using Tests.DAL.Users.Models;
 
 namespace Tests.DAL.Users
@@ -12,11 +12,7 @@ namespace Tests.DAL.Users
 
 	public class Repository: RepositoryBase
 	{
-		//#if DEBUG
-		//	public Repository () : base ("AnotherConnection", "Debug") {}
-		//#else
-		//	public Repository () : base ("AnotherConnection", "Release") {}
-		//#endif
+		public Repository(string connectionString) : base(connectionString) {}
 
 		#region [ GetUserById ]
 
@@ -368,7 +364,6 @@ namespace Tests.DAL.Users
 
 
 		#endregion
-
 
 	}
 }

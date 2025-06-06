@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+using System.Configuration;
+using System.Threading.Tasks;
 using Artisan.Orm;
 using Tests.DAL.Users;
 using Tests.DAL.Users.Models;
@@ -11,7 +12,8 @@ namespace Tests.DataServices
 
 		public UserDataService()
 		{
-			base.Repository = _repository = new Repository();
+			var connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
+			base.Repository = _repository = new Repository(connectionString);
 		}
 
 

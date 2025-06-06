@@ -1,6 +1,6 @@
 
 
-# [![Artisan.Orm Logo](https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png)](http://www.nuget.org/packages/Artisan.ORM)<br/><br/>Artisan.Orm<br/><br/>ADO.NET Micro-ORM to SQL Server
+# [![Artisan.Orm Logo](https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png)](http://www.nuget.org/packages/Artisan.ORM) Artisan.Orm — ADO.NET Micro-ORM to SQL Server
 
 First there was a desire to save a graph of objects for one access to the database: 
 * one command on the client,
@@ -46,8 +46,6 @@ To achieve these goals Artisan.Orm uses:
 * a [special approach](https://github.com/lobodava/artisan-orm/wiki/Negative-identities-and-object-graph-saving) to writing stored procedures for object reading and saving.
 
 Artisan.Оrm is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
-
-[![NuGet Logo](https://www.nuget.org/Content/Logos/nugetlogo.png)](http://www.nuget.org/packages/Artisan.ORM)
 
 More examples of the Artisan.Orm usage are available in the [Tests](https://github.com/lobodava/artisan-orm/tree/master/Tests) and [Database](https://github.com/lobodava/artisan-orm/tree/master/Database) projects.
 

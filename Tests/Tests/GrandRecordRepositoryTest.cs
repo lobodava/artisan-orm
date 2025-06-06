@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Tests.DAL.GrandRecords;
 using Tests.DAL.GrandRecords.Models;
 
@@ -19,7 +20,8 @@ namespace Tests.Tests
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new Repository();
+			var connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
+			_repository = new Repository(connectionString);
 
 			_repository.ExecuteCommand(cmd => {
 				cmd.UseSql("delete from dbo.Records where Id > 676; delete from dbo.GrandRecords where Id > 26;");	
@@ -49,7 +51,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine($"The last GrandRecord contains {grandRecord.Records.Count} Records and {grandRecord.Records.SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecord));
+			Console.Write(JsonSerializer.Serialize(grandRecord));
 		}
 
 
@@ -75,7 +77,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine($"The last GrandRecord contains {grandRecord.Records.Count} Records and {grandRecord.Records.SelectMany(r => r.ChildRecords).ToList().Count} ChildRecords:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecord));
+			Console.Write(JsonSerializer.Serialize(grandRecord));
 		}
 
 
@@ -100,7 +102,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The first GrandRecord looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(grandRecords.Take(1)));
 		}
 
 
@@ -125,7 +127,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The first GrandRecord looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(grandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(grandRecords.Take(1)));
 		}
 
 
@@ -153,7 +155,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The first of saved GrandRecords looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords.Take(1)));
 		}
 		
 
@@ -180,7 +182,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The first of saved GrandRecords looks like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords.Take(1)));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords.Take(1)));
 		}
 
 
@@ -229,7 +231,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The saved GrandRecords look like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords));
 		}
 
 
@@ -278,7 +280,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The saved GrandRecords look like:");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedGrandRecords));
+			Console.Write(JsonSerializer.Serialize(savedGrandRecords));
 		}
 
 

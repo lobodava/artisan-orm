@@ -1,13 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
+using System.Data.SqlClient;
 
 namespace Artisan.Orm
-{
+{ 
+
 	public static class MappingManager
 	{
 		private static readonly Dictionary<Type, Delegate> CreateObjectFuncDictionary = new Dictionary<Type, Delegate>();
@@ -16,9 +17,11 @@ namespace Artisan.Orm
 
 		private static readonly Dictionary<Type, Tuple<Func<DataTable>, Delegate>> CreateDataFuncsDictionary = new Dictionary<Type, Tuple<Func<DataTable>, Delegate>>();
 
-		private static readonly ConcurrentDictionary<string, Delegate> AutoCreateObjectFuncDictionary  = new ConcurrentDictionary<string, Delegate>();
+		private static readonly ConcurrentDictionary<string, Delegate> AutoCreateObjectFuncDictionary = new ConcurrentDictionary<string, Delegate>();
 
 		private static readonly ConcurrentDictionary<string, Tuple<Func<DataTable>, Delegate>> AutoCreateDataFuncsDictionary = new ConcurrentDictionary<string, Tuple<Func<DataTable>, Delegate>>();
+
+		private static readonly ConcurrentDictionary<string, SqlParameter[]> SqlParametersDictionary = new ConcurrentDictionary<string, SqlParameter[]>();
 
 
 		static MappingManager()
@@ -62,8 +65,6 @@ namespace Artisan.Orm
 
 						CreateObjectRowFuncDictionary.Add(attribute.MapperForType, createObjectRowDelegate);
 					}
-
-
 
 					Func<DataTable> createDataTableFunc = null;
 
@@ -110,7 +111,7 @@ namespace Artisan.Orm
 
 			throw new NullReferenceException($"CreateObject Func not found. Check if MapperFor {typeof(T).FullName} exists and CreateObject exist.");
 		}
-		
+	
 		public static Func<SqlDataReader, ObjectRow> GetCreateObjectRowFunc<T>()
 		{
 			Delegate del;
@@ -126,17 +127,18 @@ namespace Artisan.Orm
 		{
 			Tuple<Func<DataTable>, Delegate> tuple;
 
-			return CreateDataFuncsDictionary.TryGetValue(typeof(T), out tuple) ? tuple.Item1 : null;
+			return CreateDataFuncsDictionary.TryGetValue(typeof(T), out tuple)
+				? tuple.Item1
+				: null;
 		}
 
 		public static Func<T, object[]> GetCreateDataRowFunc<T>()
 		{
 			Tuple<Func<DataTable>, Delegate> tuple;
 
-			if (CreateDataFuncsDictionary.TryGetValue(typeof(T), out tuple))
-				return (Func<T, object[]>)tuple.Item2;
-
-			return null;
+			return CreateDataFuncsDictionary.TryGetValue(typeof(T), out tuple)
+				? (Func<T, object[]>)tuple.Item2
+				: null;
 		}
 
 
@@ -177,7 +179,6 @@ namespace Artisan.Orm
 			return false;
 		}
 
-
 		public static bool AddAutoCreateObjectFunc<T>(string key, Func<SqlDataReader, T> autoCreateObjectFunc)
 		{
 			return AutoCreateObjectFuncDictionary.TryAdd(key, autoCreateObjectFunc);
@@ -187,7 +188,8 @@ namespace Artisan.Orm
 		{
 			Delegate del;
 
-			if (AutoCreateObjectFuncDictionary.TryGetValue(key, out del)) {
+			if (AutoCreateObjectFuncDictionary.TryGetValue(key, out del))
+			{
 				return (Func<SqlDataReader, T>)del;
 			}
 			return null;
@@ -196,7 +198,7 @@ namespace Artisan.Orm
 		public static bool AddAutoCreateDataFuncs<T>(string key, Func<DataTable> createDataTableFunc, Func<T, object[]> createDataRowFunc)
 		{
 			var funcs = new Tuple<Func<DataTable>, Delegate>(createDataTableFunc, createDataRowFunc);
-			
+		
 			return AutoCreateDataFuncsDictionary.TryAdd(key, funcs);
 		}
 
@@ -229,6 +231,18 @@ namespace Artisan.Orm
 			}
 		}
 
+		public static bool AddSqlParameters(string key, SqlParameter[] sqlParameters)
+		{
+			return SqlParametersDictionary.TryAdd(key, sqlParameters);
+		}
+
+		public static SqlParameter[] GetSqlParameters(string key)
+		{
+			SqlParameter[] collection;
+
+			return SqlParametersDictionary.TryGetValue(key, out collection) ? collection : null;
+		}
+
 		#region [ Get Dependent Assemblies ]
 
 		private static IEnumerable<Assembly> GetCurrentAndDependentAssemblies()
@@ -255,4 +269,5 @@ namespace Artisan.Orm
 		#endregion
 
 	}
+
 }

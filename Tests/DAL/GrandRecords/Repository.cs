@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Artisan.Orm;
+using System.Data.SqlClient;
 using Tests.DAL.GrandRecords.Models;
 
 namespace Tests.DAL.GrandRecords
 {
 	public class Repository: RepositoryBase
 	{
+		public Repository(string connectionString) : base(connectionString) {}
 
 		#region [ Get ONE Grand Record (with its descendants) ]
 

@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Tests.DAL.Records;
 using Tests.DAL.Records.Models;
 
@@ -15,11 +16,13 @@ namespace Tests.Tests
 	public class RecordRepositoryTest
 	{
 		private Repository _repository;
+		private string _connectionString;
 
 		[TestInitialize]
 		public void TestInitialize()
 		{
-			_repository = new Repository();
+			_connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
+			_repository = new Repository(_connectionString);
 
 			_repository.ExecuteCommand(cmd => {
 				cmd.UseSql("delete from dbo.Records where Id > 676;");	
@@ -47,7 +50,7 @@ namespace Tests.Tests
 			sw.Stop();
 
 			Console.WriteLine($"GetRecordById With Mapper reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 
 		[TestMethod]
@@ -70,7 +73,7 @@ namespace Tests.Tests
 			sw.Stop();
 
 			Console.WriteLine($"GetRecordById With AutoMapping reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 		
 		[TestMethod]
@@ -93,7 +96,7 @@ namespace Tests.Tests
 			sw.Stop();
 
 			Console.WriteLine($"GetRecordByIdOnBaseLevel reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 
 
@@ -115,7 +118,7 @@ namespace Tests.Tests
 			sw.Stop();
 
 			Console.WriteLine($"GetRecordByIdAsync reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 		
 		[TestMethod]
@@ -144,7 +147,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine($"GetRecordByIdWithOpenConnection reads 500 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 500).ToString("0.##")} ms for one read" );
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 		
 
@@ -157,9 +160,11 @@ namespace Tests.Tests
 
 			sw.Start();
 
+			var connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
+
 			for (var i = 1; i <= 676; i++)
 			{
-				using (var repository2 = new Repository())
+				using (var repository2 = new Repository(_connectionString))
 				{
 					record = await repository2.GetRecordByIdAsync(i);
 
@@ -170,7 +175,7 @@ namespace Tests.Tests
 			sw.Stop();
 
 			Console.WriteLine($"GetRecordById reads 676 times for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms, or {(sw.Elapsed.TotalMilliseconds / 676).ToString("0.##")} ms for one read" );
-			Console.Write(JsonConvert.SerializeObject(record));
+			Console.Write(JsonSerializer.Serialize(record));
 		}
 
 		[TestMethod]
@@ -189,7 +194,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 		[TestMethod]
@@ -208,7 +213,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordsWithAutoMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -228,7 +233,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordsAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -248,7 +253,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordsWithAutoMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -256,17 +261,17 @@ namespace Tests.Tests
 		public void GetRecordsToEnumerable()
 		{
 			var recordList = _repository.GetRecords();
-			var json = JsonConvert.SerializeObject(recordList);
+			var json = JsonSerializer.Serialize(recordList);
 			
 			var recordEnumerable  = _repository.GetRecordsToEnumerable();
-			json = JsonConvert.SerializeObject(recordEnumerable);
+			json = JsonSerializer.Serialize(recordEnumerable);
 			
 
 			var sw = new Stopwatch();
 			sw.Start();
 			
 			recordEnumerable  = _repository.GetRecordsToEnumerable();
-			json = JsonConvert.SerializeObject(recordEnumerable);
+			json = JsonSerializer.Serialize(recordEnumerable);
 			
 			sw.Stop();
 
@@ -278,7 +283,7 @@ namespace Tests.Tests
 			sw.Restart();
 			
 			recordList = _repository.GetRecords();
-			json = JsonConvert.SerializeObject(recordList);
+			json = JsonSerializer.Serialize(recordList);
 			
 			sw.Stop();
 
@@ -314,7 +319,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordsAsEnumerable reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -346,7 +351,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecords reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 		
 
@@ -364,7 +369,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordRowsWithHandMapping reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 		[TestMethod]
@@ -381,7 +386,7 @@ namespace Tests.Tests
 			Assert.IsTrue(records.Count > 1);
 
 			Console.WriteLine($"GetRecordRowsWithHandMappingAsync reads {records.Count} records for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(records));
+			Console.Write(JsonSerializer.Serialize(records));
 		}
 
 
@@ -423,7 +428,7 @@ namespace Tests.Tests
 			Assert.IsTrue(savedRecord.Id > 676);
 
 			Console.WriteLine($"SaveRecord executes for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(savedRecord));
+			Console.Write(JsonSerializer.Serialize(savedRecord));
 		}
 
 		
@@ -445,7 +450,7 @@ namespace Tests.Tests
 			Assert.IsTrue(savedRecord.Id > 676);
 
 			Console.WriteLine($"SaveRecordAsync executes for {sw.Elapsed.TotalMilliseconds.ToString("0.##")} ms");
-			Console.Write(JsonConvert.SerializeObject(savedRecord));
+			Console.Write(JsonSerializer.Serialize(savedRecord));
 		}
 
 
@@ -476,7 +481,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The first 10 of the saved Records look like: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedRecords.Take(10)));
+			Console.Write(JsonSerializer.Serialize(savedRecords.Take(10)));
 		}
 
 		
@@ -505,7 +510,7 @@ namespace Tests.Tests
 			Console.WriteLine();
 			Console.WriteLine("The first 10 of the saved Records look like: ");
 			Console.WriteLine();
-			Console.Write(JsonConvert.SerializeObject(savedRecords.Take(10)));
+			Console.Write(JsonSerializer.Serialize(savedRecords.Take(10)));
 		}
 		
 		[TestMethod]

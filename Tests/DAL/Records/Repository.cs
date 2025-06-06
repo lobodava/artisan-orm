@@ -1,13 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Artisan.Orm;
+using System.Data.SqlClient;
 using Tests.DAL.Records.Models;
 
 namespace Tests.DAL.Records
 {
 	public class Repository: RepositoryBase
 	{
+		public Repository(string connectionString) : base(connectionString) {}
 
 		#region [ GetRecordById ]
 
@@ -291,7 +292,6 @@ namespace Tests.DAL.Records
 
 
 		#endregion
-
 
 	}
 }

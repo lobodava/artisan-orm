@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -25,7 +25,7 @@ namespace Artisan.Orm
 
 			if (!MappingManager.GetCreateDataFuncs(out createDataTableFunc, out createDataRowFunc))
 				throw new KeyNotFoundException($"No mapping function found to create DataTable and DataRow for type {typeof(T).FullName}");
-			
+
 			var dataTable = createDataTableFunc();
 
 			foreach (var entity in list.Where(entity => entity != null))
@@ -67,7 +67,7 @@ namespace Artisan.Orm
 		{
 			return ids.ToIdDataTable(dataTableName, columnName);
 		}
-		
+	
 		private static DataTable ToIdDataTable<T>(this IEnumerable<T> ids, string dataTableName, string columnName) where T: struct 
 		{
 			var dataTable = new DataTable(dataTableName);
@@ -79,22 +79,22 @@ namespace Artisan.Orm
 
 			return dataTable;
 		}
-		
+	
 
 		public static DataTable AsDataTable<T>(this IEnumerable<T> list, string tableName = null, string columnNames = null) 
 		{
 			var columnNameArray = columnNames?.Split(',', ';').Select(s => s.Trim()).ToArray();
 			return list.AsDataTable(tableName, columnNameArray);
 		}
-		
+	
 		public static DataTable AsDataTable<T>(this IEnumerable<T> list, string tableName, string[] columnNameArray) 
 		{
 			if (typeof(T).IsSimpleType())
 				return GetSimpleTypeDataTable(list, tableName, columnNameArray);
-		
+	
 			return GetObjectDataTable(list, tableName, columnNameArray);
 		}
-		
+	
 		private static DataTable GetSimpleTypeDataTable<T>(IEnumerable<T> list, string tableName, string[] columnNameArray)
 		{
 			var underlyingType = typeof(T).GetUnderlyingType();
@@ -117,10 +117,10 @@ namespace Artisan.Orm
 
 		private static DataTable GetObjectDataTable<T>(IEnumerable<T> list, string tableName, string[] columnNameArray)
 		{
+			string key = GetAutoCreateDataFuncsKey<T>(tableName, columnNameArray);
+
 			Func<DataTable> createDataTableFunc;
 			Func<T, object[]> createDataRowFunc;
-
-			string key = GetAutoCreateDataFuncsKey<T>(tableName, columnNameArray);
 
 			if (!MappingManager.GetAutoCreateDataFuncs(key, out createDataTableFunc, out createDataRowFunc))
 			{
@@ -251,78 +251,3 @@ namespace Artisan.Orm
 		}
 	}
 }
-
-
-/* Old implementations with reflection:
- 
-public static DataTable AsDataTable<T>(this IEnumerable<T> list, string tableName, string[] columnNameArray) 
-{
-	var baseType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-	var isSimpleType = typeof(T).IsSimpleType();
-
-	if (tableName == null)
-		tableName = typeof(T).Name;
-	
-			
-			
-	if (isSimpleType)
-	{
-		var dataTable = new DataTable(tableName); 
-				
-		var columnName = columnNameArray?.Length > 0 ? columnNameArray[0] : null;
-
-		if (IsNullOrWhiteSpace(columnName))
-			columnName = baseType.Name;
-
-		dataTable.Columns.Add(columnName, baseType);
-
-		if (list != null)
-		foreach (var value in list)
-			dataTable.Rows.Add(value);
-
-		return dataTable;
-	}
-	else
-	{
-		var binding = BindingFlags.Public | BindingFlags.Instance ; 
-		var properties = typeof(T).GetProperties(binding).Where(p => p.PropertyType.IsSimpleType() && p.CanRead).ToList();
-				
-
-		if (columnNameArray?.Length > 0)
-		{
-			var sortedProperties = new List<PropertyInfo>();
-
-			foreach (var columnName in columnNameArray)
-			{
-				var property = properties.FirstOrDefault(p => p.Name == columnName);
-
-				if (property != null)
-					sortedProperties.Add(property);
-			}
-
-			properties = sortedProperties;
-		}
-
-		var dataTable = new DataTable(tableName); 
-
-		foreach (var property in properties) 
-		{ 
-			dataTable.Columns.Add(property.Name, property.PropertyType); 
-		} 
-
-		object[] values = new object[properties.Count]; 
- 
-		foreach (T item in list) 
-		{ 
-			for (int i = 0; i < properties.Count; i++) 
-			{ 
-				values[i] = properties[i].GetValue(item, null); 
-			} 
- 
-			dataTable.Rows.Add(values); 
-		}
-
-		return dataTable;
-	}
-}
-*/

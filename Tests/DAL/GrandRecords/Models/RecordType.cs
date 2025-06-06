@@ -1,6 +1,6 @@
-﻿using System;
-using System.Data.SqlClient;
+using System;
 using Artisan.Orm;
+using System.Data.SqlClient;
 
 namespace Tests.DAL.GrandRecords.Models
 {

@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Text.Json.Serialization;
 using Artisan.Orm;
-using Newtonsoft.Json;
 
 namespace Tests.DAL.Folders.Models
 {
@@ -21,19 +21,19 @@ namespace Tests.DAL.Folders.Models
 		
 		public Int16 Level { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public String Path { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public String HidCode { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public String HidPath { get; set; }
 
 		[JsonIgnore]
 		public IList<Folder> Children { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public IList<Folder> SubFolders
 		{
 			get { return Children; }

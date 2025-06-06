@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
+using System.Configuration;
+using System.Threading.Tasks;
 using Artisan.Orm;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Tests.DataServices;
 using Tests.DAL.Users;
-
+using Tests.DataServices;
 
 namespace Tests.Tests
 {
@@ -16,8 +16,9 @@ namespace Tests.Tests
 		public void TestInitialize()
 		{
 			_service = new UserDataService();
-		
-			using (var repository = new Repository())
+			var connectionString = ConfigurationManager.ConnectionStrings["DatabaseConnection"].ConnectionString;
+
+			using (var repository = new Repository(connectionString))
 			{
 				repository.ExecuteCommand(cmd => {
 					cmd.UseSql("delete from dbo.Users where Id > 14;");	

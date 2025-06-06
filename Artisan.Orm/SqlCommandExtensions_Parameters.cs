@@ -1,16 +1,17 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Linq;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Data.SqlClient;
 
 namespace Artisan.Orm
-{
+{ 
+
 	public static partial class SqlCommandExtensions
 	{
-
 		public static void UseProcedure(this SqlCommand cmd, string procedureName)
 		{
 			cmd.CommandType = CommandType.StoredProcedure;
@@ -165,7 +166,7 @@ namespace Artisan.Orm
 				Direction = ParameterDirection.Input,
 				SqlDbType = SqlDbType.Decimal,
 				Scale = scale,
- 				Precision = precision,
+ 					Precision = precision,
 				Value = value
 			});
 		}
@@ -249,7 +250,7 @@ namespace Artisan.Orm
 		{
 			if (value < -3.40E+38f || 3.40E+38f < value) 
 				throw new ArgumentOutOfRangeException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server real type range [3.40E+38, 3.40E+38]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
-			
+		
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
@@ -278,7 +279,7 @@ namespace Artisan.Orm
 		{
 			if (value < -1.79E+308d || 1.79E+308d < value) 
 				throw new ArgumentOutOfRangeException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server float type range [-1.79E+308, 1.79E+308]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
-	
+
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
@@ -377,7 +378,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value,
 			});
 		}
-		
+	
 		public static void AddNVarcharParam(this SqlCommand cmd, string parameterName, int size, string value, bool trimToNull = false, bool truncate = false )
 		{
 			if (value != null)
@@ -390,7 +391,7 @@ namespace Artisan.Orm
 				else if (size < value.Length)
 					throw new ArgumentException($"String value of SqlParameter {parameterName} is {value.Length} character length that exceeds size of nvarchar({size}) type and would be truncated. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
 			}
-			
+		
 			cmd.Parameters.Add( new SqlParameter
 			{ 
 				ParameterName = parameterName,
@@ -456,7 +457,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 		public static void AddVarbinaryMaxParam(this SqlCommand cmd, string parameterName, byte[] value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -491,7 +492,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddTimeParam(this SqlCommand cmd, string parameterName, TimeSpan value )
 		{
@@ -526,7 +527,7 @@ namespace Artisan.Orm
 				Value = value
 			});
 		}
-		
+	
 		public static void AddSmallDateTimeParam(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -537,7 +538,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddDateTimeParam(this SqlCommand cmd, string parameterName, DateTime value )
 		{
@@ -549,7 +550,7 @@ namespace Artisan.Orm
 				Value = value
 			});
 		}
-		
+	
 		public static void AddDateTimeParam(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -560,7 +561,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddDateTime2Param(this SqlCommand cmd, string parameterName, DateTime value )
 		{
@@ -572,7 +573,7 @@ namespace Artisan.Orm
 				Value = value
 			});
 		}
-		
+	
 		public static void AddDateTime2Param(this SqlCommand cmd, string parameterName, DateTime? value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -606,7 +607,7 @@ namespace Artisan.Orm
 				Value = (object)value ?? DBNull.Value
 			});
 		}
-		
+	
 
 		public static void AddGuidParam(this SqlCommand cmd, string parameterName, Guid value )
 		{
@@ -681,7 +682,7 @@ namespace Artisan.Orm
 					Value = DBNull.Value
 				});
 		}
-		
+	
 
 		public static void AddSqlVariantParam(this SqlCommand cmd, string parameterName, object value )
 		{
@@ -693,7 +694,7 @@ namespace Artisan.Orm
 				Value = value ?? DBNull.Value
 			});
 		}
-		
+	
 		public static void AddXmlParam(this SqlCommand cmd, string parameterName, string value )
 		{
 			cmd.Parameters.Add( new SqlParameter
@@ -762,6 +763,14 @@ namespace Artisan.Orm
 			cmd.AddTableParam(parameterName, list?.AsDataTable(tableName, columnNames));
 		}
 
+		public static void AddTableParam<T>(this SqlCommand cmd, string parameterName, IEnumerable<T> list, string tableName)
+		{
+			var dataTable = list?.ToDataTable<T>();
+			if (dataTable != null)
+				dataTable.TableName = tableName;
+			cmd.AddTableParam(parameterName, dataTable);
+		}
+
 		public static void AddTableRowParam(this SqlCommand cmd, string parameterName, byte id)
 		{
 			var array = new byte[] { id };
@@ -821,39 +830,95 @@ namespace Artisan.Orm
 			{ 
 				ParameterName = parameterName,
 				Direction = ParameterDirection.Output,
-				SqlDbType = SqlDbType.NVarChar, 
-				Size = size,					
+				SqlDbType = SqlDbType.NVarChar,
+				Size = size,
 			});
 		}
 
 
 		public static SqlParameter ReturnValueParam(this SqlCommand cmd)
 		{
-			if (!cmd.Parameters.Contains("ReturnValue"))
+			if (!cmd.Parameters.Contains("@ReturnValue"))
 				cmd.AddReturnValueParam();
 
-			return cmd.Parameters["ReturnValue"];
+			return cmd.Parameters["@ReturnValue"];
 		}
 
 		public static void AddReturnValueParam(this SqlCommand cmd)
 		{
 			var returnValueParam = new SqlParameter
 			{
-				ParameterName = "ReturnValue",
+				ParameterName = "@ReturnValue",
 				Direction = ParameterDirection.ReturnValue,
 				SqlDbType = SqlDbType.Int,
 			};
 
-		//	cmd.Parameters.Add(returnValueParam);
-
-			cmd.Parameters.Insert(0, returnValueParam);
+			cmd.Parameters.Add(returnValueParam);
 		}
 
 		public static SqlParameter GetReturnValueParam(this SqlCommand cmd)
 		{
-			return cmd.Parameters.Contains("ReturnValue") ? cmd.Parameters["ReturnValue"] : null;
+			return cmd.Parameters.Contains("@ReturnValue") ? cmd.Parameters["@ReturnValue"] : null;
 		}
 
+		public static void AddParams(this SqlCommand cmd, Dictionary<string, object> paramDictionary)
+		{
+			var collectionKey = cmd.CommandText;
+
+			var sqlParameters = MappingManager.GetSqlParameters(collectionKey);
+
+			if (sqlParameters == null)
+			{
+				var isConnectionClosed = true;
+			
+				try
+				{
+					isConnectionClosed = cmd.Connection.State == ConnectionState.Closed;
+
+					if (isConnectionClosed)
+						cmd.Connection.Open();
+
+					SqlCommandBuilder.DeriveParameters(cmd);
+				}
+				finally
+				{
+					if (isConnectionClosed)
+						cmd.Connection.Close();
+				}
+
+				cmd.Parameters.Remove(cmd.Parameters["@RETURN_VALUE"]);
+			
+				sqlParameters = new SqlParameter[cmd.Parameters.Count];
+				cmd.Parameters.CopyTo(sqlParameters, 0);
+
+				MappingManager.AddSqlParameters(collectionKey, sqlParameters);
+			}
+			else
+			{
+				foreach (var sqlParameter in sqlParameters)
+				{
+					var newSqlParameter = new SqlParameter(sqlParameter.ParameterName,sqlParameter.SqlDbType)
+					{
+						Size = sqlParameter.Size,
+						Direction = sqlParameter.Direction,
+						Precision = sqlParameter.Precision,
+						Scale = sqlParameter.Scale
+					};
+
+					cmd.Parameters.Add(newSqlParameter);
+				}
+			}
+
+			foreach (SqlParameter sqlParameter in cmd.Parameters)
+			{
+				var key = paramDictionary.Keys.FirstOrDefault(k =>
+					string.Equals(k, sqlParameter.ParameterName.Replace("@", ""), StringComparison.InvariantCultureIgnoreCase)
+				);
+
+				if (key != null)
+					sqlParameter.Value = paramDictionary[key] ?? DBNull.Value;
+			}
+		}
 
 		internal static bool IsSqlText(string sql)
 		{
@@ -881,6 +946,6 @@ namespace Artisan.Orm
 			action(cmd);
 		}
 
-
 	}
+
 }

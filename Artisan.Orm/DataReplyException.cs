@@ -1,15 +1,16 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 
 namespace Artisan.Orm
-{
+{ 
+
 	public class DataReplyException: Exception
 	{
 		public DataReplyStatus Status { get; } = DataReplyStatus.Error;
 
 		public DataReplyMessage[] Messages { get; set; }
-		
+	
 		public DataReplyException() {}
 
 		public DataReplyException(DataReplyStatus status)
@@ -46,7 +47,7 @@ namespace Artisan.Orm
 			Status = status;
 			Messages = new [] { new DataReplyMessage {Code = code, Text = text, Id = id, Value = value} };
 		}
-		
+	
 		public DataReplyException(DataReplyStatus status, DataReplyMessage replyMessage)
 		{
 			Status = status;
@@ -70,18 +71,18 @@ namespace Artisan.Orm
 					if (sb.Length > 0)
 						sb.Append(", ");
 
-					sb.Append("{").Append($"Code: {message.Code}");
+					sb.Append('{').Append($"Code: {message.Code}");
 
 					if (!String.IsNullOrWhiteSpace(message.Text))
 						sb.Append($", Text: {message.Text}");
 
-					if (message.Id != null)
+					if (message.Id.HasValue)
 						sb.Append($", Id: {message.Id}");
 
 					if (message.Value != null)
 						sb.Append($", Value: {message.Value}");
 
-					sb.Append("}");
+					sb.Append('}');
 				}
 
 				return sb.ToString();
@@ -92,7 +93,6 @@ namespace Artisan.Orm
 		{
 			return Messages?.FirstOrDefault(m => m.Code == code);
 		}
-
 
 	}
 

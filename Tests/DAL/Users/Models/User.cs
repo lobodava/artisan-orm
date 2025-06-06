@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using Artisan.Orm;
-using Newtonsoft.Json;
+using System.Data.SqlClient;
+using System.Text.Json.Serialization;
 
 namespace Tests.DAL.Users.Models
 {
@@ -23,7 +23,7 @@ namespace Tests.DAL.Users.Models
 		[JsonConverter(typeof(ByteArrayConverter))]
 		public Byte[] RoleIds { get; set; }
 
-		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+		[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public IList<Role> Roles { get; set; }
 	}
 
@@ -35,7 +35,7 @@ namespace Tests.DAL.Users.Models
 		{
 			var i = 0;
 			
-			return new User 
+			var user =  new User 
 			{
 				Id			=	dr.GetInt32(i)	,
 				Login		=	dr.GetString(++i)	,
@@ -44,6 +44,8 @@ namespace Tests.DAL.Users.Models
 				RowVersion	=	dr.GetBase64StringFromRowVersion(++i),
 				RoleIds		=	++i < dr.FieldCount ? dr.GetByteArrayFromString(i) : null
 			};
+
+			return user;
 		}
 
 		public static ObjectRow CreateObjectRow(SqlDataReader dr)
