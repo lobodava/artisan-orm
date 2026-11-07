@@ -2,10 +2,10 @@
 (
 	@Hid hierarchyid
 )
-returns varchar(1000)
+returns varchar(1784)
 as
 begin
 
-	return replace(convert(varchar(1000), cast(@Hid as varbinary(892)), 2), '0x', '');
+	return replace(convert(varchar(1784), cast(@Hid as varbinary(892)), 2), '0x', '');
 
 end;

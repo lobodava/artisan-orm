@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -13,12 +14,14 @@ namespace Artisan.Orm
 	public class RepositoryBase: IDisposable, IAsyncDisposable
 	{
 		private bool _disposed;
+		private readonly bool _ownsResources;
 
-		/// <summary>The underlying connection. Created in the constructor and disposed when the repository is disposed.
+		/// <summary>The underlying connection. Owned by this repository unless supplied through an external transaction.
 		/// May be opened/closed transparently by individual <c>Read*</c>/<c>Execute*</c> methods.</summary>
 		public SqlConnection? Connection { get; private set; }
 
-		/// <summary>The connection string passed to the constructor.</summary>
+		/// <summary>The connection string passed to the constructor. When borrowing an external transaction,
+		/// its existing connection is used even if this string describes a different connection.</summary>
 		public string ConnectionString { get; private set; }
 
 		/// <summary>The current ambient transaction, or <c>null</c> if no transaction is in flight.
@@ -26,8 +29,11 @@ namespace Artisan.Orm
 		public SqlTransaction? Transaction { get; set; }
 
 
-		/// <summary>Creates a repository bound to <paramref name="connectionString"/>, optionally pre-attached
-		/// to an existing <paramref name="transaction"/>.</summary>
+		/// <summary>Creates a repository using the existing <paramref name="transaction"/> and its connection,
+		/// or a new owned connection bound to <paramref name="connectionString"/> when the transaction is null.</summary>
+		/// <remarks>An external transaction and its connection remain owned by the caller. Disposing this repository
+		/// does not commit, roll back, close, or dispose either resource.</remarks>
+		/// <exception cref="ArgumentException">The supplied transaction has completed or has been disposed.</exception>
 		public RepositoryBase
 		(
 			SqlTransaction? transaction,
@@ -36,7 +42,10 @@ namespace Artisan.Orm
 		{
 			ConnectionString = connectionString;
 
-			Connection = new SqlConnection(ConnectionString);
+			_ownsResources = transaction == null;
+			Connection = transaction == null
+				? new SqlConnection(ConnectionString)
+				: transaction.Connection ?? throw new ArgumentException("The transaction must have an active connection.", nameof(transaction));
 
 			Transaction = transaction;
 		}
@@ -58,8 +67,9 @@ namespace Artisan.Orm
 		/// know whether the work inside <paramref name="action"/> is meant to be
 		/// persisted or not.</para>
 		///
-		/// <para>If <paramref name="action"/> throws, the transaction is rolled back
-		/// and the exception is rethrown.</para>
+		/// <para>If <paramref name="action"/> throws, unfinished work is rolled back on dispose
+		/// and the original exception is rethrown even if cleanup fails. An already committed
+		/// transaction cannot be rolled back.</para>
 		///
 		/// <para>On exit — whether successful or not — the transaction is disposed,
 		/// <see cref="Transaction"/> is set to <c>null</c>, and the connection is
@@ -71,6 +81,7 @@ namespace Artisan.Orm
 		/// <param name="isolationLevel">The isolation level under which the transaction runs.</param>
 		/// <param name="action">The code to execute inside the transaction. Must call
 		/// <see cref="SqlTransaction.Commit"/> explicitly to persist any changes.</param>
+		/// <exception cref="InvalidOperationException">A transaction is already attached to this repository.</exception>
 		/// <example>
 		/// <code><![CDATA[
 		/// // Manual-commit pattern: call tran.Commit() to persist; otherwise everything rolls back.
@@ -89,30 +100,7 @@ namespace Artisan.Orm
 		/// </example>
 		public void BeginTransaction(IsolationLevel isolationLevel, Action<SqlTransaction> action)
 		{
-			var isConnectionClosed = Connection!.State == ConnectionState.Closed;
-
-			if (isConnectionClosed)
-				Connection.Open();
-
-			Transaction = Connection.BeginTransaction(isolationLevel);
-
-			try
-			{
-				action(Transaction);
-			}
-			catch
-			{
-				Transaction.Rollback();
-				throw;
-			}
-			finally
-			{
-				Transaction?.Dispose();
-				Transaction = null;
-
-				if(isConnectionClosed)
-					Connection.Close();
-			}
+			RunTransactionCore(isolationLevel, action, commitOnSuccess: false);
 		}
 
 		/// <summary>
@@ -141,8 +129,8 @@ namespace Artisan.Orm
 		/// given <paramref name="isolationLevel"/>, and passes it to <paramref name="action"/>.</para>
 		///
 		/// <para>If <paramref name="action"/> completes normally, the transaction is
-		/// committed automatically. If it throws, the transaction is rolled back and
-		/// the exception is rethrown.</para>
+		/// committed automatically. If it throws, unfinished work is rolled back on dispose and
+		/// the original exception is rethrown even if cleanup fails.</para>
 		///
 		/// <para>On exit — whether successful or not — the transaction is disposed,
 		/// <see cref="Transaction"/> is set to <c>null</c>, and the connection is
@@ -154,6 +142,7 @@ namespace Artisan.Orm
 		/// </summary>
 		/// <param name="isolationLevel">The isolation level under which the transaction runs.</param>
 		/// <param name="action">The code to execute inside the transaction.</param>
+		/// <exception cref="InvalidOperationException">A transaction is already attached to this repository.</exception>
 		/// <example>
 		/// <code><![CDATA[
 		/// // Auto-commit pattern: returning normally commits; throwing rolls back.
@@ -175,28 +164,7 @@ namespace Artisan.Orm
 		/// </example>
 		public void RunInTransaction(IsolationLevel isolationLevel, Action<SqlTransaction> action)
 		{
-			var isConnectionClosed = Connection!.State == ConnectionState.Closed;
-
-			if (isConnectionClosed)
-				Connection.Open();
-
-			Transaction = Connection.BeginTransaction(isolationLevel);
-
-			try
-			{
-				action(Transaction);
-				Transaction.Commit();
-			}
-			finally
-			{
-				// SqlTransaction.Dispose() rolls back an uncommitted transaction,
-				// so no explicit Rollback is needed in the catch path.
-				Transaction?.Dispose();
-				Transaction = null;
-
-				if (isConnectionClosed)
-					Connection.Close();
-			}
+			RunTransactionCore(isolationLevel, action, commitOnSuccess: true);
 		}
 
 		/// <summary>
@@ -224,35 +192,10 @@ namespace Artisan.Orm
 		/// <para>Prefer <see cref="RunInTransactionAsync(IsolationLevel, Func{SqlTransaction, CancellationToken, Task}, CancellationToken)"/>
 		/// for automatic commit-on-success / rollback-on-exception semantics.</para>
 		/// </summary>
+		/// <exception cref="InvalidOperationException">A transaction is already attached to this repository.</exception>
 		public async Task BeginTransactionAsync(IsolationLevel isolationLevel, Func<SqlTransaction, CancellationToken, Task> asyncAction, CancellationToken cancellationToken = default)
 		{
-			var isConnectionClosed = Connection!.State == ConnectionState.Closed;
-
-			if (isConnectionClosed)
-				await Connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
-			Transaction = (SqlTransaction)await Connection.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
-
-			try
-			{
-				await asyncAction(Transaction, cancellationToken).ConfigureAwait(false);
-			}
-			catch
-			{
-				await Transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-				throw;
-			}
-			finally
-			{
-				if (Transaction != null)
-				{
-					await Transaction.DisposeAsync().ConfigureAwait(false);
-					Transaction = null;
-				}
-
-				if (isConnectionClosed)
-					await Connection.CloseAsync().ConfigureAwait(false);
-			}
+			await RunTransactionCoreAsync(isolationLevel, asyncAction, commitOnSuccess: false, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -272,32 +215,10 @@ namespace Artisan.Orm
 		///
 		/// <para>The caller must not commit or roll back manually.</para>
 		/// </summary>
+		/// <exception cref="InvalidOperationException">A transaction is already attached to this repository.</exception>
 		public async Task RunInTransactionAsync(IsolationLevel isolationLevel, Func<SqlTransaction, CancellationToken, Task> asyncAction, CancellationToken cancellationToken = default)
 		{
-			var isConnectionClosed = Connection!.State == ConnectionState.Closed;
-
-			if (isConnectionClosed)
-				await Connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
-			Transaction = (SqlTransaction)await Connection.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
-
-			try
-			{
-				await asyncAction(Transaction, cancellationToken).ConfigureAwait(false);
-				await Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-			}
-			finally
-			{
-				// SqlTransaction.DisposeAsync rolls back an uncommitted transaction.
-				if (Transaction != null)
-				{
-					await Transaction.DisposeAsync().ConfigureAwait(false);
-					Transaction = null;
-				}
-
-				if (isConnectionClosed)
-					await Connection.CloseAsync().ConfigureAwait(false);
-			}
+			await RunTransactionCoreAsync(isolationLevel, asyncAction, commitOnSuccess: true, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -307,6 +228,84 @@ namespace Artisan.Orm
 		public Task RunInTransactionAsync(Func<SqlTransaction, CancellationToken, Task> asyncAction, CancellationToken cancellationToken = default)
 		{
 			return RunInTransactionAsync(IsolationLevel.Unspecified, asyncAction, cancellationToken);
+		}
+
+		private void RunTransactionCore(IsolationLevel isolationLevel, Action<SqlTransaction> action, bool commitOnSuccess)
+		{
+			if (action == null) throw new ArgumentNullException(nameof(action));
+			EnsureNoTransaction();
+			var connection = Connection!;
+			var closeConnection = connection.State == ConnectionState.Closed;
+			SqlTransaction? transaction = null;
+			var failed = false;
+			try
+			{
+				if (closeConnection) connection.Open();
+				transaction = connection.BeginTransaction(isolationLevel);
+				Transaction = transaction;
+				action(transaction);
+				if (commitOnSuccess) transaction.Commit();
+			}
+			catch
+			{
+				failed = true;
+				throw;
+			}
+			finally
+			{
+				Transaction = null;
+				Exception? cleanupError = null;
+				// Dispose rolls back unfinished work, including after cancellation. Do not
+				// issue Rollback against a transaction already completed by the callback.
+				try { transaction?.Dispose(); }
+				catch (Exception ex) { cleanupError = ex; }
+				try { if (closeConnection) connection.Close(); }
+				catch (Exception ex) { cleanupError ??= ex; }
+				if (!failed && cleanupError != null)
+					ExceptionDispatchInfo.Capture(cleanupError).Throw();
+			}
+		}
+
+		private async Task RunTransactionCoreAsync(IsolationLevel isolationLevel, Func<SqlTransaction, CancellationToken, Task> asyncAction, bool commitOnSuccess, CancellationToken cancellationToken)
+		{
+			if (asyncAction == null) throw new ArgumentNullException(nameof(asyncAction));
+			EnsureNoTransaction();
+			var connection = Connection!;
+			var closeConnection = connection.State == ConnectionState.Closed;
+			SqlTransaction? transaction = null;
+			var failed = false;
+			try
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				if (closeConnection) await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+				transaction = (SqlTransaction)await connection.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
+				Transaction = transaction;
+				await asyncAction(transaction, cancellationToken).ConfigureAwait(false);
+				if (commitOnSuccess) await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+			}
+			catch
+			{
+				failed = true;
+				throw;
+			}
+			finally
+			{
+				Transaction = null;
+				Exception? cleanupError = null;
+				// Cleanup deliberately does not use the cancelled operation token.
+				try { if (transaction != null) await transaction.DisposeAsync().ConfigureAwait(false); }
+				catch (Exception ex) { cleanupError = ex; }
+				try { if (closeConnection) await connection.CloseAsync().ConfigureAwait(false); }
+				catch (Exception ex) { cleanupError ??= ex; }
+				if (!failed && cleanupError != null)
+					ExceptionDispatchInfo.Capture(cleanupError).Throw();
+			}
+		}
+
+		private void EnsureNoTransaction()
+		{
+			if (Transaction != null)
+				throw new InvalidOperationException("A transaction is already attached to this repository. Complete and detach it before starting another transaction.");
 		}
 
 
@@ -1455,28 +1454,32 @@ namespace Artisan.Orm
 		public IEnumerable<T> ReadToEnumerable<T>(string sql, params SqlParameter[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
-			return cmd.ReadToEnumerable<T>();
+			foreach (var item in cmd.ReadToEnumerable<T>())
+				yield return item;
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToEnumerable{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
 		public IEnumerable<T> ReadToEnumerable<T>(string sql, Action<SqlCommand> action)
 		{
 			using var cmd = CreateCommand(sql, action);
-			return cmd.ReadToEnumerable<T>();
+			foreach (var item in cmd.ReadToEnumerable<T>())
+				yield return item;
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsEnumerable{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
 		public IEnumerable<T> ReadAsEnumerable<T>(string sql, params SqlParameter[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
-			return cmd.ReadAsEnumerable<T>();
+			foreach (var item in cmd.ReadAsEnumerable<T>())
+				yield return item;
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsEnumerable{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
 		public IEnumerable<T> ReadAsEnumerable<T>(string sql, Action<SqlCommand> action)
 		{
 			using var cmd = CreateCommand(sql, action);
-			return cmd.ReadAsEnumerable<T>();
+			foreach (var item in cmd.ReadAsEnumerable<T>())
+				yield return item;
 		}
 	
 		#endregion
@@ -1687,7 +1690,7 @@ namespace Artisan.Orm
 
 			var dataReplyStatus = DataReply.ParseStatus(statusCode);
 
-			if (dataReplyStatus != null )
+			if (dataReplyStatus != null && dataReplyStatus != DataReplyStatus.Ok)
 			{
 				if (dr.NextResult())
 					throw new DataReplyException(dataReplyStatus.Value, dr.ReadToArray<DataReplyMessage>());
@@ -1698,7 +1701,7 @@ namespace Artisan.Orm
 			dr.NextResult();
 		}
 
-		/// <summary>Disposes the underlying transaction (if any) and connection.</summary>
+		/// <summary>Disposes owned resources and detaches borrowed resources without disposing them.</summary>
 		public void Dispose()
 		{
 			Dispose(disposing: true);
@@ -1711,17 +1714,20 @@ namespace Artisan.Orm
 
 			if (disposing)
 			{
-				Transaction?.Dispose();
-				Transaction = null;
+				if (_ownsResources)
+				{
+					Transaction?.Dispose();
+					Connection?.Dispose();
+				}
 
-				Connection?.Dispose();
+				Transaction = null;
 				Connection = null;
 			}
 
 			_disposed = true;
 		}
 
-		/// <summary>Asynchronously disposes the underlying transaction (if any) and connection.</summary>
+		/// <summary>Asynchronously disposes owned resources and detaches borrowed resources without disposing them.</summary>
 		public async ValueTask DisposeAsync()
 		{
 			await DisposeAsyncCore().ConfigureAwait(false);
@@ -1738,18 +1744,17 @@ namespace Artisan.Orm
 		{
 			if (_disposed) return;
 
-			if (Transaction != null)
+			if (_ownsResources)
 			{
-				await Transaction.DisposeAsync().ConfigureAwait(false);
-				Transaction = null;
+				if (Transaction != null)
+					await Transaction.DisposeAsync().ConfigureAwait(false);
+
+				if (Connection != null)
+					await Connection.DisposeAsync().ConfigureAwait(false);
 			}
 
-			if (Connection != null)
-			{
-				await Connection.DisposeAsync().ConfigureAwait(false);
-				Connection = null;
-			}
-
+			Transaction = null;
+			Connection = null;
 			_disposed = true;
 		}
 	}

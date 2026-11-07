@@ -1,0 +1,210 @@
+{
+  "skill_name": "artisan-orm",
+  "target_version": "4.1.0",
+  "evals": [
+    {
+      "id": 1,
+      "name": "Existing dependency without the library name in the request",
+      "kind": "selection",
+      "context": "A C# application references the local Artisan.Orm source being prepared for 4.1.0. Existing repositories derive from RepositoryBase and use Microsoft.Data.SqlClient. The application model is Product { int Id; string Name; }. dbo.GetProductById(@Id int) returns one result set with non-null Id int and Name nvarchar(100), in that order. No mapper for Product exists.",
+      "prompt": "Add a repository method that calls dbo.GetProductById and returns the product, or null if no row is found. Follow the project's existing data-access style.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Selects the skill based on the existing dependency and repository conventions, although the prompt does not name the library.",
+        "Uses the existing RepositoryBase and Microsoft.Data.SqlClient conventions without introducing another ORM.",
+        "Provides a compatible mapper or inline mapping function and matches the declared SQL column order.",
+        "Handles an empty result without inventing an extra result set or dereferencing null."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Unrelated EF Core application",
+      "kind": "selection",
+      "context": "A C# application references Microsoft.EntityFrameworkCore.SqlServer and uses AppDbContext. It has no Artisan.ORM dependency or Artisan mapper code. Product has Id and Name properties and is exposed by AppDbContext.Products.",
+      "prompt": "Add an asynchronous lookup by product ID using the existing DbContext and cancellation token. Keep the current ORM.",
+      "expected_skill_usage": false,
+      "assertions": [
+        "Does not select the Artisan.Orm skill merely because the task uses C# and SQL Server.",
+        "Uses the existing EF Core model and preserves the requested ORM.",
+        "Does not add Artisan.ORM, RepositoryBase, or MapperFor declarations."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "SQL-only request without Artisan context",
+      "kind": "selection",
+      "context": "The workspace contains only SQL migration scripts. There is no C# project, package reference, or Artisan.Orm code. dbo.Orders has columns Id int and CreatedAt datetime2.",
+      "prompt": "Write a SQL Server query that returns the ten most recent orders, ordered by CreatedAt descending and then Id descending.",
+      "expected_skill_usage": false,
+      "assertions": [
+        "Does not select the skill based on SQL Server terminology alone.",
+        "Answers the SQL query request without adding a C# repository, mapper, or library dependency."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Explicit adoption in a new application",
+      "kind": "selection",
+      "context": "A new C# application targets .NET 8 and has no ORM dependency. The local Artisan.Orm source for the planned 4.1.0 release is available. No claim has been made that 4.1.0 is published. dbo.Products has non-null Id int and Name nvarchar(100) columns.",
+      "prompt": "Show how to adopt Artisan.Orm for a product lookup using the local library source. Include a minimal model, mapper, and repository example.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Selects the skill because the user explicitly requests adoption, despite the absence of an existing dependency.",
+        "Uses a local project reference or describes the available source integration instead of asserting that a published 4.1.0 package exists.",
+        "Uses Microsoft.Data.SqlClient and maps the supplied SQL schema.",
+        "Uses a read-only mapper contract for the lookup rather than adding unused write-method stubs."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Declared mapper promise versus operation requirements",
+      "kind": "behavior",
+      "context": "A project uses the local 4.1.0 development source and its analyzer. Product is a class with an int Id property. ProductMapper is public static, has [MapperFor(typeof(Product), RequiredMethod.AllMain)], and contains only public static Product CreateObject(SqlDataReader reader) => new Product { Id = reader.GetInt32(0) };. The SQL projection is one non-null int Id column. The only current operation is reader.ReadTo<Product>().",
+      "prompt": "Explain the mapper errors and fix the declaration for a mapper intended only for entity reads. Also explain what would be required if we later called products.ToDataTable().",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Explains that AllMain requires CreateObject, CreateDataTable, and CreateDataRow even without a table-writing call.",
+        "Identifies the two missing methods as ART002 and changes the intentionally read-only mapper to RequiredMethod.CreateObject.",
+        "Does not suppress diagnostics or add empty implementations to satisfy AllMain.",
+        "Explains that a later mapper-based ToDataTable call independently needs both DataTable methods and would otherwise produce ART006.",
+        "If combining RequiredMethod values, uses comma-separated arguments rather than bitwise OR."
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Parameter examples with their shared declarations",
+      "kind": "behavior",
+      "context": "A consumer project uses a build from the planned 4.1.0 source. Only the skill folder is available in this evaluation workspace; its source-map paths are not present. The user has opened references/parameters-and-types.md. dbo.UserTableType already exists with Id int NOT NULL, Name nvarchar(50) NOT NULL, and Email nvarchar(100) NULL, in that order. No application User or UserMapper has been defined.",
+      "prompt": "Make the User TVP examples self-contained. Include the shared model and mapper, then show a helper using the registered mapper and another using automatic mapping with explicit columns. The helpers should only configure a supplied command.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Reads the linked minimal shared model and mapper section rather than inventing missing declarations or assuming the main source checkout exists.",
+        "Provides the required imports, User model, and compatible mapper declarations with Id, Name, and nullable Email in the supplied order.",
+        "Uses the registered-mapper AddTableParam overload for the mapped helper.",
+        "Uses AddTableParam with an explicit Id,Name,Email column list, or an equivalent explicitly projected AsDataTable, for automatic mapping.",
+        "Does not describe the three-argument list overload as automatic mapping and does not execute the supplied command."
+      ]
+    },
+    {
+      "id": 7,
+      "name": "String flags in the 4.1.0 source contract",
+      "kind": "behavior",
+      "context": "A project references the local Artisan.Orm source being prepared for 4.1.0, including the string-parameter fixes. Comment is an optional nvarchar(3) parameter. Truncation is explicitly allowed for this display-only field. Each example uses a fresh SqlCommand.",
+      "prompt": "Use the parameter flags directly for Comment. Explain the parameter values for null, whitespace-only text, and '  abcdef  ' when trimToNull and truncate are true. Then explain what happens for the last value when truncate is false.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Uses AddNVarcharParam with size 3 and the requested flags without requiring preliminary TrimToNull or TruncateTo calls.",
+        "Maps null and whitespace-only text to DBNull.Value.",
+        "Trims before truncation, producing abc from the padded long input.",
+        "Explains that disabling truncation throws ArgumentException for the trimmed overlong value before adding the parameter.",
+        "Does not generalize this truncation policy to identifiers or other fields where losing characters would change meaning."
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Older consumer package with unverified fixes",
+      "kind": "behavior",
+      "context": "A consumer project has PackageReference Include=Artisan.ORM Version=4.0.0. The installed assembly, package release contents, and matching source are not available in this evaluation. The current skill targets the planned 4.1.0 contract. The project does not have local library or analyzer source files.",
+      "prompt": "Can I rely on this package applying trimToNull and truncate, accepting an explicit Ok DataReply status, and reporting mapper errors during the build? Explain what needs verification before I use the 4.1.0 examples here.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Does not claim that the 4.0.0 package includes the 4.1.0 fixes or bundled analyzer based only on a version label in a source project.",
+        "States that the installed package or matching implementation must be checked and identifies the missing evidence.",
+        "Distinguishes the string-flag fix, explicit-Ok DataReply fix, and analyzer availability as separate compatibility questions.",
+        "Does not claim to have inspected unavailable source paths or executed package tests.",
+        "Does not instruct the user to install a published 4.1.0 package without verifying that it is available."
+      ]
+    },
+    {
+      "id": 9,
+      "name": "First-row preservation and explicit scalar factories",
+      "kind": "behavior",
+      "context": "A project references the prepared 4.1.0 source. A SQL query returns rows ordered by Ordinal: (Ordinal=1, Ignored=10, Value=1), (Ordinal=2, Ignored=NULL, Value=2), (Ordinal=3, Ignored=30, Value=3). Its SELECT list is Ignored int NULL, Value int NOT NULL. An explicit factory reads column 1 and doubles it. The code uses a command-level scalar ReadToEnumerable<int> overload inside a live command scope.",
+      "prompt": "What values should this enumeration produce? Show how to retain the supplied factory and explain whether null in the first column or the scalar return type changes which mapping path is used. Also describe the one-row case.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Returns 2, 4, 6 in order and includes the first row; a one-row result produces one value.",
+        "Honors the supplied factory for scalar results and for the row whose first column is SQL NULL.",
+        "Does not pre-read or discard a row as a workaround, substitute the first-column value, or add a fake mapper registration for int.",
+        "Keeps the command alive for enumeration or materializes the result within its scope."
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Borrowed transaction lifetime across repositories",
+      "kind": "behavior",
+      "context": "The prepared 4.1.0 source is in use. A caller opens SqlConnection A and starts transaction T. RepositoryBase(T, connectionStringB) receives that live transaction, while the string describes a different server/database. Another repository is also explicitly constructed with T. The caller owns A and T.",
+      "prompt": "Explain which connection the repositories use, whether they can participate in the same transaction, what disposing either repository does, and whether RunInTransaction can start another transaction while T is attached.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Uses T.Connection, namely A, rather than constructing a connection from connectionStringB.",
+        "Explains that explicit attachment to the same live transaction shares it; identical connection strings alone do not.",
+        "Leaves commit/rollback and connection/transaction disposal to the caller when a borrowing repository is disposed.",
+        "Rejects a completed transaction and rejects starting BeginTransaction or RunInTransaction while a transaction remains attached.",
+        "Does not claim that nested transactions or savepoints are provided automatically."
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Graph order and deadlocks without constraining manual mappers",
+      "kind": "behavior",
+      "context": "An Artisan.Orm application uses explicit graph mappers and MERGE procedures with clustered join keys. OUTPUT pairs source.Id with inserted.Id. New objects use increasing negative IDs. The model has no SortOrder property, but its List order matters to users. The application permits adding an order column to its SQL table, UDTT, and hand-written mapper. Existing procedures use message-based RAISERROR catch wrappers.",
+      "prompt": "Can the indexes and increasing temporary IDs guarantee insertion order and prevent deadlocks? Preserve the graph approach, propose a reliable way to retain the list order, and explain what would be needed for a bounded deadlock retry. Distinguish MERGE from an insert-only INSERT SELECT ORDER BY.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Retains key-pair OUTPUT translation and never matches input/output arrays by their positions.",
+        "Rejects the clustered-index guarantees while explaining their matching-performance value.",
+        "Persists an explicit position and reads with ORDER BY; permits a manual mapper to derive it from collection order without requiring a C# property.",
+        "Scopes the documented INSERT SELECT ORDER BY guarantee to identity-value computation, not physical insertion order or MERGE.",
+        "Discusses consistent access order, short transactions, actual deadlock evidence, and bounded whole-transaction retry after rollback with safe external effects.",
+        "Recognizes that current message-based RAISERROR wrappers emit 50000 and that SQL Server 2012+ THROW can preserve 1205; does not invent a built-in automatic retry."
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Folder SQL deployment and regression boundaries",
+      "kind": "behavior",
+      "context": "The Artisan.Orm 4.1.0 sample SQL fixes are available locally. RecalcSubFolderHids now uses OldParentHid and partitions anchor ROW_NUMBER by ParentId. GetHidCode returns varchar(1784). The configured test database still has the previous definitions. A full Database project publish runs a post-deployment generator that truncates Folders. A move must leave siblings under both parents and preserve descendants.",
+      "prompt": "Plan a focused verification of these fixes. What objects need updating and what must the tests assert? Explain whether building the solution or installing the library package updates the database, and whether these fixes validate every possible folder move.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Targets dbo.RecalcSubFolderHids and dbo.GetHidCode explicitly rather than using a full database publish by default.",
+        "Distinguishes compiling SQL/source/package updates from deploying database objects.",
+        "Exercises a move between nonempty sibling groups with interleaved names, stable IDs, continuous per-parent paths, and descendant updates.",
+        "Checks complete distinct hexadecimal codes beyond 1000 characters plus null/root/short behavior; accounts for 1784 characters for 892 bytes.",
+        "Does not claim the fixes add cycle, cross-user, live-schema, or arbitrary-depth validation; acknowledges the actual sample preconditions."
+      ]
+    },
+    {
+      "id": 13,
+      "name": "DataReply JSON and optional application protocol",
+      "kind": "behavior",
+      "context": "An ASP.NET Core application uses prepared 4.1.0 Artisan.Orm DataReply types. It wants camel-case member names, lowercase enum strings, null omission, and message details. System.Text.Json defaults currently produce numeric statuses and empty message objects. Some failures have no messages. The application also has ordinary repository reads that return entities directly.",
+      "prompt": "Explain the serialization problem and propose a consistent HTTP/client contract. Does DataReply need to replace all ordinary reads? Would null omission also remove DataReply<int>.Data when it is 0?",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Identifies public DataReplyMessage fields and offers response DTOs or explicitly scoped IncludeFields rather than assuming DataMember configures System.Text.Json.",
+        "Configures camel-case names, a camel-case JsonStringEnumConverter, and WhenWritingNull for the requested shape.",
+        "Preserves integer 0, guards absent message arrays, and keeps the controller/client top-level shape consistent.",
+        "Treats DataReply as optional and maps HTTP statuses at the application boundary while processing structured error bodies.",
+        "Keeps unexpected diagnostic details server-side and lets cancellation propagate."
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Mapping and metadata cache isolation",
+      "kind": "behavior",
+      "context": "The prepared 4.1.0 source is available. Two unrelated runtime types share the same FullName, readers return different ordered schemas, and two databases each define dbo.Save with different parameter metadata. Connections include ordinary SQL-login authentication and integrated authentication. An old helper seeds MappingManager.AddSqlParameters with only a procedure-name key.",
+      "prompt": "Explain how current caches separate these cases and whether the old cache-seeding helper controls AddParams. Recommend an approach if the application must avoid metadata-discovery round trips. Do these caches prove a manual mapper matches the database?",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Distinguishes actual runtime Type identity and ordered result shape rather than relying on FullName or SQL text alone.",
+        "Describes DataTable shape isolation by type, table name, and ordered columns.",
+        "Separates parameter metadata by database/connection/authentication context and notes connection-instance scope for integrated/token authentication.",
+        "Explains that unqualified procedure names or an unknown default database are not cached and that commands receive independent parameter clones.",
+        "Does not claim legacy AddSqlParameters seeds the scoped AddParams cache; recommends explicit Add*Param helpers when discovery must be avoided.",
+        "Does not infer live-schema validation or a mandatory one-property-per-column contract for manual mappers."
+      ]
+    }
+  ]
+}

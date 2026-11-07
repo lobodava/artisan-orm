@@ -1,4 +1,4 @@
-﻿using Artisan.Orm;
+using Artisan.Orm;
 
 namespace Tests.DataServices;
 
@@ -18,6 +18,10 @@ public class DataServiceBase: IDisposable
 		{
 			return new DataReply<T>(ex.Status, ex.Messages);
 		}
+		catch (OperationCanceledException)
+		{
+			throw;
+		}
 		catch (Exception ex) 
 		{
 			return new DataReply<T>(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
@@ -35,6 +39,10 @@ public class DataServiceBase: IDisposable
 		{
 			return new DataReply<T>(ex.Status, ex.Messages);
 		}
+		catch (OperationCanceledException)
+		{
+			throw;
+		}
 		catch(Exception ex) 
 		{
 			return new DataReply<T>(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
@@ -50,6 +58,10 @@ public class DataServiceBase: IDisposable
 		catch(DataReplyException ex)
 		{
 			return new DataReply(ex.Status, ex.Messages);
+		}
+		catch (OperationCanceledException)
+		{
+			throw;
 		}
 		catch(Exception ex) 
 		{
@@ -68,6 +80,10 @@ public class DataServiceBase: IDisposable
 		{
 			return new DataReply(ex.Status, ex.Messages);
 		}
+		catch (OperationCanceledException)
+		{
+			throw;
+		}
 		catch(Exception ex) 
 		{
 			return new DataReply(DataReplyStatus.Error, GetErrorDataReplyMessages(ex));
@@ -77,10 +93,11 @@ public class DataServiceBase: IDisposable
 
 	private static DataReplyMessage [] GetErrorDataReplyMessages (Exception ex)
 	{
+		var stackTrace = ex.StackTrace ?? string.Empty;
 		return new []
 		{
 			new DataReplyMessage { Code = "ErrorMessage"	, Text = ex.Message },
-			new DataReplyMessage { Code = "StackTrace"	, Text = ex.StackTrace[..500] }
+			new DataReplyMessage { Code = "StackTrace"	, Text = stackTrace[..Math.Min(stackTrace.Length, 500)] }
 		};
 	}
 	

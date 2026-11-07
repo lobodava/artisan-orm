@@ -1,4 +1,4 @@
-﻿using Artisan.Orm;
+using Artisan.Orm;
 using Microsoft.Data.SqlClient;
 
 namespace Tests.DAL.Users.Models;

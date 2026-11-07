@@ -8,7 +8,7 @@ as
 begin
 
 	declare @ParentHidStr varchar(1000)	= cast(@ParentHid as varchar(1000));
-	declare @OldParentHidStr varchar(1000)	= cast(@OldParentId as varchar(1000));
+	declare @OldParentHidStr varchar(1000)	= cast(@OldParentHid as varchar(1000));
 
 	with Recursion as
 	(
@@ -20,7 +20,7 @@ begin
 			NewHid		=	cast(
 								concat( 
 									case when ParentId = @ParentId then @ParentHidStr else @OldParentHidStr end,
-									row_number() over (order by [Name], Id),
+									row_number() over (partition by ParentId order by [Name], Id),
 									'/'
 								) 
 								as varchar(1000)

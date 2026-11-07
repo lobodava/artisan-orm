@@ -12,6 +12,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj
 		{BA18C65B-49A6-4C98-BCC5-B71CB57F16FF} = {BA18C65B-49A6-4C98-BCC5-B71CB57F16FF}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Artisan.Orm.Analyzers", "Artisan.Orm.Analyzers\Artisan.Orm.Analyzers.csproj", "{2AC0210D-91FD-4B37-9C8F-2490614B0021}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Artisan.Orm.Analyzers.Tests", "Artisan.Orm.Analyzers.Tests\Artisan.Orm.Analyzers.Tests.csproj", "{99EF58F7-EB10-4169-B04A-7797008169F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +36,14 @@ Global
 		{F1EE12B6-5A00-4021-8FDA-ED6B0C6B272F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1EE12B6-5A00-4021-8FDA-ED6B0C6B272F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1EE12B6-5A00-4021-8FDA-ED6B0C6B272F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AC0210D-91FD-4B37-9C8F-2490614B0021}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AC0210D-91FD-4B37-9C8F-2490614B0021}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AC0210D-91FD-4B37-9C8F-2490614B0021}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AC0210D-91FD-4B37-9C8F-2490614B0021}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99EF58F7-EB10-4169-B04A-7797008169F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99EF58F7-EB10-4169-B04A-7797008169F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99EF58F7-EB10-4169-B04A-7797008169F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99EF58F7-EB10-4169-B04A-7797008169F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

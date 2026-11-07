@@ -1,13 +1,15 @@
 # Artisan.Orm — How to Reinvent the Wheel
 
-> **Note (2024).** Originally published on [CodeProject in November 2016](https://www.codeproject.com/Articles/1155836/Artisan-Orm-or-How-to-Reinvent-the-Wheel) and last revised June 2020. CodeProject has since gone read-only; this re-publication preserves the original content. A handful of small fixes were applied during conversion:
+> **Republication note.** Originally published on [CodeProject in November 2016](https://www.codeproject.com/Articles/1155836/Artisan-Orm-or-How-to-Reinvent-the-Wheel) and last revised June 2020. CodeProject has since gone read-only; this re-publication preserves the historical explanation. A handful of small fixes were applied during conversion:
 > - `(string)drr["Name"]` had a typo `drr` — fixed to `dr`;
 > - `[MapperFor(typeof(User)]` was missing its closing parenthesis — fixed;
 > - `cmd.ReadTo<User>;` was missing parentheses — fixed to `cmd.ReadTo<User>()`;
 > - `public <T> GetByCommand<T>(...)` was missing its return type — fixed to `public T GetByCommand<T>(...)`;
 > - the C# samples that use plain primitives have been switched from `Int32` / `String` to `int` / `string` for readability. The `MapperFor` examples keep `Int32` / `String` because that is how the library's `DataTableExtensions.AddColumn<T>` API is still presented.
 >
-> The Read-method table reproduced below is the **v1.x snapshot** that appeared in the original article. The current v4 surface area is significantly larger — see the [Read Methods Understanding](https://github.com/lobodava/artisan-orm/wiki/Read-Methods-Understanding) wiki page for the up-to-date list, including async/streaming/multi-result-set methods that were added later.
+> **4.1.0 compatibility.** The Read-method table is a **v1.x snapshot**, and the User and graph examples use historical teaching schemas. They are not deployment scripts for the current sample database. The API calls remain useful, but use the linked current models, SQL types and procedures together when running against this repository. Modern notes below identify the differences; see [Read Methods Understanding](https://github.com/lobodava/artisan-orm/wiki/Read-Methods-Understanding) for the expanded API.
+>
+> Current C# examples use `Microsoft.Data.SqlClient`, `Artisan.Orm` and `System.Data`. The compatibility notes describe the changes being prepared for 4.1.0; they do not announce a published release.
 >
 > — *Vadim Loboda, originally Nov 2016, revised Jun 2020*
 
@@ -21,7 +23,7 @@ This article is a continuation and development of:
 
 The next articles:
 
-- [The Artisan Way of Data Reply](#) *(to be re-published)*
+- [The Artisan Way of Data Reply](03-data-reply.md)
 - [Combination of Id-ParentId and HierarchyId Approaches to Hierarchical Data](04-hierarchyid-combination.md)
 
 ## Introduction
@@ -211,6 +213,8 @@ The technique of object-graph saving means creating user-defined data types for 
 
 Where to keep those `Func` delegates? My solution is to make a static class with static methods and decorate it with the custom `MapperFor` attribute, like this:
 
+The following mapper belongs to the article's four-column User schema. The current sample's [User mapper](../Tests/DAL/Users/Models/User.cs) and [SQL UserTableType](../Database/4.%20Types/UserTableType.sql) also include RowVersion and RoleIds; use those together with the current procedures.
+
 ```csharp
 [MapperFor(typeof(User))]
 public static class UserMapper
@@ -249,7 +253,15 @@ public static class UserMapper
 }
 ```
 
-When the application starts, a special `MappingManager` iterates `MapperFor` attributes, converts the static methods to `Func` delegates, and caches them — for instance in a `Dictionary<Type, Func<SqlDataReader, T>>`.
+`MappingManager` discovers `MapperFor` attributes, converts the static methods to delegates, and caches them by mapped type. In the current implementation this is a one-time lazy scan on the first registered-mapper operation, rather than an automatic scan at application startup.
+
+For 4.1.0, this three-method mapper can declare its intended contract explicitly:
+
+```csharp
+[MapperFor(typeof(User), RequiredMethod.AllMain)]
+```
+
+`AllMain` requires `CreateObject`, `CreateDataTable` and `CreateDataRow`. This makes accidental removal of either the read or write side visible to the Roslyn analyzer and the runtime checks. `All` additionally requires `CreateObjectRow`, which this example does not implement. The original attribute without a second argument remains valid; it does not declare a required-method set. The analyzer checks registrations and operations at build time, while runtime discovery remains in place. See [compile-time mapper validation](../docs/analyzers.md).
 
 ## Extension Methods
 
@@ -283,6 +295,8 @@ The `ReadAs` methods use auto-mapping based on expression-trees compilation:
 - This mapping delegate is cached into a dictionary with a composite string key.
 - The composite key consists of the `SqlCommand` text and the full name of the target object type.
 - Therefore every next `SqlDataReader` reading uses the compiled and cached mapping delegate.
+
+> **Current cache behavior.** The command-text key above describes the historical implementation. In 4.1.0, the cache uses the actual target `Type` identity and the reader shape: ordered column names and field types. Queries with the same shape can reuse a mapper without matching SQL text. Registered mapper discovery still uses reflection; hand-written mappers are not an automatic Native AOT or trimming guarantee.
 
 So auto-mapping performance is almost the same as the performance of hand-written mappers.
 
@@ -345,6 +359,8 @@ public void RunCommand   (Action<SqlCommand>   action)
 public int  ExecuteCommand(Action<SqlCommand>  action)
 ```
 
+In the current API, `GetByCommand` and `RunCommand` own the command lifetime; the read/execute operation inside the callback opens and closes the connection when needed. They do not automatically open a connection for arbitrary raw ADO.NET calls. A repository created from a connection string owns its connection. A repository attached to an external transaction borrows that transaction's existing connection, and disposing it leaves both resources with the caller. Keep commands and readers alive while consuming deferred results, and do not use one repository concurrently.
+
 ## Repository Methods
 
 Inheriting from `RepositoryBase`, having hand-written mappers and the extension methods for `SqlCommand` and `SqlDataReader` allow making the repository methods more compact, the code more readable, and self-explanatory.
@@ -357,6 +373,8 @@ public User GetUserById(int id)
 ```
 
 This is how to save a User and read it back:
+
+This historical example assumes the four-column TVP above and a procedure whose first result contains the saved user. The current [SaveUser procedure](../Database/5.%20Procedures/Users/SaveUser.sql) has a different contract: its User TVP has six columns, role IDs are passed separately, and a DataReply status result precedes the payload. The current [repository example](../Tests/DAL/Users/Repository.cs) supplies those parameters and consumes the status before reading the user. Updating only this mapper or only this call is not sufficient to target the current sample database.
 
 ```csharp
 public User SaveUser(User user)
@@ -408,6 +426,8 @@ public IList<GrandRecord> SaveGrandRecords(IList<GrandRecord> grandRecords)
 }
 ```
 
+For the graph example above, the three result sets must follow the same parent traversal order: grand records by Id, records by GrandRecordId then Id, and child records by GrandRecordId then RecordId then Id. Every detail must have a parent in the supplied lists; an unmatched detail can prevent later matches. The current [SaveGrandRecords procedure](../Database/5.%20Procedures/GrandRecords/SaveGrandRecords.sql) supplies that order. Use its matching [mappers and repository](../Tests/DAL/GrandRecords/) when running against the current sample schema.
+
 ## About Artisan.Orm
 
 The above approach has been tested in several projects and proved its efficiency. So I decided to create a separate library.
@@ -426,13 +446,13 @@ The original article shipped with a Visual Studio 2015 solution containing three
 - **Database** — SSDT project to create the database for SQL Server (used as test data)
 - **Tests** — test project with examples of the code in use
 
-Today the source has moved on through several major versions; in particular, v4 (2024) is multi-targeting `netstandard2.1` / `net8.0` / `net10.0`. See [What's New in v4](https://github.com/lobodava/artisan-orm/wiki/Whats-New-in-v4) on the wiki.
+The source has moved on through several major versions. The 4.1.0 preparation tree targets `netstandard2.1`, `net8.0` and `net10.0`, and includes the analyzer and analyzer-test projects in addition to the original three. See [What's New in v4](https://github.com/lobodava/artisan-orm/wiki/Whats-New-in-v4) and [CHANGELOG](../CHANGELOG.md).
 
 ## Multiple Exception Output
 
 When an error or exception occurs in a single insert/update/delete statement, it is enough to raise an error and throw an exception with a single error code or message.
 
-It is quite a different challenge when it is required to catch all the issues, throw multiple exceptions that may occur while saving the whole object graph, and transmit this exceptional information to an application client. Artisan.Orm offers its own way of solving this task — read the next article: [The Artisan Way of Data Reply](#).
+It is quite a different challenge when it is required to collect several issues while saving an object graph and transmit those details to an application client. Artisan.Orm offers an optional status-and-message protocol for this task, described in [The Artisan Way of Data Reply](03-data-reply.md). It is not required for ordinary reads and writes or a replacement for SQL exceptions.
 
 ## Original Publication History
 
@@ -446,15 +466,16 @@ It is quite a different challenge when it is required to catch all the issues, t
 
 ## What Has Happened Since
 
-The library is now at version 4 (2024), multi-targeting `netstandard2.1`, `net8.0` and `net10.0`. Highlights since this article was first published:
+The 4.1.0 preparation tree targets `netstandard2.1`, `net8.0` and `net10.0`. Highlights since this article was first published:
 
-- Async support became universal across the API, with `CancellationToken` parameters where appropriate.
+- Async read/write variants and `IAsyncEnumerable<T>` streaming were added. Some materializing helpers still perform synchronous row reads, connection opening in read helpers does not forward cancellation, and `GetByReaderAsync` accepts a synchronous projection. Use explicit async reader traversal when those boundaries must be asynchronous and cancellable.
 - A `BulkCopy<T>` / `BulkCopyAs<T>` family was added on top of `SqlBulkCopy`.
 - Multi-result-set reads via tuple-returning `ReadToLists<T1, T2[, T3[, T4]]>` paired with `MergeJoin` for one-pass parent-child graph assembly.
 - Streaming via `ReadToAsyncEnumerable<T>` for queries that don't fit in memory.
 - JSON parameters for `OPENJSON`-based round-trips, plus `DateOnly` / `TimeOnly` (NET6+).
 - Output-parameter helpers for the nine common SQL types.
 - `IAsyncDisposable` support and proper async transactions (`RunInTransactionAsync`).
+- Roslyn mapper validation checks the declared `RequiredMethod` contract and mapper-dependent operations during a normal build. Runtime checks remain as a second line of validation.
 
 The full picture lives in [What's New in v4](https://github.com/lobodava/artisan-orm/wiki/Whats-New-in-v4) on the wiki.
 

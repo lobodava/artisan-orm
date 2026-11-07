@@ -11,7 +11,7 @@ namespace Artisan.Orm
 		All,
 
 		/// <summary>
-		/// Check if all three main methods exists: CreateObject, CreateObjectRow and CreateDataTable.
+		/// Check if all three main methods exist: CreateObject, CreateDataTable and CreateDataRow.
 		/// </summary>
 		AllMain,
 

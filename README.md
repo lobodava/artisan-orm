@@ -22,11 +22,23 @@ For hierarchical data — folder trees, organisation charts and the like — the
 
 > Note: the four articles above were originally published on [CodeProject](https://www.codeproject.com/) between 2016 and 2021. CodeProject went read-only in late 2024; the articles have been re-published in [`articles/`](articles/) under [CC-BY-SA-4.0](articles/LICENSE).  
 
+## Preparing 4.1.0
+
+Version 4.1.0 adds compile-time mapper checks, corrects read projections and cancellation,
+clarifies transaction ownership, isolates mapping and parameter caches, and fixes parameter
+normalization and graph helper edge cases. The optional DataReply protocol remains available.
+See [CHANGELOG.md](CHANGELOG.md) for behavior changes and migration notes.
+
+The repository includes a [Claude Code skill](.claude/skills/artisan-orm/SKILL.md) for working
+with the library. Sample SQL corrections require explicit deployment; installing the package
+never updates a database. Release verification and publication steps are in
+[the release checklist](docs/releasing.md).
+
 ## What's new in 4.0
 
 - **Multi-target**: `netstandard2.1`, `net8.0`, `net10.0`.
 - **`BulkCopy` / `BulkCopyAs`** — high-throughput inserts via `SqlBulkCopy`, fed by `MapperFor` mappers.
-- **`ReadToLists<T1..T6>`** — multiple result sets to N strongly-typed lists in one call.
+- **`ReadToLists<T1..T4>`** — multiple result sets to N strongly-typed lists in one call.
 - **`ReadToAsyncEnumerable<T>` / `ReadAsAsyncEnumerable<T>`** — `IAsyncEnumerable<T>` streaming.
 - **`MergeJoin`** — in-memory master/detail/sub-detail joining without ORM-level SQL joins.
 - **`RunInTransaction` / `RunInTransactionAsync`** — autocommit-on-return transaction wrappers.
@@ -36,6 +48,19 @@ For hierarchical data — folder trees, organisation charts and the like — the
 See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
 ## What to read for better understanding
+
+### Compile-time mapper validation
+
+The package includes a Roslyn analyzer that checks `MapperFor` registrations, required methods,
+delegate-compatible signatures, duplicate registrations, and calls that need a registered mapper.
+Diagnostics are errors by default and run automatically during `dotnet build` with a normal
+`PackageReference`. Runtime mapping and reflection checks remain in place.
+
+The analyzer requires Roslyn 4.8 or later (for example, .NET SDK 8.0.100+). Messages are in English,
+with resources ready for additional translations. See [analyzer rules and configuration](docs/analyzers.md),
+including exceptions for inline mappers, `As` methods, and runtime-only mapper assemblies.
+
+### Wiki and examples
 
 Full information about Artisan.ORM is available in [documentation Wiki](https://github.com/lobodava/artisan-orm/wiki). 
 

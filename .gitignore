@@ -258,5 +258,6 @@ Artisan.Orm/1. How-to-publish-NuGet-package.txt
 desktop.ini
 Artisan.Orm/nuget.exe
 
-# Claude Code local session data
-.claude/
+# Claude Code: share skills, keep other files local
+.claude/*
+!.claude/skills/

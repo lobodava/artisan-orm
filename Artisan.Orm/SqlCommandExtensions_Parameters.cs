@@ -156,24 +156,29 @@ namespace Artisan.Orm
 
 		/// <summary>Adds an input <c>decimal(<paramref name="precision"/>, <paramref name="scale"/>)</c> parameter.
 		/// When <paramref name="truncateFraction"/> is <c>true</c>, fractional digits beyond <paramref name="scale"/>
-		/// are truncated; when <c>false</c>, SQL Server's default rounding rules apply.</summary>
+		/// are discarded toward zero; when <c>false</c>, a value requiring fractional rounding is rejected.
+		/// Insignificant trailing zeroes do not require rounding. Precision must be 1 through 38,
+		/// and scale must not exceed precision.</summary>
 		public static void AddDecimalParam(this SqlCommand cmd, string parameterName, byte precision,  byte scale,  decimal value, bool truncateFraction = false)
 		{
-			var valueString = Math.Abs(value).ToString(CultureInfo.InvariantCulture);
-			var split = valueString.Split('.');
+			ValidateDecimalPrecisionAndScale(precision, scale);
 
-			if (split.Length > 1 && scale < split[1].Length && !truncateFraction)
-				throw new ArgumentException($"Fractional part of SqlParameter {parameterName} = {value} is longer than acceptable for SQL Server decimal({precision},{scale}) type. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
-
-			if (precision - scale < split[0].Length)
+			// Decimal supports at most 28 fractional digits. Truncating its invariant text
+			// avoids multiplying large values by a power of ten and overflowing CLR decimal.
+			var text = value.ToString(CultureInfo.InvariantCulture);
+			var separator = text.IndexOf('.');
+			if (separator >= 0 && text.Length - separator - 1 > scale)
 			{
-				var integerPart		=  new string('9', precision - scale);
-				var fractionalPart	=  new string('9', scale);
-				var minValue = $"-{integerPart}.{fractionalPart}";
-				var maxValue = $"{integerPart}.{fractionalPart}";
-
-				throw new ArgumentOutOfRangeException($"Value of SqlParameter {parameterName} = {value} that is out of SQL Server decimal({precision},{scale}) type range [{minValue}, {maxValue}]. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
+				var truncated = decimal.Parse(text.Substring(0, separator + (scale == 0 ? 0 : scale + 1)), CultureInfo.InvariantCulture);
+				if (!truncateFraction && truncated != value)
+					throw new ArgumentException($"Fractional part of SqlParameter {parameterName} = {value} is longer than acceptable for SQL Server decimal({precision},{scale}) type. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.", nameof(value));
+				value = truncated;
 			}
+
+			var integerPart = decimal.Truncate(value).ToString(CultureInfo.InvariantCulture).TrimStart('-').TrimStart('0');
+			if (integerPart.Length > precision - scale)
+				throw new ArgumentOutOfRangeException(nameof(value), value,
+					$"Value of SqlParameter {parameterName} is outside the SQL Server decimal({precision},{scale}) range. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
 
 			cmd.Parameters.Add( new SqlParameter
 			{ 
@@ -189,6 +194,7 @@ namespace Artisan.Orm
 		/// <inheritdoc cref="AddDecimalParam(SqlCommand, string, byte, byte, decimal, bool)"/>
 		public static void AddDecimalParam(this SqlCommand cmd, string parameterName, byte precision,  byte scale,  decimal? value, bool truncateFraction = false )
 		{
+			ValidateDecimalPrecisionAndScale(precision, scale);
 			if (value != null)
 				cmd.AddDecimalParam(parameterName, precision, scale, value.Value, truncateFraction);
 			else
@@ -201,6 +207,14 @@ namespace Artisan.Orm
 					Precision = precision,
 					Value = DBNull.Value
 				});
+		}
+
+		private static void ValidateDecimalPrecisionAndScale(byte precision, byte scale)
+		{
+			if (precision < 1 || precision > 38)
+				throw new ArgumentOutOfRangeException(nameof(precision), precision, "SQL Server decimal precision must be between 1 and 38.");
+			if (scale > precision)
+				throw new ArgumentOutOfRangeException(nameof(scale), scale, "SQL Server decimal scale must not exceed precision.");
 		}
 
 
@@ -385,18 +399,18 @@ namespace Artisan.Orm
 
 
 		/// <summary>Adds an input <c>varchar(<paramref name="size"/>)</c> parameter.</summary>
-		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, whitespace-only or empty strings are sent as <c>NULL</c>.
-		/// When <paramref name="truncate"/>=<c>true</c>, strings longer than <paramref name="size"/> are silently
-		/// truncated; otherwise they are sent as-is and SQL Server may raise an error.</remarks>
+		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, the value is trimmed and an empty result is sent as <c>NULL</c>.
+		/// After trimming, strings longer than <paramref name="size"/> are truncated when <paramref name="truncate"/>=<c>true</c>;
+		/// otherwise an <see cref="ArgumentException"/> is thrown before adding the parameter.</remarks>
 		public static void AddVarcharParam(this SqlCommand cmd, string parameterName, int size, string? value, bool trimToNull = false, bool truncate = false)
 		{
+			if (trimToNull)
+				value = value.TrimToNull();
+
 			if (value != null)
 			{
-				if (trimToNull)
-					value.TrimToNull();
-
 				if (truncate)
-					value.TruncateTo(size);
+					value = value.TruncateTo(size);
 				else if (size < value.Length)
 					throw new ArgumentException($"String value of SqlParameter {parameterName} is {value.Length} character length that exceeds size of varchar({size}) type and would be truncated. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
 			}
@@ -412,17 +426,18 @@ namespace Artisan.Orm
 		}
 	
 		/// <summary>Adds an input <c>nvarchar(<paramref name="size"/>)</c> parameter.</summary>
-		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, whitespace-only or empty strings are sent as <c>NULL</c>.
-		/// When <paramref name="truncate"/>=<c>true</c>, strings longer than <paramref name="size"/> are silently truncated.</remarks>
+		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, the value is trimmed and an empty result is sent as <c>NULL</c>.
+		/// After trimming, strings longer than <paramref name="size"/> are truncated when <paramref name="truncate"/>=<c>true</c>;
+		/// otherwise an <see cref="ArgumentException"/> is thrown before adding the parameter.</remarks>
 		public static void AddNVarcharParam(this SqlCommand cmd, string parameterName, int size, string? value, bool trimToNull = false, bool truncate = false)
 		{
+			if (trimToNull)
+				value = value.TrimToNull();
+
 			if (value != null)
 			{
-				if (trimToNull)
-					value.TrimToNull();
-
 				if (truncate)
-					value.TruncateTo(size);
+					value = value.TruncateTo(size);
 				else if (size < value.Length)
 					throw new ArgumentException($"String value of SqlParameter {parameterName} is {value.Length} character length that exceeds size of nvarchar({size}) type and would be truncated. CommandType: {cmd.CommandType}. CommandText: {cmd.CommandText}.");
 			}
@@ -439,11 +454,11 @@ namespace Artisan.Orm
 
 
 		/// <summary>Adds an input <c>varchar(max)</c> parameter.</summary>
-		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, whitespace-only or empty strings are sent as <c>NULL</c>.</remarks>
+		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, the value is trimmed and an empty result is sent as <c>NULL</c>.</remarks>
 		public static void AddVarcharMaxParam(this SqlCommand cmd, string parameterName, string? value, bool trimToNull = false)
 		{
 			if (trimToNull)
-				value.TrimToNull();
+				value = value.TrimToNull();
 
 			cmd.Parameters.Add(new SqlParameter
 			{
@@ -456,11 +471,11 @@ namespace Artisan.Orm
 		}
 
 		/// <summary>Adds an input <c>nvarchar(max)</c> parameter.</summary>
-		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, whitespace-only or empty strings are sent as <c>NULL</c>.</remarks>
+		/// <remarks>When <paramref name="trimToNull"/>=<c>true</c>, the value is trimmed and an empty result is sent as <c>NULL</c>.</remarks>
 		public static void AddNVarcharMaxParam(this SqlCommand cmd, string parameterName, string? value, bool trimToNull = false)
 		{
 			if (trimToNull)
-				value.TrimToNull();
+				value = value.TrimToNull();
 
 			cmd.Parameters.Add( new SqlParameter
 			{ 
@@ -837,7 +852,7 @@ namespace Artisan.Orm
 		/// <example>
 		/// <code><![CDATA[
 		/// // 1) C# mapper:
-		/// [MapperFor(typeof(Record), RequiredMethod.All)]
+		/// [MapperFor(typeof(Record), RequiredMethod.BothForDataTable)]
 		/// public static class RecordMapper
 		/// {
 		///     public static DataTable CreateDataTable() => new DataTable("RecordTableType")
@@ -1159,15 +1174,16 @@ namespace Artisan.Orm
 		}
 
 		/// <summary>Auto-discovers the procedure's parameter set via <see cref="SqlCommandBuilder.DeriveParameters(SqlCommand)"/>
-		/// (cached after first call), then fills each parameter from <paramref name="paramDictionary"/> by case-insensitive
+		/// (cached for schema-qualified procedures), then fills each parameter from <paramref name="paramDictionary"/> by case-insensitive
 		/// name match. Property keys may include or omit the leading <c>@</c>.</summary>
 		/// <remarks>Useful when you don't want to hand-write a sequence of <c>Add*Param</c> calls — pass an anonymous-typed
-		/// dictionary or one built from a model. Trades a small first-call latency for code brevity.</remarks>
+		/// dictionary or one built from a model. Metadata is shared only for the same server, database, procedure,
+		/// connection settings and SQL principal. Integrated and token-based authentication reuse metadata only
+		/// on the same connection instance. Default-schema-dependent names and unknown databases are derived on each call.
+		/// Passwords and tokens are not cached.</remarks>
 		public static void AddParams(this SqlCommand cmd, Dictionary<string, object> paramDictionary)
 		{
-			var collectionKey = cmd.CommandText;
-
-			var sqlParameters = MappingManager.GetSqlParameters(collectionKey);
+			var sqlParameters = MappingManager.GetProcedureParameters(cmd);
 
 			if (sqlParameters == null)
 			{
@@ -1193,28 +1209,19 @@ namespace Artisan.Orm
 				sqlParameters = new SqlParameter[cmd.Parameters.Count];
 				cmd.Parameters.CopyTo(sqlParameters, 0);
 
-				MappingManager.AddSqlParameters(collectionKey, sqlParameters);
+				MappingManager.CacheProcedureParameters(cmd, sqlParameters);
 			}
 			else
 			{
-				foreach (var sqlParameter in sqlParameters)
-				{
-					var newSqlParameter = new SqlParameter(sqlParameter.ParameterName,sqlParameter.SqlDbType)
-					{
-						Size = sqlParameter.Size,
-						Direction = sqlParameter.Direction,
-						Precision = sqlParameter.Precision,
-						Scale = sqlParameter.Scale
-					};
-
-					cmd.Parameters.Add(newSqlParameter);
-				}
+				cmd.Parameters.AddRange(sqlParameters);
 			}
 
 			foreach (SqlParameter sqlParameter in cmd.Parameters)
 			{
 				var key = paramDictionary.Keys.FirstOrDefault(k =>
-					string.Equals(k, sqlParameter.ParameterName.Replace("@", ""), StringComparison.InvariantCultureIgnoreCase)
+					string.Equals(k.StartsWith("@", StringComparison.Ordinal) ? k.Substring(1) : k,
+						sqlParameter.ParameterName.StartsWith("@", StringComparison.Ordinal) ? sqlParameter.ParameterName.Substring(1) : sqlParameter.ParameterName,
+						StringComparison.OrdinalIgnoreCase)
 				);
 
 				if (key != null)

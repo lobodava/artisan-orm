@@ -221,36 +221,15 @@ namespace Artisan.Orm
 	
 
 		/// <summary>Reads all rows of the first result set into <paramref name="list"/> (or a new list if <c>null</c>),
-		/// projecting each row through <paramref name="createFunc"/>. <c>NULL</c> rows for nullable value types
-		/// are added as <c>default</c>.</summary>
+		/// projecting each row through <paramref name="createFunc"/>, including rows with <c>NULL</c> values.</summary>
 		public static IList<T> ReadToList<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T>? list)
 		{
-			list ??= new List<T>();
-
-			var isNullableValueType = typeof(T).IsNullableValueType();
-
-			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
-
-			using (var dr = cmd.ExecuteReader(readerFlags))
-			{
-				while (dr.Read())
-				{
-					if (isNullableValueType && dr.IsDBNull(0))
-						list.Add(default!);  // default! — T is Nullable<X> here, null is valid
-					else
-						list.Add(createFunc(dr));
-				}
-			}
-
-			return list;
+			return cmd.ReadToListOfObjects(createFunc, list);
 		}
 
 		/// <inheritdoc cref="ReadToList{T}(SqlCommand, Func{SqlDataReader, T}, IList{T})"/>
 		public static IList<T> ReadToList<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
 		{
-			if (typeof(T).IsSimpleType())
-				return cmd.ReadToListOfValues<T>(null);
-
 			return cmd.ReadToListOfObjects<T>(createFunc, null);
 		}
 
@@ -394,23 +373,20 @@ namespace Artisan.Orm
 
 			using var dr = cmd.ExecuteReader(readerFlags);
 
-			while (dr.Read())
+			if (isNullableValueType)
 			{
-				if (isNullableValueType)
-				{
-					var underlyingType = type.GetUnderlyingType();
+				var underlyingType = type.GetUnderlyingType();
 
-					while (dr.Read())
-						if (dr.IsDBNull(0))
-							yield return default!;  // default! — T is Nullable<X> here, null is valid
-						else
-							yield return SqlDataReaderExtensions.GetValue<T>(dr, underlyingType);
-				}
-				else
-				{
-					while (dr.Read())
-						yield return SqlDataReaderExtensions.GetValue<T>(dr, type);
-				}
+				while (dr.Read())
+					if (dr.IsDBNull(0))
+						yield return default!;  // default! — T is Nullable<X> here, null is valid
+					else
+						yield return SqlDataReaderExtensions.GetValue<T>(dr, underlyingType);
+			}
+			else
+			{
+				while (dr.Read())
+					yield return SqlDataReaderExtensions.GetValue<T>(dr, type);
 			}
 		}
 
@@ -456,21 +432,12 @@ namespace Artisan.Orm
 		/// <summary>Streams the first result set lazily, projecting each row through <paramref name="createFunc"/>.</summary>
 		public static IEnumerable<T> ReadToEnumerable<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc)
 		{
-			var isNullableValueType = typeof(T).IsNullableValueType();
-
 			var readerFlags = GetReaderFlagsAndOpenConnection(cmd, CommandBehavior.SingleResult);
 
 			using var dr = cmd.ExecuteReader(readerFlags);
 
-			if (isNullableValueType)
-				while (dr.Read())
-					if (dr.IsDBNull(0))
-						yield return default!;  // default! — T is Nullable<X> here, null is valid
-					else
-						yield return createFunc(dr);
-			else
-				while (dr.Read())
-					yield return createFunc(dr);
+			while (dr.Read())
+				yield return createFunc(dr);
 		}
 
 		/// <summary>Streams the first result set lazily using auto-mapping (reflection-based, cached per

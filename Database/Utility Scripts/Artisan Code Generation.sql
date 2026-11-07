@@ -20,7 +20,7 @@ declare @PluralName		 sysname = @TableName;
 set nocount on;
 
 
-begin -- декларация переменных 
+begin -- Declare variables
 
 	declare @ColumnCount int = 0;
 
@@ -64,7 +64,7 @@ begin -- декларация переменных
 	
 end;
 
-begin -- наполнение @LineSource 
+begin -- Populate @LineSource
 
 	with DataTypes (SqlType, Method, C#Type) as  (
 		
@@ -124,7 +124,7 @@ begin -- наполнение @LineSource
 	update @LineSource set Comma = '' where ColumnNo = @ColumnCount;
 end;
 
-begin -- расстановка ключей (constraint) 
+begin -- Set key constraints
 
 	declare @TableKeys table (	
 		CONSTRAINT_TYPE		sysname,
@@ -161,7 +161,7 @@ begin -- расстановка ключей (constraint)
 
 end;
 
-begin -- составление строк 
+begin -- Compose output lines
 
 	select 
 		@ColumnTabCount = max(len(ColumnName) + 2) / 4 + case when (max(len(ColumnName) + 2) % 4) = 0 then 0 else 1 end,
@@ -359,7 +359,7 @@ raiserror(	-- Tail
 '
 ,0,1);
 
-begin -- Вывод TableType 
+begin -- Print the table type
 
 raiserror(	
 '/*

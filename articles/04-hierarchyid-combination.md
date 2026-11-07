@@ -1,15 +1,19 @@
 # Combination of Id-ParentId and HierarchyId Approaches to Hierarchical Data
 
-> **Note (2024).** Originally published on [CodeProject in July 2017](https://www.codeproject.com/Articles/1192607/Combination-of-Id-ParentId-and-HierarchyId).
+> **Republication note.** Originally published on [CodeProject in July 2017](https://www.codeproject.com/Articles/1192607/Combination-of-Id-ParentId-and-HierarchyId).
 > CodeProject has since gone read-only and PDFs were the only surviving
-> snapshot. This re-publication preserves the original content; a handful of
+> snapshot. This re-publication preserves the historical explanation; a handful of
 > typos and PDF extraction artifacts have been cleaned up, and the SQL is
-> formatted for modern Markdown rendering. The patterns are timeless and
-> apply unchanged to every SQL Server version since 2008.
+> formatted for modern Markdown rendering. `hierarchyid` was introduced in SQL
+> Server 2008, but the examples here use `LAG`, `LEAD` and `CONCAT` and require
+> SQL Server 2012 or later; see the [LAG version requirement](https://learn.microsoft.com/en-us/sql/t-sql/functions/lag-transact-sql).
 >
 > A working implementation lives in the Artisan.Orm sample repository:
 > [`Database/`](../Database/) for the schema, procedures and SQL functions;
 > [`Tests/DAL/Folders/`](../Tests/DAL/Folders/) for the C# repository code.
+> The standalone schemas and alternative procedure names below are historical;
+> the 4.1.0 compatibility notes identify the current entry points. The SQL examples
+> include corrections to sibling numbering and the full-width HidCode conversion.
 >
 > — *Vadim Loboda, originally 17 Jul 2017*
 
@@ -45,9 +49,11 @@ In response to these difficulties, Microsoft added the **HierarchyId** data type
 
 If you build a clustered index on HierarchyId, all node-records are physically stored in the order in which they are most frequently fetched.
 
+> **Ordering clarification for 4.1.0.** The historical wording describes the useful depth-first organization of clustered keys, not guaranteed page contiguity, insertion order, or result order. Use `ORDER BY UserId, Hid` (or `ORDER BY Hid` within one user) when returning a hierarchy. The index supports that access pattern; the explicit order defines the result contract. See the [ordering discussion in Article 1](01-object-graph-saving.md#410-clarification-what-the-indexes-actually-guarantee).
+
 But HierarchyId still has drawbacks — trade-offs for its useful properties:
 
-- impossibility to use HierarchyId as a foreign key to a parent (no self-referencing). A parent FK can technically be substituted with `PERSISTED REFERENCES`, but the pros and cons of such a solution are still under-researched.
+- it does not automatically enforce parent existence or a tree structure. A persisted computed parent column based on `GetAncestor(1)` can participate in a self-referencing foreign key, as shown in [Microsoft's tree-constraint example](https://learn.microsoft.com/en-us/sql/relational-databases/hierarchical-data-sql-server#enforce-a-tree). Stable integer IDs remain useful when paths change.
 - difficult ways to generate HierarchyId values for added and changed records to keep the required order — SQL Server does not do this automatically; it is up to the programmer to manage it.
 - difficult use of HierarchyId as a primary or foreign key: it may regularly change.
 - it has no corresponding type in JavaScript (for example).
@@ -143,7 +149,7 @@ print @Parent.GetDescendant('/1.2.3.4.5.6.7.8/', '/1.2.3.4.5.6.7.9/').ToString()
 declare @Hid hierarchyid = '/1.2.3.4.5.6.7.8.1/';
 select @Hid;  -- 0x63A08A49A85258
 
-declare @Hid hierarchyid = '/-1.-2.-3.-4.-5.-6.-7.-8.-1234567890/';
+set @Hid = '/-1.-2.-3.-4.-5.-6.-7.-8.-1234567890/';
 select @Hid;  -- 0x41F8F87A3C1D8E87216D9A81A73A
 
 -- special cases with null
@@ -203,6 +209,8 @@ The best place and moment to calculate the HierarchyId and keep it in a coordina
 
 Let's imagine a multi-user application where each user keeps its own catalog. This catalog stores information in hierarchical folders. The table for these folders might look like this:
 
+This is the article's standalone teaching schema. The current [sample Folders table](../Database/1.%20Tables/Users/4.%20Folders.sql) uses the `dbo.FolderId` sequence and `DEFAULT NEXT VALUE FOR` instead of `IDENTITY`; the integer key, ParentId relationship and `(UserId, Hid)` clustered key serve the same roles.
+
 ```sql
 create table dbo.Folders
 (
@@ -225,12 +233,12 @@ create table dbo.Folders
 
 Note that the **clustered index is built on `(UserId, Hid)`**, but the **primary key is on `Id`**. This allows us to:
 
-- keep all the records of each user's Folders hierarchically sorted physically (the clustered index dictates physical order),
+- organize each user's folder records by the hierarchical clustered key, supporting depth-first access,
 - use the integer `Id` as a primary key — and as a foreign key for other tables and DTOs.
 
-It is well known that a hierarchy built on HierarchyId may have one root only. Because the clustered key is the combination of `UserId` and `Hid`, the `dbo.Folders` table may have one root **per user**.
+The application models one catalog root per user. The unique `(UserId, Hid)` key permits at most one stored `/` root for each user; it does not require that a root exists. `hierarchyid` values alone do not enforce a complete tree.
 
-The root node is mandatory — every user's catalog must have one — so the root is mostly a system record that users do not edit. Once the root is a system record, every other node must have a parent, and `ParentId` must be `not null`.
+The application's initialization must create each user's root as a system record that users do not edit. The table permits `ParentId = NULL` for that root. The single-folder save contract below accepts only non-root nodes, so its TVP requires a non-null ParentId. The foreign key checks parent existence, but does not by itself prevent cycles, cross-user parenting, or disagreement between ParentId and Hid.
 
 ### The Best Place to Make the Calculation
 
@@ -249,7 +257,7 @@ create type dbo.FolderTableType as table
 );
 ```
 
-And here is the `SaveFolder` stored procedure itself:
+And here is the historical `SaveFolder` stored procedure itself. It illustrates the incremental path algorithm. The current [SaveFolder procedure](../Database/5.%20Procedures/Folders/SaveFolder.sql) combines this and the recalculation alternative behind `@WithHidReculc`, and also returns the saved folder.
 
 ```sql
 create procedure dbo.SaveFolder
@@ -378,7 +386,7 @@ begin
 end;
 ```
 
-If you save each Folder using only this stored procedure, the `Hid` column will always have actual and consistent information.
+Using one save path helps keep ParentId and Hid coordinated, provided its input and transaction preconditions hold. Supply one non-root folder, an existing parent belonging to the intended user, and reject moves beneath the node itself or its descendants. The sample procedure does not implement all of those validations. It sets SERIALIZABLE only when it starts its own transaction; a caller supplying an ambient transaction must choose suitable isolation and locking. The comment about locking the parent is not a substitute for that policy.
 
 ## Fetch a Folder With Its Descendants in Hierarchical Order
 
@@ -442,14 +450,14 @@ Here is the `dbo.GetHidCode` scalar function:
 
 ```sql
 create function dbo.GetHidCode (@Hid hierarchyid)
-returns varchar(1000)
+returns varchar(1784)
 as
 begin
-    return replace(
-        convert(varchar(1000), cast(@Hid as varbinary(892)), 2),
-        '0x', '');
+    return convert(varchar(1784), cast(@Hid as varbinary(892)), 2);
 end;
 ```
+
+A hierarchyid can occupy [up to 892 bytes](https://learn.microsoft.com/en-us/sql/t-sql/data-types/hierarchyid-data-type-method-reference), so its full hexadecimal representation can require 1784 characters. Conversion style 2 already omits `0x`. Keep that capacity in transport fields and client storage too; the former 1000-character version could truncate valid long paths. This width describes HidCode, not the separate human-readable HidPath buffers used by the historical procedures.
 
 The `HidCode` string can be used on the client side to sort a flat list of Folders hierarchically — convenient when you want to keep the heavy lifting in SQL but ship a flat list to JavaScript and let the UI re-sort on the fly.
 
@@ -481,7 +489,7 @@ See this sequence in `HidPath`: `1 → 1.1 → 2` instead of `1 → 2 → 3`. In
 
 If you are OK with that — skip this chapter. But for the rest of us, here is one more option for keeping the hierarchical data in a clean state.
 
-The following stored procedure recalculates the HierarchyId so the path consists of integer numbers in a continuous sequence:
+The following historical alternative recalculates HierarchyId so sibling ordinals form a continuous sequence. `SaveFolderWithHidReculc` is an illustrative standalone name, not a procedure installed by the current sample project. For 4.1.0, call `dbo.SaveFolder` with `@WithHidReculc = 1`, or the C# sample's `SaveFolder(folder, withHidReorder: true)`.
 
 ```sql
 create procedure dbo.SaveFolderWithHidReculc
@@ -565,7 +573,7 @@ begin
                 @OldParentHid = OldParentHid
             from @FolderIds;
 
-            exec dbo.ReculcSubFolderHids
+            exec dbo.RecalcSubFolderHids
                 @UserId, @ParentId, @ParentHid, @OldParentId, @OldParentHid;
         end;
 
@@ -581,10 +589,10 @@ begin
 end;
 ```
 
-The trick is in the call to `ReculcSubFolderHids` after the `@Folder` save:
+The trick is in the call to `RecalcSubFolderHids` after the `@Folder` save. That is the current SQL object name; its [source filename](../Database/5.%20Procedures/Folders/ReculcSubFolderHids.sql) retains the older spelling.
 
 ```sql
-create procedure dbo.ReculcSubFolderHids
+create procedure dbo.RecalcSubFolderHids
     @UserId        int,
     @ParentId      int,
     @ParentHid     hierarchyid,
@@ -608,7 +616,7 @@ begin
                                      then @ParentHidStr
                                      else @OldParentHidStr
                                 end,
-                                row_number() over (order by Name, Id),
+                                row_number() over (partition by ParentId order by Name, Id),
                                 '/'
                             )
                             as varchar(1000)
@@ -649,7 +657,7 @@ begin
 end;
 ```
 
-The above procedure produces paths consisting of integer numbers in a continuous sequence:
+The anchor numbers siblings separately for each ParentId, including both the old and new parents after a move. The old path prefix comes from `@OldParentHid`, not the integer `@OldParentId`. These details keep each affected sibling group in its own continuous sequence:
 
 ```text
 -- Result of SaveFolderWithHidReculc on the previous example
@@ -660,7 +668,7 @@ Id    ParentId  Name  Level  HidCode    HidPath
 365   121       5B    5      5AD6B780   /1/1/1/1/3/
 ```
 
-This method has a drawback too: it works well as long as the recalculated branch consists of up to about 10,000 nodes (calculation under one second). For 100,000 nodes the recalculation may take 15 seconds or more.
+The original measurements suggested a cost trade-off: recalculating about 10,000 nodes took under one second, while 100,000 nodes could take 15 seconds or more. These are historical observations, not 4.1.0 performance guarantees; measure the relevant schema, hardware, tree depth and workload. The sample also uses bounded path strings and SQL Server's default recursive-CTE depth limit, so validate unusually deep or long paths before relying on it.
 
 ## Read a Tree in C#
 
@@ -734,7 +742,7 @@ public static IList<Folder> ConvertHierarchicallySortedFolderListToTrees(
 }
 ```
 
-The above runs about twice as fast as the equivalent for an unsorted Folder list, which has to build a dictionary first:
+In the original measurements, the sorted-list version ran about twice as fast as the unsorted-list version below, which builds a dictionary first. This is not a guaranteed ratio: both approaches are linear for valid input, with different allocation and traversal costs.
 
 ```csharp
 public static IList<Folder> ConvertHierarchicallyUnsortedFolderListToTrees(
@@ -767,17 +775,19 @@ Both methods can build multiple roots, so the return type is `IList<Folder>`. Th
 
 The patterns above became part of the Artisan.Orm sample database and library:
 
-- The `dbo.Folders` table and its companion procedures (`SaveFolder`, `SaveFolderWithHidReculc`, `ReculcSubFolderHids`, `GetFolderWithSubFolders`, `GenerateFolders`, etc.) live in the [`Database/`](../Database/) project.
-- The C# repository that calls them — including the tree-building helpers — lives in [`Tests/DAL/Folders/Repository.cs`](../Tests/DAL/Folders/Repository.cs).
-- Artisan.Orm's [`INode<T>`](https://github.com/lobodava/artisan-orm/wiki/INode-Interface-and-ToTree-Methods) interface generalises the in-memory tree-building algorithm shown above, so the two `ConvertHierarchically*FolderListToTrees` methods can be replaced by a single `repo.ReadToTree<Folder>(...)` call when `Folder` implements `INode<Folder>`.
+- The [Folders table](../Database/1.%20Tables/Users/4.%20Folders.sql), [SaveFolder](../Database/5.%20Procedures/Folders/SaveFolder.sql), [RecalcSubFolderHids](../Database/5.%20Procedures/Folders/ReculcSubFolderHids.sql), [GetFolderWithSubFolders](../Database/5.%20Procedures/Folders/GetFolderWithSubFolders.sql) and [GenerateFolders](../Database/5.%20Procedures/Folders/GenerateFolders.sql) live in the Database project. `SaveFolder` selects its algorithm through `@WithHidReculc`; there is no separate `SaveFolderWithHidReculc` object in this project.
+- The C# repository, including `SaveFolder(folder, withHidReorder: true)`, lives in [Tests/DAL/Folders/Repository.cs](../Tests/DAL/Folders/Repository.cs).
+- Artisan.Orm's [`INode<T>`](https://github.com/lobodava/artisan-orm/wiki/INode-Interface-and-ToTree-Methods) interface generalizes the tree-building algorithm. With a registered mapper and `INode<Folder>`, use `ReadToTreeList<Folder>(..., hierarchicallySorted: true)` to preserve the forest returned by the two converters. Use the default unsorted path when the query does not guarantee depth-first order. `ReadToTree<Folder>` returns only the first root and is appropriate for an explicitly single-root result. The current [Folder model and mapper](../Tests/DAL/Folders/Models/Folder.cs) supply both contracts.
 
 The integration tests in [`Tests/Tests/FolderTests.cs`](../Tests/Tests/FolderTests.cs) demonstrate the full flow.
+
+The 4.1.0 regressions in [`FolderSqlRegressionTest.cs`](../Tests/Tests/FolderSqlRegressionTest.cs) also check moving a folder between nonempty sibling groups, updating descendant paths, and preserving distinct complete HidCode values for long hierarchyids.
 
 ## About the Source Code
 
 The original article shipped with a standalone Hierarchy solution containing two projects: a `Hierarchy.DB` SSDT project and a `Hierarchy.Tests` test project. That code has been folded into the Artisan.Orm repository — see the links in the previous section.
 
-The `Database/` project contains a `dbo.GenerateFolders` stored procedure which generates hierarchical data for tests; the generation runs automatically during the database publish phase, so as soon as you publish the schema you have a populated `dbo.Folders` table to play with.
+The Database project runs `dbo.GenerateFolders` during its post-deployment script. It truncates `dbo.Folders` before generating sample data, so publish this project to a disposable sample/test database, not a database whose folder data must be retained.
 
 ## See Also
 

@@ -14,13 +14,15 @@ namespace Artisan.Orm
 	{
 		#region [ GetReaderFlagsAndOpenConnectionAsync ]
 
-		private static async Task<CommandBehavior> GetReaderFlagsAndOpenConnectionAsync(SqlCommand cmd, CommandBehavior defaultReaderFlag = CommandBehavior.Default)
+		private static async Task<CommandBehavior> GetReaderFlagsAndOpenConnectionAsync(SqlCommand cmd, CommandBehavior defaultReaderFlag, CancellationToken cancellationToken)
 		{
+			cancellationToken.ThrowIfCancellationRequested();
+
 			var readerFlags = defaultReaderFlag;
 
 			if (cmd.Connection.State == ConnectionState.Closed)
 			{
-				await cmd.Connection.OpenAsync().ConfigureAwait(false);
+				await cmd.Connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
 				if (defaultReaderFlag == CommandBehavior.Default)
 					readerFlags = CommandBehavior.CloseConnection;
@@ -31,39 +33,58 @@ namespace Artisan.Orm
 			return readerFlags;
 		}
 	
+		private static async Task<SqlDataReader> ExecuteReaderAndOpenConnectionAsync(SqlCommand cmd, CommandBehavior behavior, CancellationToken cancellationToken)
+		{
+			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, behavior, cancellationToken).ConfigureAwait(false);
+			try
+			{
+				return await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			}
+			catch
+			{
+				// No reader exists to apply CloseConnection when execution fails.
+				if ((readerFlags & CommandBehavior.CloseConnection) != 0)
+				{
+					try { await cmd.Connection.CloseAsync().ConfigureAwait(false); }
+					catch { /* Preserve the command failure. */ }
+				}
+				throw;
+			}
+		}
+
 		#endregion
 
 
 		#region [ GetByReaderAsync, ExecuteReaderAsync ]
 
 		/// <inheritdoc cref="GetByReader{T}(SqlCommand, Func{SqlDataReader, T})"/>
+		/// <remarks>Opening and command execution are asynchronous and cancellable. The supplied callback
+		/// is synchronous; it controls its own row traversal and cancellation checks.</remarks>
 		public static async Task<T> GetByReaderAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, T> func, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			return func(dr);
 		}
 
 		/// <inheritdoc cref="GetByReader{T}(SqlCommand, Func{SqlDataReader, SqlParameter, T})"/>
+		/// <remarks>Opening and command execution are asynchronous and cancellable. The supplied callback
+		/// is synchronous; it controls its own row traversal and cancellation checks.</remarks>
 		public static async Task<T> GetByReaderAsync<T>(this SqlCommand cmd,  Func<SqlDataReader, SqlParameter, T> func, CancellationToken cancellationToken = default)
 		{
 			var returnValueParam = cmd.ReturnValueParam();
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			return func(dr, returnValueParam);
 		}
 
 		/// <inheritdoc cref="ExecuteReader(SqlCommand, Action{SqlDataReader})"/>
+		/// <remarks>Opening and command execution are asynchronous and cancellable. The supplied callback
+		/// is synchronous; it controls its own row traversal and cancellation checks.</remarks>
 		public static async Task<int> ExecuteReaderAsync(this SqlCommand cmd, Action<SqlDataReader> action, CancellationToken cancellationToken = default)
 		{
 			var returnValueParam = cmd.ReturnValueParam();
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
+			using (var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false))
 			{
 				action(dr);
 			}
@@ -78,10 +99,8 @@ namespace Artisan.Orm
 	
 		private static async Task<T?> ReadToValueAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			if (dr.Read())
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false);
+			if (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
 			{
 				if (typeof(T).IsNullableValueType() && dr.IsDBNull(0))
 					return default;
@@ -96,10 +115,8 @@ namespace Artisan.Orm
 		/// <inheritdoc cref="ReadTo{T}(SqlCommand, Func{SqlDataReader, T})"/>
 		public static async Task<T?> ReadToAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.Read() ? createFunc(dr) : default;
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false);
+			return await dr.ReadAsync(cancellationToken).ConfigureAwait(false) ? createFunc(dr) : default;
 		}
 
 		/// <inheritdoc cref="ReadTo{T}(SqlCommand)"/>
@@ -118,10 +135,8 @@ namespace Artisan.Orm
 			if (typeof(T).IsSimpleType())
 				return await cmd.ReadToValueAsync<T>(cancellationToken).ConfigureAwait(false);
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.Read() ? dr.CreateObject<T>() : default;
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false);
+			return await dr.ReadAsync(cancellationToken).ConfigureAwait(false) ? dr.CreateObject<T>() : default;
 		}
 
 		#endregion
@@ -136,19 +151,17 @@ namespace Artisan.Orm
 			var type = typeof(T);
 			var isNullableValueType = type.IsNullableValueType();
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
+			using (var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false))
 			{
 				if (isNullableValueType)
 				{
 					var underlyingType = type.GetUnderlyingType();
-					while (dr.Read())
+					while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
 						list.Add(dr.IsDBNull(0) ? default! : SqlDataReaderExtensions.GetValue<T>(dr, underlyingType));  // default! — T is Nullable<X> here, null is valid
 				}
 				else
 				{
-					while (dr.Read())
+					while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
 						list.Add(SqlDataReaderExtensions.GetValue<T>(dr, type));
 				}
 			}
@@ -160,10 +173,8 @@ namespace Artisan.Orm
 		{
 			list ??= new List<T>();
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
-				while (dr.Read())
+			using (var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false))
+				while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
 					list.Add(createFunc(dr));
 
 			return list;
@@ -173,32 +184,12 @@ namespace Artisan.Orm
 		/// <inheritdoc cref="ReadToList{T}(SqlCommand, Func{SqlDataReader, T}, IList{T})"/>
 		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, IList<T>? list, CancellationToken cancellationToken = default)
 		{
-			list ??= new List<T>();
-
-			var isNullableValueType = typeof(T).IsNullableValueType();
-
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
-			{
-				while (dr.Read())
-				{
-					if (isNullableValueType && dr.IsDBNull(0))
-						list.Add(default!);  // default! — T is Nullable<X> here, null is valid
-					else
-						list.Add(createFunc(dr));
-				}
-			}
-
-			return list;
+			return await cmd.ReadToListOfObjectsAsync(createFunc, list, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="ReadToList{T}(SqlCommand, Func{SqlDataReader, T})"/>
 		public static async Task<IList<T>> ReadToListAsync<T>(this SqlCommand cmd, Func<SqlDataReader, T> createFunc, CancellationToken cancellationToken = default)
 		{
-			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToListOfValuesAsync<T>(null, cancellationToken).ConfigureAwait(false);
-
 			return await cmd.ReadToListOfObjectsAsync<T>(createFunc, null, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -225,13 +216,17 @@ namespace Artisan.Orm
 		public static async Task<IList<T>> ReadAsListAsync<T>(this SqlCommand cmd, IList<T>? list, CancellationToken cancellationToken = default)
 		{
 			if (typeof(T).IsSimpleType())
-				return await cmd.ReadToListOfValuesAsync<T>(list).ConfigureAwait(false);
+				return await cmd.ReadToListOfValuesAsync<T>(list, cancellationToken).ConfigureAwait(false);
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
+			using (var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false))
 			{
-				list = dr.ReadAsList<T>(list, getNextResult: false);
+				list ??= new List<T>();
+				Func<SqlDataReader, T>? createFunc = null;
+				while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
+				{
+					createFunc ??= GetAutoMappingFunc<T>(dr);
+					list.Add(createFunc(dr));
+				}
 			}
 
 			return list;
@@ -269,9 +264,7 @@ namespace Artisan.Orm
 		/// <inheritdoc cref="ReadDynamic(SqlCommand)"/>
 		public static async Task<dynamic?> ReadDynamicAsync(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false);
 			return await dr.ReadAsync(cancellationToken).ConfigureAwait(false) ? dr.CreateDynamic() : null;
 		}
 
@@ -282,9 +275,7 @@ namespace Artisan.Orm
 
 			var iList = (System.Collections.IList)list;
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using (var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false))
+			using (var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false))
 			{
 				while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
 					iList.Add(dr.CreateDynamic());
@@ -308,6 +299,18 @@ namespace Artisan.Orm
 		#endregion
 
 
+		private static Func<SqlDataReader, T> GetAutoMappingFunc<T>(SqlDataReader dr)
+		{
+			var key = SqlDataReaderExtensions.GetAutoCreateObjectFuncKey<T>(dr);
+			var createFunc = MappingManager.GetAutoCreateObjectFunc<T>(key);
+			if (createFunc == null)
+			{
+				createFunc = SqlDataReaderExtensions.CreateAutoMappingFunc<T>(dr);
+				MappingManager.AddAutoCreateObjectFunc(key, createFunc);
+			}
+			return createFunc;
+		}
+
 		#region [ ReadToAsyncEnumerable, ReadAsAsyncEnumerable ]
 
 		private static async IAsyncEnumerable<T> ReadToAsyncEnumerableValues<T>(
@@ -317,9 +320,7 @@ namespace Artisan.Orm
 			var type = typeof(T);
 			var isNullableValueType = type.IsNullableValueType();
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			await using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			await using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false);
 
 			if (isNullableValueType)
 			{
@@ -339,45 +340,19 @@ namespace Artisan.Orm
 			Func<SqlDataReader, T> createFunc,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
-			var isNullableValueType = typeof(T).IsNullableValueType();
+			await using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false);
 
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			await using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-
-			if (isNullableValueType)
-			{
-				while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
-				{
-					if (dr.IsDBNull(0))
-						yield return default!;  // default! — T is Nullable<X> here, null is valid
-					else
-						yield return createFunc(dr);
-				}
-			}
-			else
-			{
-				while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
-					yield return createFunc(dr);
-			}
+			while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
+				yield return createFunc(dr);
 		}
 
 		private static async IAsyncEnumerable<T> ReadAsAsyncEnumerableObjects<T>(
 			this SqlCommand cmd,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
+			await using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false);
 
-			await using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-
-			var key = SqlDataReaderExtensions.GetAutoCreateObjectFuncKey<T>(dr);
-			var autoMappingFunc = MappingManager.GetAutoCreateObjectFunc<T>(key);
-
-			if (autoMappingFunc == null)
-			{
-				autoMappingFunc = SqlDataReaderExtensions.CreateAutoMappingFunc<T>(dr);
-				MappingManager.AddAutoCreateObjectFunc(key, autoMappingFunc);
-			}
+			var autoMappingFunc = GetAutoMappingFunc<T>(dr);
 
 			while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
 				yield return autoMappingFunc(dr);
@@ -430,95 +405,106 @@ namespace Artisan.Orm
 		#endregion
 
 
+		private static ObjectRow CreateObjectRowFromValues(SqlDataReader dr)
+		{
+			var row = new ObjectRow(dr.FieldCount);
+			for (var i = 0; i < dr.FieldCount; i++)
+				row.Add(dr.GetValue(i));
+			return row;
+		}
+
 		#region [ ReadToObjectRow(s)Async, ReadAsObjectRow(s)Async ]
 
 		/// <inheritdoc cref="ReadToObjectRow(SqlCommand, Func{SqlDataReader, ObjectRow})"/>
 		public static async Task<ObjectRow?> ReadToObjectRowAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadToObjectRow(createFunc, false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false);
+			return await dr.ReadAsync(cancellationToken).ConfigureAwait(false) ? createFunc(dr) : null;
 		}
 
 		/// <inheritdoc cref="ReadToObjectRow{T}(SqlCommand)"/>
 		public static async Task<ObjectRow?> ReadToObjectRowAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadToObjectRow<T>();
+			return await cmd.ReadToObjectRowAsync(MappingManager.GetCreateObjectRowFunc<T>(), cancellationToken).ConfigureAwait(false);
 		}
 
 
 		/// <inheritdoc cref="ReadToObjectRows(SqlCommand, Func{SqlDataReader, ObjectRow})"/>
 		public static async Task<ObjectRows> ReadToObjectRowsAsync(this SqlCommand cmd, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadToObjectRows(createFunc, false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false);
+			var rows = new ObjectRows();
+			while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
+				rows.Add(createFunc(dr));
+			return rows;
 		}
 
 		/// <inheritdoc cref="ReadAsObjectRows(SqlCommand)"/>
 		public static async Task<ObjectRows> ReadAsObjectRowsAsync(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadAsObjectRows();
+			return await cmd.ReadToObjectRowsAsync(CreateObjectRowFromValues, cancellationToken).ConfigureAwait(false);
 		}
 
 
 		/// <inheritdoc cref="ReadAsObjectRow(SqlCommand)"/>
 		public static async Task<ObjectRow?> ReadAsObjectRowAsync(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleRow).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadAsObjectRow();
+			return await cmd.ReadToObjectRowAsync(CreateObjectRowFromValues, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="ReadToObjectRows{T}(SqlCommand)"/>
 		public static async Task<ObjectRows> ReadToObjectRowsAsync<T>(this SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadToObjectRows<T>();
+			return await cmd.ReadToObjectRowsAsync(MappingManager.GetCreateObjectRowFunc<T>(), cancellationToken).ConfigureAwait(false);
 		}
 	
 		#endregion
 
+
+		private static TValue ReadDictionaryValue<TValue>(SqlDataReader dr)
+		{
+			return dr.IsDBNull(1) ? (TValue)(object?)null! : dr.GetValue<TValue>(1);
+		}
+
+		private static async Task<IDictionary<TKey, TValue>> ReadDictionaryAsync<TKey, TValue>(SqlDataReader dr, Func<SqlDataReader, TValue> createFunc, CancellationToken cancellationToken) where TKey : notnull
+		{
+			var dictionary = new Dictionary<TKey, TValue>();
+			while (await dr.ReadAsync(cancellationToken).ConfigureAwait(false))
+			{
+				if (!dr.IsDBNull(0))
+					dictionary.Add(dr.GetValue<TKey>(0), createFunc(dr));
+			}
+			return dictionary;
+		}
 
 		#region [ ReadToDictionaryAsync, ReadAsDictionaryAsync ]
 
 		/// <inheritdoc cref="ReadToDictionary{TKey, TValue}(SqlCommand, Func{SqlDataReader, TValue})"/>
 		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, Func<SqlDataReader, TValue> createFunc, CancellationToken cancellationToken = default) where TKey : notnull
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadToDictionary<TKey, TValue>(createFunc);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false);
+			return await ReadDictionaryAsync<TKey, TValue>(dr, createFunc, cancellationToken).ConfigureAwait(false);
 		}
 
 
 		/// <inheritdoc cref="ReadToDictionary{TKey, TValue}(SqlCommand)"/>
 		public static async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(this SqlCommand cmd, CancellationToken cancellationToken = default) where TKey : notnull
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadToDictionary<TKey, TValue>();
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false);
+			Func<SqlDataReader, TValue> createFunc = typeof(TValue).IsSimpleType()
+				? ReadDictionaryValue<TValue>
+				: MappingManager.GetCreateObjectFunc<TValue>();
+			return await ReadDictionaryAsync<TKey, TValue>(dr, createFunc, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="ReadAsDictionary{TKey, TValue}(SqlCommand)"/>
 		public static async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(this SqlCommand cmd, CancellationToken cancellationToken = default) where TKey : notnull
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
-			return dr.ReadAsDictionary<TKey, TValue>();
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.SingleResult, cancellationToken).ConfigureAwait(false);
+			Func<SqlDataReader, TValue> createFunc = typeof(TValue).IsSimpleType()
+				? ReadDictionaryValue<TValue>
+				: GetAutoMappingFunc<TValue>(dr);
+			return await ReadDictionaryAsync<TKey, TValue>(dr, createFunc, cancellationToken).ConfigureAwait(false);
 		}
 
 		#endregion 

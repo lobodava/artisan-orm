@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="MissingMapperTitle" xml:space="preserve"><value>Mapper registration is missing</value></data>
+  <data name="MissingMapperMessage" xml:space="preserve"><value>'{0}' requires a mapper for '{1}', but no [MapperFor(typeof({1}))] registration was found in this compilation or its referenced assemblies</value></data>
+  <data name="MissingMapperDescription" xml:space="preserve"><value>Add a MapperFor registration with the required function, pass an inline mapper, or use the corresponding As API. For runtime-only mapper assemblies, set artisan_orm.allow_external_mappers = true in .editorconfig.</value></data>
+  <data name="MissingMethodTitle" xml:space="preserve"><value>Required mapper method is missing</value></data>
+  <data name="MissingMethodMessage" xml:space="preserve"><value>Mapper '{0}' for '{1}' requires '{2}' according to RequiredMethod; expected {3}</value></data>
+  <data name="MissingMethodDescription" xml:space="preserve"><value>The RequiredMethod values on MapperFor define methods that must be available even when no call site currently uses them.</value></data>
+  <data name="InvalidSignatureTitle" xml:space="preserve"><value>Mapper method has an incompatible signature</value></data>
+  <data name="InvalidSignatureMessage" xml:space="preserve"><value>Method '{0}' cannot be registered for '{1}'; expected a public static non-generic method compatible with {2}</value></data>
+  <data name="InvalidSignatureDescription" xml:space="preserve"><value>MappingManager finds public methods by reflection and binds them to delegates. Parameters and return types must support that binding; numeric, boxing and user-defined conversions do not substitute for delegate compatibility.</value></data>
+  <data name="DuplicateMapperTitle" xml:space="preserve"><value>Multiple mappers register the same type</value></data>
+  <data name="DuplicateMapperMessage" xml:space="preserve"><value>Type '{0}' is registered by multiple mappers: {1}; MappingManager requires a single registration per type</value></data>
+  <data name="DuplicateMapperDescription" xml:space="preserve"><value>MappingManager adds every MapperFor registration to a dictionary keyed by its target type, including mappers with different sets of methods.</value></data>
+  <data name="AmbiguousMethodTitle" xml:space="preserve"><value>Mapper method lookup is ambiguous</value></data>
+  <data name="AmbiguousMethodMessage" xml:space="preserve"><value>Reflection cannot select '{0}' unambiguously in mapper '{1}'; expected {2}</value></data>
+  <data name="AmbiguousMethodDescription" xml:space="preserve"><value>Remove ambiguous overloads. CreateDataTable is looked up by name alone; other mapper methods are looked up using their input type.</value></data>
+  <data name="RequiredByCallTitle" xml:space="preserve"><value>Operation requires a missing mapper function</value></data>
+  <data name="RequiredByCallMessage" xml:space="preserve"><value>'{0}' requires '{1}' in mapper '{2}' for '{3}'; expected {4}</value></data>
+  <data name="RequiredByCallDescription" xml:space="preserve"><value>A method can be optional in RequiredMethod but mandatory for a particular operation. DataTable operations require both CreateDataTable and CreateDataRow.</value></data>
+  <data name="InvalidRegistrationTitle" xml:space="preserve"><value>Mapper registration cannot be used at runtime</value></data>
+  <data name="InvalidRegistrationMessage" xml:space="preserve"><value>Mapper '{0}' has an invalid registration: {1}</value></data>
+  <data name="InvalidRegistrationDescription" xml:space="preserve"><value>MapperFor needs a closed, usable target type and a non-null array of defined RequiredMethod values. Mapper methods cannot be registered from an open generic class.</value></data>
+  <data name="InvalidTarget" xml:space="preserve"><value>MapperFor must specify a closed target type that can be used as a delegate type argument</value></data>
+  <data name="OpenMapper" xml:space="preserve"><value>the mapper or its containing type has unbound type parameters</value></data>
+  <data name="InvalidRequiredMethods" xml:space="preserve"><value>RequiredMethod must contain only defined values and must not be null</value></data>
+</root>

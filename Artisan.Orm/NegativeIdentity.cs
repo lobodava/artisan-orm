@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 
 namespace Artisan.Orm
@@ -12,7 +13,22 @@ namespace Artisan.Orm
 	{
 		private static long _identity = long.MinValue;
 
-		public static long Next => Interlocked.Increment(ref _identity) - 1;
+		/// <summary>Returns the next negative identity without reusing any value.</summary>
+		/// <exception cref="InvalidOperationException">The negative identity range has been exhausted.</exception>
+		public static long Next
+		{
+			get
+			{
+				while (true)
+				{
+					var identity = Volatile.Read(ref _identity);
+					if (identity >= 0)
+						throw new InvalidOperationException("The Int64 negative identity range has been exhausted.");
+					if (Interlocked.CompareExchange(ref _identity, identity + 1, identity) == identity)
+						return identity;
+				}
+			}
+		}
 	}
 
 	/// <summary>
@@ -24,7 +40,22 @@ namespace Artisan.Orm
 	{
 		private static int _identity = int.MinValue;
 
-		public static int Next => Interlocked.Increment(ref _identity) - 1;
+		/// <summary>Returns the next negative identity without reusing any value.</summary>
+		/// <exception cref="InvalidOperationException">The negative identity range has been exhausted.</exception>
+		public static int Next
+		{
+			get
+			{
+				while (true)
+				{
+					var identity = Volatile.Read(ref _identity);
+					if (identity >= 0)
+						throw new InvalidOperationException("The Int32 negative identity range has been exhausted.");
+					if (Interlocked.CompareExchange(ref _identity, identity + 1, identity) == identity)
+						return identity;
+				}
+			}
+		}
 	}
 
 	/// <summary>
@@ -32,13 +63,29 @@ namespace Artisan.Orm
 	/// used to mark new entities in object graphs before the real identity is assigned by the database.
 	/// Values are produced monotonically starting from <see cref="short.MinValue"/>.
 	/// Note: <see cref="Interlocked"/> has no 16-bit overload, so the counter is kept in an <see cref="int"/>
-	/// and the result is narrowed back to <see cref="short"/>.
+	/// and the result is narrowed back to <see cref="short"/>. The generator throws after all
+	/// 32,768 negative values have been allocated; it never wraps or resets.
 	/// </summary>
 	public static class Int16NegativeIdentity
 	{
 		private static int _identity = short.MinValue;
 
-		public static short Next => (short)(Interlocked.Increment(ref _identity) - 1);
+		/// <summary>Returns the next negative identity without reusing any value.</summary>
+		/// <exception cref="InvalidOperationException">The negative identity range has been exhausted.</exception>
+		public static short Next
+		{
+			get
+			{
+				while (true)
+				{
+					var identity = Volatile.Read(ref _identity);
+					if (identity >= 0)
+						throw new InvalidOperationException("The Int16 negative identity range has been exhausted.");
+					if (Interlocked.CompareExchange(ref _identity, identity + 1, identity) == identity)
+						return (short)identity;
+				}
+			}
+		}
 	}
 
 }

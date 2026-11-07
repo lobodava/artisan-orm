@@ -85,7 +85,7 @@ namespace Artisan.Orm
 					sb.Append('}');
 				}
 
-				return sb.ToString();
+				return sb.Length == 0 ? $"DataReply status: {Status}." : sb.ToString();
 			}
 		}
 

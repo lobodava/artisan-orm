@@ -129,29 +129,12 @@ namespace Artisan.Orm
 		/// if <c>null</c>) via <paramref name="createFunc"/>. Optionally advances to the next result set.</summary>
 		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, IList<T>? list, bool getNextResult = true)
 		{
-			list ??= new List<T>();
-
-			var isNullableValueType = typeof(T).IsNullableValueType();
-
-			while (dr.Read())
-			{
-				if (isNullableValueType && dr.IsDBNull(0))
-					list.Add(default!);  // default! — T is Nullable<X> here, null is valid
-				else
-					list.Add(createFunc(dr));
-			}
-
-			if (getNextResult) dr.NextResult();
-
-			return list;
+			return dr.ReadToListOfObjects(createFunc, list, getNextResult);
 		}
 
 		/// <inheritdoc cref="ReadToList{T}(SqlDataReader, Func{SqlDataReader, T}, IList{T}, bool)"/>
 		public static IList<T> ReadToList<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true)
 		{
-			if (typeof(T).IsSimpleType())
-				return dr.ReadToListOfValues<T>(null, getNextResult);
-
 			return dr.ReadToListOfObjects<T>(createFunc, null, getNextResult);
 		}
 
@@ -303,9 +286,6 @@ namespace Artisan.Orm
 		/// the iterator.</summary>
 		public static IEnumerable<T> ReadToEnumerable<T>(this SqlDataReader dr, Func<SqlDataReader, T> createFunc, bool getNextResult = true)
 		{
-			if (typeof(T).IsSimpleType())
-				return dr.ReadToEnumerableOfValues<T>(getNextResult);
-
 			return dr.ReadToEnumerableOfObjects<T>(createFunc, getNextResult);
 		}
 	
@@ -434,8 +414,8 @@ namespace Artisan.Orm
 			{
 				if (!dr.IsDBNull(0))
 				{
-					var key = (TKey)Convert.ChangeType(dr.GetValue(0), keyType)!;  // IsDBNull(0) is false, so value is non-null
-					var value = (TValue)(dr.IsDBNull(1) ? (object?)null : Convert.ChangeType(dr.GetValue(1), underlyingTypeOfValue))!;
+					var key = (TKey)ConvertValue(dr.GetValue(0), keyType);
+					var value = (TValue)(dr.IsDBNull(1) ? (object?)null : ConvertValue(dr.GetValue(1), underlyingTypeOfValue))!;
 					dictionary.Add(key, value);
 				}
 			}
@@ -453,7 +433,7 @@ namespace Artisan.Orm
 			{
 				if (!dr.IsDBNull(0))
 				{
-					var key = (TKey)Convert.ChangeType(dr.GetValue(0), keyType)!;  // IsDBNull(0) is false, so value is non-null
+					var key = (TKey)ConvertValue(dr.GetValue(0), keyType);
 					var objectValue = createFunc(dr);
 					dictionary.Add(key, objectValue);
 				}
@@ -474,7 +454,7 @@ namespace Artisan.Orm
 			{
 				if (!dr.IsDBNull(0))
 				{
-					var key = (TKey)Convert.ChangeType(dr.GetValue(0), keyType)!;  // IsDBNull(0) is false, so value is non-null
+					var key = (TKey)ConvertValue(dr.GetValue(0), keyType);
 					var value = createFunc(dr);
 					dictionary.Add(key, value);
 				}
@@ -562,23 +542,8 @@ namespace Artisan.Orm
 			Func<SqlDataReader, T> createFunc,
 			[EnumeratorCancellation] CancellationToken ct = default)
 		{
-			var isNullableValueType = typeof(T).IsNullableValueType();
-
-			if (isNullableValueType)
-			{
-				while (await dr.ReadAsync(ct).ConfigureAwait(false))
-				{
-					if (dr.IsDBNull(0))
-						yield return default!;  // default! — T is Nullable<X> here, null is valid
-					else
-						yield return createFunc(dr);
-				}
-			}
-			else
-			{
-				while (await dr.ReadAsync(ct).ConfigureAwait(false))
-					yield return createFunc(dr);
-			}
+			while (await dr.ReadAsync(ct).ConfigureAwait(false))
+				yield return createFunc(dr);
 		}
 
 		private static async IAsyncEnumerable<T> ReadAsAsyncEnumerableObjects<T>(

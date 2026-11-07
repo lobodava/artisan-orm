@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Data.SqlClient;
 
@@ -18,11 +20,23 @@ namespace Artisan.Orm
 
 		private static readonly Dictionary<Type, Tuple<Func<DataTable>?, Delegate?>> CreateDataFuncsDictionary = new Dictionary<Type, Tuple<Func<DataTable>?, Delegate?>>();
 
-		private static readonly ConcurrentDictionary<string, Delegate> AutoCreateObjectFuncDictionary = new ConcurrentDictionary<string, Delegate>();
+		private static readonly ConcurrentDictionary<(Type Type, string Key), Delegate> AutoCreateObjectFuncDictionary = new ConcurrentDictionary<(Type, string), Delegate>();
 
-		private static readonly ConcurrentDictionary<string, Tuple<Func<DataTable>?, Delegate?>> AutoCreateDataFuncsDictionary = new ConcurrentDictionary<string, Tuple<Func<DataTable>?, Delegate?>>();
+		private static readonly ConcurrentDictionary<(Type Type, string Key), Tuple<Func<DataTable>?, Delegate?>> AutoCreateDataFuncsDictionary = new ConcurrentDictionary<(Type, string), Tuple<Func<DataTable>?, Delegate?>>();
 
 		private static readonly ConcurrentDictionary<string, SqlParameter[]> SqlParametersDictionary = new ConcurrentDictionary<string, SqlParameter[]>();
+
+		private sealed class ProcedureParameterCache : ConcurrentDictionary<(string Server, string Database, CommandType CommandType, string CommandText, string Settings, string Authentication), SqlParameter[]> { }
+
+		private static readonly ProcedureParameterCache ProcedureParametersDictionary = new ProcedureParameterCache();
+		private static readonly ConditionalWeakTable<SqlConnection, ProcedureParameterCache> ConnectionParametersDictionaries =
+			new ConditionalWeakTable<SqlConnection, ProcedureParameterCache>();
+
+		// Restrict shared metadata to explicit schema names. Other valid SQL identifier forms
+		// still work, but are derived afresh instead of assuming the caller's default schema.
+		private static readonly Regex SchemaQualifiedProcedure = new Regex(
+			@"^\s*(?:\[[^\]]+\]|[A-Za-z_][A-Za-z0-9_]*)\s*\.\s*(?:\[[^\]]+\]|[A-Za-z_][A-Za-z0-9_]*)\s*$",
+			RegexOptions.CultureInvariant);
 
 
 		/// <summary>
@@ -87,7 +101,7 @@ namespace Artisan.Orm
 
 					if (methodInfo == null)
 					{
-						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.BothForDataTable }).Any())
+						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.AllMain, RequiredMethod.BothForDataTable }).Any())
 							throw new ArtisanMappingException($"Mapper {type.Name} does not contain required method CreateDataTable");
 					}
 					else
@@ -102,7 +116,7 @@ namespace Artisan.Orm
 					methodInfo = type.GetMethod("CreateDataRow", new Type[] { attribute.MapperForType });
 
 					if (methodInfo == null) {
-						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.BothForDataTable }).Any())
+						if (attribute.RequiredMethods.Intersect(new []{RequiredMethod.All, RequiredMethod.AllMain, RequiredMethod.BothForDataTable }).Any())
 							throw new ArtisanMappingException($"Mapper {type.Name} does not contain required method CreateDataRow");
 					}
 					else {
@@ -163,7 +177,8 @@ namespace Artisan.Orm
 		{
 			EnsureInitialized();
 
-			if (CreateDataFuncsDictionary.TryGetValue(typeof(T), out Tuple<Func<DataTable>?, Delegate?>? tuple))
+			if (CreateDataFuncsDictionary.TryGetValue(typeof(T), out Tuple<Func<DataTable>?, Delegate?>? tuple) &&
+				tuple.Item1 != null && tuple.Item2 != null)
 			{
 				createDataTableFunc = tuple.Item1;
 				createDataRowFunc = (Func<T, object[]>?)tuple.Item2;
@@ -182,7 +197,8 @@ namespace Artisan.Orm
 		{
 			EnsureInitialized();
 
-			if (CreateDataFuncsDictionary.TryGetValue(type, out Tuple<Func<DataTable>?, Delegate?>? funcs))
+			if (CreateDataFuncsDictionary.TryGetValue(type, out Tuple<Func<DataTable>?, Delegate?>? funcs) &&
+				funcs.Item1 != null && funcs.Item2 != null)
 			{
 				createDataTableFunc = funcs.Item1;
 				createDataRowFunc = funcs.Item2;
@@ -198,12 +214,12 @@ namespace Artisan.Orm
 
 		public static bool AddAutoCreateObjectFunc<T>(string key, Func<SqlDataReader, T> autoCreateObjectFunc)
 		{
-			return AutoCreateObjectFuncDictionary.TryAdd(key, autoCreateObjectFunc);
+			return AutoCreateObjectFuncDictionary.TryAdd((typeof(T), key), autoCreateObjectFunc);
 		}
 
 		public static Func<SqlDataReader, T>? GetAutoCreateObjectFunc<T>(string key)
 		{
-			if (AutoCreateObjectFuncDictionary.TryGetValue(key, out Delegate? del))
+			if (AutoCreateObjectFuncDictionary.TryGetValue((typeof(T), key), out Delegate? del))
 			{
 				return (Func<SqlDataReader, T>?)del;
 			}
@@ -214,12 +230,13 @@ namespace Artisan.Orm
 		{
 			var funcs = new Tuple<Func<DataTable>?, Delegate?>(createDataTableFunc, createDataRowFunc);
 
-			return AutoCreateDataFuncsDictionary.TryAdd(key, funcs);
+			return AutoCreateDataFuncsDictionary.TryAdd((typeof(T), key), funcs);
 		}
 
 		public static bool GetAutoCreateDataFuncs<T>(string key, out Func<DataTable>? createDataTableFunc, out Func<T, object[]>? createDataRowFunc)
 		{
-			if (AutoCreateDataFuncsDictionary.TryGetValue(key, out Tuple<Func<DataTable>?, Delegate?>? funcs))
+			if (AutoCreateDataFuncsDictionary.TryGetValue((typeof(T), key), out Tuple<Func<DataTable>?, Delegate?>? funcs) &&
+				funcs.Item1 != null && funcs.Item2 != null)
 			{
 				createDataTableFunc = funcs.Item1;
 				createDataRowFunc = (Func<T, object[]>?)funcs.Item2;
@@ -271,12 +288,67 @@ namespace Artisan.Orm
 
 		public static bool AddSqlParameters(string key, SqlParameter[] sqlParameters)
 		{
-			return SqlParametersDictionary.TryAdd(key, sqlParameters);
+			return SqlParametersDictionary.TryAdd(key, CloneSqlParameters(sqlParameters));
 		}
 
 		public static SqlParameter[]? GetSqlParameters(string key)
 		{
-			return SqlParametersDictionary.TryGetValue(key, out var collection) ? collection : null;
+			return SqlParametersDictionary.TryGetValue(key, out var collection) ? CloneSqlParameters(collection) : null;
+		}
+
+		internal static bool CacheProcedureParameters(SqlCommand command, SqlParameter[] parameters)
+		{
+			var key = GetProcedureParametersKey(command);
+			if (key == null) return false;
+			var templates = CloneSqlParameters(parameters);
+			foreach (var parameter in templates) parameter.Value = null;
+			return GetProcedureParametersCache(command, key.Value.Authentication).TryAdd(key.Value, templates);
+		}
+
+		internal static SqlParameter[]? GetProcedureParameters(SqlCommand command)
+		{
+			var key = GetProcedureParametersKey(command);
+			return key != null && GetProcedureParametersCache(command, key.Value.Authentication).TryGetValue(key.Value, out var parameters)
+				? CloneSqlParameters(parameters) : null;
+		}
+
+		private static SqlParameter[] CloneSqlParameters(SqlParameter[] parameters)
+		{
+			return parameters.Select(parameter => (SqlParameter)((ICloneable)parameter).Clone()).ToArray();
+		}
+
+		private static ProcedureParameterCache GetProcedureParametersCache(SqlCommand command, string authentication)
+		{
+			return authentication.Length > 0 ? ProcedureParametersDictionary :
+				ConnectionParametersDictionaries.GetValue(command.Connection!, _ => new ProcedureParameterCache());
+		}
+
+		private static (string Server, string Database, CommandType CommandType, string CommandText, string Settings, string Authentication)? GetProcedureParametersKey(SqlCommand command)
+		{
+			var connection = command.Connection;
+			if (connection == null || string.IsNullOrEmpty(connection.Database) || command.CommandType != CommandType.StoredProcedure ||
+				command.CommandText.IndexOf('#') >= 0 || !SchemaQualifiedProcedure.IsMatch(command.CommandText)) return null;
+
+			var settings = new SqlConnectionStringBuilder(connection.ConnectionString);
+			settings.Remove("Password");
+			var userId = connection.Credential?.UserId ?? settings.UserID;
+			string authentication;
+			if (!settings.IntegratedSecurity && !string.IsNullOrEmpty(userId) &&
+				(settings.Authentication == SqlAuthenticationMethod.NotSpecified || settings.Authentication == SqlAuthenticationMethod.SqlPassword) &&
+				string.IsNullOrEmpty(connection.AccessToken) && connection.AccessTokenCallback == null)
+			{
+				// A password change does not change the SQL principal. Never retain passwords/tokens.
+				authentication = userId;
+			}
+			else
+			{
+				// Keep opaque identities in a weak, connection-local cache. This retains repeated
+				// command reuse without keeping the connection or its credentials alive globally.
+				authentication = string.Empty;
+			}
+
+			return (connection.DataSource, connection.Database, command.CommandType,
+				command.CommandText, settings.ConnectionString, authentication);
 		}
 
 		#region [ Get Dependent Assemblies ]

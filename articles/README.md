@@ -4,6 +4,8 @@ This folder contains a series of articles about the design patterns behind Artis
 
 The articles are licensed under **[CC-BY-SA-4.0](LICENSE)** — share, remix, and build upon them with attribution. The Artisan.Orm source code in the rest of the repository remains under the [MIT License](../Artisan.Orm/LICENSE.txt).
 
+The original publication dates and design narrative are preserved. Compatibility notes and clearly identified current examples describe the source being prepared for **4.1.0**; this does not mean that release has already been published. Historical class declarations, SQL fragments, and web-framework examples are not standalone copies of the current implementation. For installation and current APIs, start with the [project README](../README.md), [Getting Started](https://github.com/lobodava/artisan-orm/wiki/Getting-Started), and [4.1.0 changes](../CHANGELOG.md).
+
 ## The series
 
 | # | Article | Original date |
@@ -22,8 +24,10 @@ The articles can be read independently, but they were written as a progression:
 3. **Article 3** adds the *DataReply* protocol for delivering structured business-logic outcomes from stored procedures back to the client.
 4. **Article 4** extends the model with `hierarchyid` for cases where the data is itself hierarchical.
 
-If you are new to the project and want a single recommended starting point, [Article 1](01-object-graph-saving.md) is the entry point.
+For the design story, [Article 1](01-object-graph-saving.md) is the entry point. Use the current setup and API documentation linked above when implementing an application.
 
 ## Relationship to the wiki
 
 The [wiki](https://github.com/lobodava/artisan-orm/wiki) is the **reference documentation** for the library — short pages with the API of each method, organised for quick lookup. These articles are the **long-form narrative** behind the design — the *why* and the *how it evolved*. Where it makes sense, individual wiki pages link back to the corresponding article for the deeper story.
+
+Article 3 includes current DataReply protocol, JSON serialization, and HTTP integration examples alongside its historical discussion. DataReply is optional, and manually authored mappers can deliberately use a SQL table shape different from the C# model; the articles do not impose a universal one-property-per-column contract.

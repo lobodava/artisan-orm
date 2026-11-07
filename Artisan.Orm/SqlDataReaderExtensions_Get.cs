@@ -17,18 +17,26 @@ namespace Artisan.Orm
 
 		/// <summary>Reads the value at <paramref name="ordinal"/> and converts it to <typeparamref name="T"/>
 		/// via <see cref="Convert.ChangeType(object, Type)"/>. The non-null underlying type of <typeparamref name="T"/>
-		/// is used, so this works for both value types and their <see cref="Nullable{T}"/> counterparts.</summary>
+		/// is used, so this works for both value types and their <see cref="Nullable{T}"/> counterparts.
+		/// Enums are converted through their underlying numeric type; unnamed numeric values are preserved.</summary>
 		/// <exception cref="InvalidCastException">If the column value cannot be converted to <typeparamref name="T"/>.</exception>
 		public static T GetValue<T>(this SqlDataReader reader, int ordinal)
 		{
 			var underlyingType = typeof(T).GetUnderlyingType();
 
-			return (T)Convert.ChangeType(reader.GetValue(ordinal), underlyingType);
+			return (T)ConvertValue(reader.GetValue(ordinal), underlyingType);
 		}
 
 		internal static T GetValue<T>(SqlDataReader reader, Type underlyingType)
 		{
-			return (T)Convert.ChangeType(reader.GetValue(0), underlyingType);
+			return (T)ConvertValue(reader.GetValue(0), underlyingType);
+		}
+
+		private static object ConvertValue(object value, Type underlyingType)
+		{
+			if (underlyingType.IsEnum)
+				return Enum.ToObject(underlyingType, Convert.ChangeType(value, Enum.GetUnderlyingType(underlyingType), CultureInfo.InvariantCulture));
+			return Convert.ChangeType(value, underlyingType);
 		}
 
 		/// <summary>Same as <see cref="GetValue{T}(SqlDataReader, int)"/> but returns <c>default</c>
@@ -41,7 +49,7 @@ namespace Artisan.Orm
 
 			var underlyingType = typeof(T).GetUnderlyingType();
 		
-			return (T)Convert.ChangeType(reader.GetValue(ordinal), underlyingType);
+			return (T)ConvertValue(reader.GetValue(ordinal), underlyingType);
 		}
 
 	

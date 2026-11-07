@@ -5,6 +5,94 @@ All notable changes to **Artisan.ORM** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [4.1.0] - Pending release
+
+### Added
+
+- Roslyn analyzer bundled in `Artisan.ORM`: errors ART001-ART007 validate mapper registrations,
+  required functions, signatures, duplicate registrations, ambiguous reflection lookups, and
+  mapper-dependent calls. English messages use localizable resources. Requires Roslyn 4.8+.
+- Analyzer tests on .NET 8 and .NET 10 and a package-consumer verification script requiring no database.
+
+### Fixed
+
+- Negative-ID generators stop at exhaustion with `InvalidOperationException` instead of returning
+  zero, positive values, or repeated IDs. This applies to Int16, Int32, and Int64 generators.
+- Decimal parameters accept fractional `decimal(p,p)` values and validate precision/scale.
+  `truncateFraction: true` truncates toward zero before binding; false rejects nonzero excess scale.
+- Dictionary parameter binding accepts names with or without a leading `@`.
+- Automatic table mapping skips indexers and non-public getters; numeric enum mapping is consistent
+  for nullable and non-nullable values. Missing mapper write functions produce descriptive errors.
+- Async command materializers forward cancellation through opening, row reads, and result advancement.
+- Transaction failure cleanup preserves the original exception, including after explicit completion.
+- Deferred repository reads retain their command until enumeration ends or is disposed.
+- MergeJoin disposes acquired detail enumerators on success, callback failure, and partial setup failure.
+- DataReply parsing rejects undefined values and combined names; status-only exceptions include the status.
+- Sample DataServiceBase propagates cancellation and safely handles absent or short stack traces.
+- Sample SaveUsers validates login, name, and email independently, including new-only duplicate batches.
+- Package verification uses an isolated restore directory and checks the exact supplied package hash.
+
+- Folder hierarchy recalculation uses the old parent's hierarchy path and numbers each
+  parent's children independently, preserving valid paths when a folder is reparented.
+- `dbo.GetHidCode` preserves the complete hexadecimal representation of a `hierarchyid`
+  with capacity for 1784 characters. Integration regressions cover reparenting with
+  descendants and long hierarchy codes, plus null/root/short-code compatibility.
+- Synchronous scalar enumeration now includes the first row, including one-row and nullable results.
+- Explicit read factories are honored for scalar and nullable results across list, array, enumerable,
+  and multi-result paths; SQL NULL in column zero no longer bypasses a supplied projection.
+- Repositories attached to an external transaction now use its connection and leave both resources
+  owned by the caller. Completed transactions and attempts to start a nested transaction are rejected.
+- Automatic mapping caches distinguish runtime types, table names, ordered columns, and reader schemas.
+- Procedure parameter metadata caches distinguish connection/database identities and preserve complete
+  parameter metadata without sharing mutable parameter instances or values between commands.
+- String parameter helpers now apply `trimToNull` and `truncate` to the parameter value.
+  Trimming precedes truncation or length validation and converts blank text to SQL NULL.
+- `CheckForDataReplyException` now accepts an explicit `Ok` status and advances to the data
+  result set without throwing or interpreting the payload as error messages.
+- Analyzer diagnostics now run during document analysis as well as builds, so mapper errors
+  remain visible in Visual Studio's combined Build + IntelliSense list and in the editor.
+- Patched transitive `System.Security.Cryptography.Pkcs` vulnerabilities with minimum versions
+  8.0.2 (`netstandard2.1`/`net8.0`) and 9.0.21 (`net10.0`). These requirements flow to package consumers.
+- Removed the explicit SourceLink package that pulled in vulnerable `Microsoft.Build.Tasks.Git`;
+  builds use SourceLink from .NET SDK 10.0.403 or a newer patch in the same feature band.
+- `RequiredMethod.AllMain` now requires `CreateObject`, `CreateDataTable`, and `CreateDataRow`
+  as documented in the Wiki. Runtime validation previously only required `CreateObject`.
+
+### Changed
+
+- Updated the four design articles for the source being prepared for 4.1.0 while preserving
+  their publication history. Historical examples are distinguished from current APIs,
+  and the original clustered-index claim is retained with an ordering/deadlock correction.
+- Updated Microsoft.Data.SqlClient to 7.1.1, test Configuration packages to 10.0.14,
+  Microsoft.NET.Test.Sdk to 18.11.0, and MSTest adapter/framework to 4.5.2.
+- Removed redundant direct test references to SqlClient, Configuration, and System.Text.Json.
+- Enabled NuGet auditing of direct and transitive dependencies; known vulnerability warnings fail the build.
+
+### Compatibility
+
+- `truncateFraction: true` now means truncation toward zero, not implicit SQL rounding. Without
+  that flag, nonzero excess fractional digits still fail. SQL precision must be 1..38, scale 0..precision.
+- Negative IDs remain unique only within a generator's finite lifetime; use Int32/Int64 for larger
+  workloads. An exhausted generator stays exhausted instead of silently resetting.
+- Enum properties now participate in automatic mapping through their underlying numeric type.
+  Explicit manual mappers still define their own SQL shape and conversions.
+- `DataReply.ParseStatus` retains case-insensitive names and defined numeric values for compatibility;
+  undefined numbers and comma-separated combinations now throw `InvalidCastException`.
+
+- Explicit read factories now handle every row, including SQL NULL values; callers control null substitution.
+- An external transaction passed to a repository stays caller-owned, along with its connection.
+  Complete and detach an attached transaction before starting a new one through the repository helpers.
+- `AddParams` no longer consumes the unscoped public `MappingManager.AddSqlParameters` cache.
+  Procedure metadata is isolated by database and connection identity. Integrated/token authentication
+  reuses metadata within one connection instance; a new instance performs discovery again. Use explicit
+  `Add*Param` calls when avoiding metadata discovery is important. Unqualified procedure names or an
+  unknown default database are not cached.
+- Builds now fail for statically detected mapper contract violations. Projects that supply mapper
+  assemblies only at runtime can configure `artisan_orm.allow_external_mappers = true` to skip
+  missing-registration diagnostics. See [analyzer documentation](docs/analyzers.md).
+
 ## [4.0.0] — 2026
 
 First major version since 3.5.1. Multi-targets `netstandard2.1`, `net8.0`, `net10.0`. Existing 3.x code continues to work; the changes below are additive or strictly internal unless called out under **Breaking**.
@@ -14,7 +102,7 @@ First major version since 3.5.1. Multi-targets `netstandard2.1`, `net8.0`, `net1
 #### New APIs
 
 - **`BulkCopy` / `BulkCopyAs` / `BulkCopyAsync` / `BulkCopyAsAsync`** — high-throughput inserts through `SqlBulkCopy`, fed by the same `MapperFor` mappers used elsewhere in the library. Sync and async variants on `RepositoryBase` and as `SqlConnection` extensions.
-- **`ReadToLists<T1..T6>` / `ReadToListsAsync<T1..T6>`** — read multiple result sets into N strongly-typed lists in a single call. Available on `RepositoryBase`, `SqlCommand` and `SqlDataReader`. Removes the need for explicit `reader.NextResult()` boilerplate when stored procedures return several sets.
+- **`ReadToLists<T1..T4>` / `ReadToListsAsync<T1..T4>`** — read multiple result sets into N strongly-typed lists in a single call. Available on `RepositoryBase`, `SqlCommand` and `SqlDataReader`. Removes the need for explicit `reader.NextResult()` boilerplate when stored procedures return several sets.
 - **`ReadToAsyncEnumerable<T>` / `ReadAsAsyncEnumerable<T>`** — `IAsyncEnumerable<T>` streaming for very large result sets. Rows yield as they arrive; the reader and connection are disposed when enumeration ends or is cancelled.
 - **`RunInTransaction` / `RunInTransactionAsync`** — `Action<SqlTransaction>` / `Func<SqlTransaction, …, Task>` wrappers with autocommit-on-return and rollback-on-exception. Overloads with and without explicit `IsolationLevel`.
 

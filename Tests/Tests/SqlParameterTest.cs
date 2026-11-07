@@ -193,20 +193,20 @@ namespace Tests.Tests
 			char?		charNull		=	null;
 			char?		charNullable	=	'R';
 
-			char		nchar			=	'Ф';
+			char		nchar			=	'\u0101';
 			char?		ncharNull		=	null;
-			char?		ncharNullable	=	'Ж';
+			char?		ncharNullable	=	'\u0100';
 
 			string		varchar			=	new('W', 8000);
 			string		varcharNull		=	null;
 
-			string		nvarchar			=	new('Ж', 4000);
+			string		nvarchar			=	new('\u0100', 4000);
 			string		nvarcharNull		=	null;
 
 			string		varcharmax			=	new('W', 10000);
 			string		varcharmaxNull		=	null;
 
-			string		nvarcharmax			=	new('Ж', 10000);
+			string		nvarcharmax			=	new('\u0100', 10000);
 			string		nvarcharmaxNull		=	null;
 
 			

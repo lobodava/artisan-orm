@@ -91,24 +91,18 @@ namespace Tests.Tests
 			using var cts = new CancellationTokenSource();
 			var seen = 0;
 
-			try
+			await Assert.ThrowsAsync<OperationCanceledException>(async () =>
 			{
-				await foreach (var record in _repository
-					.ReadToAsyncEnumerable<Record>("dbo.GetRecords", cts.Token)
+				await foreach (var value in _repository
+					.ReadToAsyncEnumerable<int>("SELECT Value FROM (VALUES (1), (2), (3)) AS Sample(Value) ORDER BY Value", cts.Token)
 					.WithCancellation(cts.Token))
 				{
 					seen++;
-					if (seen == 1) cts.Cancel();
+					cts.Cancel();
 				}
+			});
 
-				// If the table has only one row, we may finish before cancel triggers.
-				Assert.IsTrue(seen >= 1);
-			}
-			catch (OperationCanceledException)
-			{
-				// Expected when more than one row is present.
-				Assert.IsTrue(seen >= 1);
-			}
+			Assert.AreEqual(1, seen);
 		}
 
 		[TestMethod]

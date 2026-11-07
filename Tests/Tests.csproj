@@ -10,22 +10,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-	<PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.6" />
-	<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.6" />
-	<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
-	<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-	<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
-	<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+	<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.14" />
+	<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.14" />
+	<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+	<PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
+	<PackageReference Include="MSTest.TestFramework" Version="4.5.2" />
 	<PackageReference Include="coverlet.collector" Version="6.0.4">
 	  <PrivateAssets>all</PrivateAssets>
 	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	</PackageReference>
-	<PackageReference Include="System.Text.Json" Version="9.0.10" />
   </ItemGroup>
 
   <ItemGroup>
 	<ProjectReference Include="..\Artisan.Orm\Artisan.Orm.csproj" />
+    <ProjectReference Include="..\Artisan.Orm.Analyzers\Artisan.Orm.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

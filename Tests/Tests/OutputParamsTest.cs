@@ -62,7 +62,7 @@ namespace Tests.Tests
 		{
 			_repository.RunCommand(cmd =>
 			{
-				cmd.UseSql("set @VarChar = 'hello'; set @NVarChar = N'привет';");
+				cmd.UseSql("set @VarChar = 'hello'; set @NVarChar = N'caf\u00E9';");
 
 				cmd.AddVarcharOutputParam ("@VarChar",  size: 50);
 				cmd.AddNVarcharOutputParam("@NVarChar", size: 50);
@@ -71,7 +71,7 @@ namespace Tests.Tests
 				cmd.ExecuteNonQuery();
 
 				Assert.AreEqual("hello",   (string)cmd.Parameters["@VarChar"].Value!);
-				Assert.AreEqual("привет", (string)cmd.Parameters["@NVarChar"].Value!);
+				Assert.AreEqual("caf\u00E9", (string)cmd.Parameters["@NVarChar"].Value!);
 			});
 		}
 	}

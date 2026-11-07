@@ -120,9 +120,7 @@ namespace Artisan.Orm
 			this SqlCommand cmd,
 			CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			var list1 = await ReadResultSetAsync<T1>(dr, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list2 = await ReadResultSetAsync<T2>(dr, advance: false, ct: cancellationToken).ConfigureAwait(false);
 
@@ -139,9 +137,7 @@ namespace Artisan.Orm
 			Func<SqlDataReader, T2> createFunc2,
 			CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			var list1 = await ReadResultSetAsync<T1>(dr, createFunc1, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list2 = await ReadResultSetAsync<T2>(dr, createFunc2, advance: false, ct: cancellationToken).ConfigureAwait(false);
 
@@ -197,9 +193,7 @@ namespace Artisan.Orm
 			this SqlCommand cmd,
 			CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			var list1 = await ReadResultSetAsync<T1>(dr, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list2 = await ReadResultSetAsync<T2>(dr, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list3 = await ReadResultSetAsync<T3>(dr, advance: false, ct: cancellationToken).ConfigureAwait(false);
@@ -218,9 +212,7 @@ namespace Artisan.Orm
 			Func<SqlDataReader, T3> createFunc3,
 			CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			var list1 = await ReadResultSetAsync<T1>(dr, createFunc1, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list2 = await ReadResultSetAsync<T2>(dr, createFunc2, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list3 = await ReadResultSetAsync<T3>(dr, createFunc3, advance: false, ct: cancellationToken).ConfigureAwait(false);
@@ -280,9 +272,7 @@ namespace Artisan.Orm
 			this SqlCommand cmd,
 			CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			var list1 = await ReadResultSetAsync<T1>(dr, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list2 = await ReadResultSetAsync<T2>(dr, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list3 = await ReadResultSetAsync<T3>(dr, advance: true,  ct: cancellationToken).ConfigureAwait(false);
@@ -303,9 +293,7 @@ namespace Artisan.Orm
 			Func<SqlDataReader, T4> createFunc4,
 			CancellationToken cancellationToken = default)
 		{
-			var readerFlags = await GetReaderFlagsAndOpenConnectionAsync(cmd).ConfigureAwait(false);
-
-			using var dr = await cmd.ExecuteReaderAsync(readerFlags, cancellationToken).ConfigureAwait(false);
+			using var dr = await ExecuteReaderAndOpenConnectionAsync(cmd, CommandBehavior.Default, cancellationToken).ConfigureAwait(false);
 			var list1 = await ReadResultSetAsync<T1>(dr, createFunc1, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list2 = await ReadResultSetAsync<T2>(dr, createFunc2, advance: true,  ct: cancellationToken).ConfigureAwait(false);
 			var list3 = await ReadResultSetAsync<T3>(dr, createFunc3, advance: true,  ct: cancellationToken).ConfigureAwait(false);

@@ -51,12 +51,18 @@ namespace Artisan.Orm
 			Messages = new [] { new DataReplyMessage { Text = message } };
 		}
 
+		/// <summary>
+		/// Parses one defined status name (case-insensitive) or its numeric value.
+		/// Blank input returns null. Unknown values and comma-separated combinations are rejected.
+		/// </summary>
 		public static DataReplyStatus? ParseStatus (string? statusCode)
 		{
 			if (IsNullOrWhiteSpace(statusCode))
 				return null;
 
-			if (Enum.TryParse(statusCode, true, out DataReplyStatus status))
+			if (statusCode!.IndexOf(',') < 0 &&
+				Enum.TryParse(statusCode, true, out DataReplyStatus status) &&
+				Enum.IsDefined(typeof(DataReplyStatus), status))
 				return status;
 
 			throw new InvalidCastException(

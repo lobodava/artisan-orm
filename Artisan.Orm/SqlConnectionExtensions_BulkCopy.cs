@@ -90,7 +90,8 @@ namespace Artisan.Orm
 		/// the resulting mapping. Use this when <typeparamref name="T"/> doesn't have a registered <c>[MapperFor]</c>
 		/// — for example, anonymous-typed projections or import-only DTOs. Switch to
 		/// <see cref="BulkCopy{T}(SqlConnection, IEnumerable{T}, string, SqlTransaction, SqlBulkCopyOptions, int, int)"/>
-		/// when a hand-written mapper is available — slightly faster on first invocation, AOT-friendly.
+		/// when a hand-written mapper is available. Mapper discovery still uses reflection;
+		/// NativeAOT and trimming compatibility require separate validation and preservation rules.
 		/// </remarks>
 		public static int BulkCopyAs<T>(
 			this SqlConnection conn,

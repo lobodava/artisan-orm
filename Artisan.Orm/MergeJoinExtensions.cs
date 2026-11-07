@@ -10,20 +10,20 @@ namespace Artisan.Orm
 	/// </summary>
 	/// <remarks>
 	/// <para><b>What it does.</b> Walks the master and detail enumerables in lock-step a single time
-	/// (O(N+M) total work, zero extra allocations), and calls your <c>action</c> delegate for each
+	/// (O(N+M) total work, no lookup collection), and calls your <c>action</c> delegate for each
 	/// linked pair. Pair this with <see cref="SqlCommandExtensions.ReadToLists{T1, T2}(Microsoft.Data.SqlClient.SqlCommand)"/>
 	/// to assemble parent-child graphs from a single round-trip.</para>
 	///
 	/// <para><b>Critical precondition.</b> Both lists must be <b>sorted by the same join key, in the
-	/// same direction</b> — typically guaranteed by adding <c>order by ParentId</c> (or whatever
-	/// foreign key the link function tests) to the SQL that produced the detail list. If the input
-	/// is not sorted, the algorithm will silently miss matches: any detail whose master appears
-	/// later than the current cursor position is skipped forever.</para>
+	/// same direction</b>, with details grouped in the order their masters are visited. Every detail
+	/// must have a matching master in this traversal. An unmatched detail is not skipped: it holds
+	/// the cursor in place and can prevent all subsequent details from being joined. The predicate
+	/// only reports equality and cannot tell the algorithm which cursor should advance.</para>
 	///
 	/// <para><b>When to use this vs LINQ <c>GroupJoin</c>.</b> <c>GroupJoin</c> allocates a lookup
 	/// dictionary keyed by the master id, which is O(N) memory and a per-key hash. <c>MergeJoin</c>
-	/// allocates nothing and is friendlier to large detail sets. The cost is the sorted-input
-	/// precondition.</para>
+	/// uses constant auxiliary space; enumerators and caller callbacks may still allocate. The cost
+	/// is the ordering and matching-parent preconditions. Every acquired enumerator is disposed.</para>
 	/// </remarks>
 	public static class MergeJoinExtensions
 	{
@@ -91,7 +91,7 @@ namespace Artisan.Orm
 			where TMaster :class
 			where TDetail :class
 		{
-			var enumerator = detailList.GetEnumerator();
+			using var enumerator = detailList.GetEnumerator();
 			var detail = enumerator.MoveNext() ? enumerator.Current : null;
 
 			foreach (var master in masterList)
@@ -167,10 +167,10 @@ namespace Artisan.Orm
 			where TFirstDetail :class
 			where TSecondDetail : class
 		{
-			var firstDetailEnumerator = firstDetailList.GetEnumerator();
+			using var firstDetailEnumerator = firstDetailList.GetEnumerator();
 			var firstDetail = firstDetailEnumerator.MoveNext() ? firstDetailEnumerator.Current : null;
 
-			var secondDetailEnumerator = secondDetailList.GetEnumerator();
+			using var secondDetailEnumerator = secondDetailList.GetEnumerator();
 			var secondDetail = secondDetailEnumerator.MoveNext() ? secondDetailEnumerator.Current : null;
 
 			foreach (var master in masterList)
@@ -200,7 +200,10 @@ namespace Artisan.Orm
 		/// <para>The link predicates form a chain: <paramref name="isMasterDetailLink"/> tests
 		/// (master, detail) and <paramref name="isDetailSubDetailLink"/> tests (detail, subDetail) — note
 		/// that the third level is keyed on <em>detail</em>, not master.</para>
-		/// <para>All three lists must be sorted accordingly: detail by master-FK, sub-detail by detail-FK.</para>
+		/// <para>Detail groups must follow the actual master traversal. Sub-detail groups must follow
+		/// the actual detail traversal, which need not be sorted by detail ID. Sorting sub-details by
+		/// detail-FK alone is insufficient when the detail IDs are visited in another order. Every
+		/// detail and sub-detail must have its parent in the corresponding input.</para>
 		/// </remarks>
 		/// <example>
 		/// <code><![CDATA[
@@ -257,10 +260,10 @@ namespace Artisan.Orm
 			where TDetail :class
 			where TSubDetail : class
 		{
-			var detailEnumerator = detailList.GetEnumerator();
+			using var detailEnumerator = detailList.GetEnumerator();
 			var detail = detailEnumerator.MoveNext() ? detailEnumerator.Current : null;
 
-			var subDetailEnumerator = subDetailList.GetEnumerator();
+			using var subDetailEnumerator = subDetailList.GetEnumerator();
 			var subDetail = subDetailEnumerator.MoveNext() ? subDetailEnumerator.Current : null;
 
 			foreach (var master in masterList)

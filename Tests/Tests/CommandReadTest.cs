@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Globalization;
 using Artisan.Orm;
+using Microsoft.Data.SqlClient;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.DAL.Users.Models;
 
@@ -220,8 +222,8 @@ namespace Tests.Tests
 				Assert.AreEqual('W', cmd.ReadTo<char>());
 			});
 			_repository.RunCommand(cmd => {
-				cmd.UseSql("select N'Ж'");
-				Assert.AreEqual('Ж', cmd.ReadTo<char>());
+				cmd.UseSql("select N'\u0100'");
+				Assert.AreEqual('\u0100', cmd.ReadTo<char>());
 			});
 			_repository.RunCommand(cmd => {
 				cmd.UseSql("select null");
@@ -236,8 +238,8 @@ namespace Tests.Tests
 				Assert.AreEqual("WW", cmd.ReadTo<string>());
 			});
 			_repository.RunCommand(cmd => {
-				cmd.UseSql("select N'ЖЖ'");
-				Assert.AreEqual("ЖЖ", cmd.ReadTo<string>());
+				cmd.UseSql("select N'\u0100\u0100'");
+				Assert.AreEqual("\u0100\u0100", cmd.ReadTo<string>());
 			});
 
 
@@ -248,8 +250,8 @@ namespace Tests.Tests
 				Assert.AreEqual("WWW", cmd.ReadTo<string>());
 			});
 			_repository.RunCommand(cmd => {
-				cmd.UseSql("select cast(N'ЖЖЖ' as nvarchar(3))");
-				Assert.AreEqual("ЖЖЖ", cmd.ReadTo<string>());
+				cmd.UseSql("select cast(N'\u0100\u0100\u0100' as nvarchar(3))");
+				Assert.AreEqual("\u0100\u0100\u0100", cmd.ReadTo<string>());
 			});
 
 			_repository.RunCommand(cmd => {
@@ -264,8 +266,8 @@ namespace Tests.Tests
 				Assert.AreEqual(cmd.ReadTo<string>(), new string('W', 10000));
 			});
 			_repository.RunCommand(cmd => {
-				cmd.UseSql("select cast(replicate(N'Ж', 3000) as nvarchar(max)) + cast(replicate(N'Ж', 3000) as nvarchar(max)) + cast(replicate(N'Ж', 4000) as nvarchar(max))");
-				Assert.IsTrue(string.Equals(cmd.ReadTo<string>(), new string('Ж', 10000)));
+				cmd.UseSql("select cast(replicate(N'\u0100', 3000) as nvarchar(max)) + cast(replicate(N'\u0100', 3000) as nvarchar(max)) + cast(replicate(N'\u0100', 4000) as nvarchar(max))");
+				Assert.IsTrue(string.Equals(cmd.ReadTo<string>(), new string('\u0100', 10000)));
 			});
 
 
@@ -647,51 +649,67 @@ namespace Tests.Tests
 		[TestMethod]
 		public async Task RunCommandAsyncWithCancellationToken1()
 		{
-			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-			CancellationToken cancellationToken = cts.Token;
+			using var cts = new CancellationTokenSource();
+			await _repository.Connection.OpenAsync();
 
-			var appSettings = new AppSettings();
-			var repo  = new RepositoryBase(appSettings.ConnectionStrings.DatabaseConnection);
-
-			try
-			{
-				await repo.RunCommandAsync(async (cmd, token) => {
+			await AssertCommandCanceledAsync(() =>
+				_repository.RunCommandAsync(async (cmd, token) => {
+					Assert.AreEqual(cts.Token, token);
 					cmd.UseSql("WAITFOR DELAY '00:00:05'; select cast(1 as bit);");
-					var value = await cmd.ReadToAsync<bool>(token);
-				}, cancellationToken);
+					cts.CancelAfter(TimeSpan.FromSeconds(2));
+					await cmd.ReadToAsync<bool>(token);
+				}, cts.Token), cts.Token);
 
-				Assert.Fail();
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex.Message);
-			}			
+			Assert.IsTrue(cts.IsCancellationRequested);
 		}
 
 		[TestMethod]
 		public async Task GetByCommandAsyncWithCancellationToken()
 		{
-			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-			CancellationToken token = cts.Token;
+			using var cts = new CancellationTokenSource();
+			await _repository.Connection.OpenAsync();
 
-			var appSettings = new AppSettings();
-			var repo  = new RepositoryBase(appSettings.ConnectionStrings.DatabaseConnection);
+			await AssertCommandCanceledAsync(() =>
+				_repository.GetByCommandAsync((cmd, token) => {
+					Assert.AreEqual(cts.Token, token);
+					cmd.UseSql("WAITFOR DELAY '00:00:05'; select cast(1 as bit);");
+					cts.CancelAfter(TimeSpan.FromSeconds(2));
+					return cmd.ReadToAsync<bool>(token);
+				}, cts.Token), cts.Token);
 
+			Assert.IsTrue(cts.IsCancellationRequested);
+		}
+
+		private static async Task AssertCommandCanceledAsync(Func<Task> action, CancellationToken cancellationToken)
+		{
+			var originalCulture = CultureInfo.CurrentUICulture;
 			try
 			{
-				var value = await repo.GetByCommandAsync((cmd, tkn) => {
-					cmd.UseSql("WAITFOR DELAY '00:00:05'; select cast(1 as bit);");
-					return cmd.ReadToAsync<bool>(tkn);
-				}, token);
+				// SqlClient can report in-flight cancellation as a localized SqlException
+				// with no unique error number. Match its cancellation message in a fixed culture.
+				CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+				try
+				{
+					await action();
+				}
+				catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+				{
+					return;
+				}
+				catch (SqlException ex) when (cancellationToken.IsCancellationRequested &&
+					ex.Errors.Cast<SqlError>().All(error => error.Number == 0 && error.State == 0 && error.Class == 11) &&
+					ex.Errors.Cast<SqlError>().Any(error => error.Message == "Operation cancelled by user."))
+				{
+					return;
+				}
 
-				Assert.Fail();
+				Assert.Fail("The SQL command completed without cancellation.");
 			}
-			catch (Exception ex)
+			finally
 			{
-				Console.WriteLine(ex.Message);
-			}			
+				CultureInfo.CurrentUICulture = originalCulture;
+			}
 		}
-		
 
 		
 		[TestCleanup]

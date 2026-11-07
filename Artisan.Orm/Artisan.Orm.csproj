@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net8.0;net10.0</TargetFrameworks>
@@ -9,7 +9,7 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
 
     <Title>Artisan.ORM</Title>
-    <Version>4.0.0</Version>
+    <Version>4.1.0</Version>
     <Authors>Vadim Loboda</Authors>
     <Description>
     ADO.NET Micro-ORM to SQL Server. Multi-targets .NET Standard 2.1, .NET 8 and .NET 10.
@@ -25,32 +25,23 @@
     <RepositoryUrl>https://github.com/lobodava/artisan-orm</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>ado.net orm micro-orm sql server mssql bulkcopy iasyncenumerable</PackageTags>
-    <PackageReleaseNotes>Artisan.ORM 4.0.0 — first major version since 3.5.1.
+    <PackageReleaseNotes>Artisan.ORM 4.1.0
 
-Targeting:
-- Multi-target: netstandard2.1, net8.0, net10.0.
-- Microsoft.Data.SqlClient bumped to 7.0.1.
+- Bundled Roslyn mapper diagnostics ART001-ART007, including complete RequiredMethod.AllMain checks.
+- Fixed first-row reads, explicit projections, async cancellation, transaction ownership and cleanup.
+- Isolated mapper and procedure-parameter caches; preserved complete parameter metadata.
+- Corrected string and decimal normalization, dictionary parameter names, and enum auto-mapping.
+- Enforced finite negative-ID ranges and disposed MergeJoin enumerators.
+- Hardened optional DataReply status validation and exception messages.
+- Updated SqlClient and patched vulnerable transitive dependencies.
+- Updated sample SQL, articles, wiki, and the Claude Code skill. SQL changes require separate deployment.
 
-New APIs:
-- BulkCopy / BulkCopyAs (sync + async) — high-throughput inserts via SqlBulkCopy with MapperFor mappers.
-- ReadToLists / ReadToListsAsync — multiple result sets to N strongly-typed lists in one call (T1..T6).
-- ReadToAsyncEnumerable / ReadAsAsyncEnumerable — IAsyncEnumerable&lt;T&gt; streaming for very large result sets.
-- MergeJoin (rewritten) — in-memory join of master/detail/sub-detail result sets without ORM-level joins.
-- RunInTransaction / RunInTransactionAsync — autocommit-on-return transaction wrappers.
+Targets: netstandard2.1, net8.0, net10.0. Includes XML documentation, SourceLink, and symbols.
+ReadToLists supports two, three, or four result sets.
 
-Quality &amp; API surface:
-- Nullable Reference Types enabled across the entire library.
-- Async transaction API: IAsyncDisposable, ConfigureAwait(false), CancellationToken throughout.
-- Thread-safe NegativeIdentity generators (Int16/Int32/Int64).
-- ArtisanMappingException replaces internal NullReferenceException / ApplicationException.
-- AddParam extensions no longer use 'dynamic' (faster, AOT-friendlier).
-- Schema-based mapper cache key — no more reflection on SqlDataReader.Command.
-- MappingManager: safe reflection and lazy initialization.
-
-Packaging:
-- Deterministic builds, SourceLink, symbol (.snupkg) packages.
-- XML documentation file shipped in the package.
-- Re-published the four CodeProject design articles under /articles.
+Compatibility: excess decimal scale is rejected unless truncateFraction is true (truncation toward zero).
+Exhausted negative-ID generators throw instead of wrapping. Undefined/composite DataReply statuses are rejected.
+Mapper contract errors can now fail builds; see docs/analyzers.md and the changelog for migration guidance.
 
 Full notes: https://github.com/lobodava/artisan-orm/blob/master/CHANGELOG.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -80,12 +71,35 @@ Full notes: https://github.com/lobodava/artisan-orm/blob/master/CHANGELOG.md</Pa
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.203" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+    <!-- SqlClient still permits vulnerable PKCS versions. Publish these minimums to consumers. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(TargetFramework)' != 'net10.0'" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" Condition="'$(TargetFramework)' == 'net10.0'" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Artisan.Orm.Analyzers\Artisan.Orm.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Resolve the analyzer output at pack time, after the project reference has built. -->
+  <Target Name="IncludeArtisanAnalyzers" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="..\Artisan.Orm.Analyzers\Artisan.Orm.Analyzers.csproj"
+             Targets="GetTargetPath" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0">
+      <Output TaskParameter="TargetOutputs" ItemName="ArtisanAnalyzerAssembly" />
+    </MSBuild>
+    <PropertyGroup>
+      <ArtisanAnalyzerDirectory>@(ArtisanAnalyzerAssembly->'%(RootDir)%(Directory)')</ArtisanAnalyzerDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <None Include="@(ArtisanAnalyzerAssembly)" Pack="true" PackagePath="analyzers/dotnet/cs" />
+      <None Include="$(ArtisanAnalyzerDirectory)**\Artisan.Orm.Analyzers.resources.dll"
+            Pack="true" PackagePath="analyzers/dotnet/cs/%(RecursiveDir)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

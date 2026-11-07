@@ -55,7 +55,7 @@ begin
 			from
 				cte
 			where
-				LoginRn > 1 and Id > 0
+				LoginRn > 1
 
 			union all
 
@@ -67,7 +67,7 @@ begin
 			from
 				cte
 			where
-				LoginRn > 1 and Id > 0
+				NameRn > 1
 
 			union all
 
@@ -79,7 +79,7 @@ begin
 			from
 				cte
 			where
-				LoginRn > 1 and Id > 0
+				EmailRn > 1
 
 
 			if exists(select * from @DataReplyMessages) 

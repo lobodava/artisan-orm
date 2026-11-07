@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Globalization;
 using Microsoft.Data.SqlClient;
 
 namespace Artisan.Orm
@@ -67,11 +68,17 @@ namespace Artisan.Orm
 		/// </summary>
 		internal static string GetAutoCreateObjectFuncKey<T>(SqlDataReader dr)
 		{
-			var sb = new StringBuilder(typeof(T).FullName);
+			// MappingManager keys the target by its actual Type identity. Encode every shape
+			// component separately so aliases containing ':' or '|' cannot merge fields.
+			var sb = new StringBuilder();
 			var count = dr.FieldCount;
+			sb.Append(count.ToString(CultureInfo.InvariantCulture)).Append(':');
 			for (var i = 0; i < count; i++)
 			{
-				sb.Append('|').Append(dr.GetName(i)).Append(':').Append(dr.GetFieldType(i).Name);
+				var name = dr.GetName(i);
+				var typeName = dr.GetFieldType(i).AssemblyQualifiedName!;
+				sb.Append(name.Length.ToString(CultureInfo.InvariantCulture)).Append(':').Append(name);
+				sb.Append(typeName.Length.ToString(CultureInfo.InvariantCulture)).Append(':').Append(typeName);
 			}
 			return sb.ToString();
 		}
@@ -121,7 +128,7 @@ namespace Artisan.Orm
 
 			return Expression.Call(
 				null,
-				typeof(Convert).GetMethod("ChangeType", new[] { typeof(object), typeof(Type) })!,  // Convert.ChangeType(object, Type) always exists
+				typeof(SqlDataReaderExtensions).GetMethod(nameof(ConvertValue), BindingFlags.Static | BindingFlags.NonPublic)!,
 				Expression.Call(
 					sqlDataReaderParam,
 					typeof(SqlDataReader).GetMethod("GetValue", new[] { typeof(int) })!,  // SqlDataReader.GetValue(int) always exists
@@ -135,7 +142,7 @@ namespace Artisan.Orm
 		{ 
 			var properties = typeof(T)
 				.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-				.Where(p => p.CanWrite && p.PropertyType.IsSimpleType()).ToList();
+				.Where(p => p.GetSetMethod() != null && p.GetIndexParameters().Length == 0 && p.PropertyType.IsSimpleType()).ToList();
 
 			var memberBindings = new List<MemberBinding>();
 			var readerParam = Expression.Parameter(typeof(SqlDataReader), "reader");

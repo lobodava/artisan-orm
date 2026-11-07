@@ -47,6 +47,7 @@ namespace Artisan.Orm
 
 		internal static bool IsSimpleType(this Type type)
 		{
+			if (type.IsEnum) return true;
 			if (SimpleTypes.Any(x => x.IsAssignableFrom(type)))
 				return true;
 
@@ -66,6 +67,12 @@ namespace Artisan.Orm
 		internal static Type GetUnderlyingType(this Type type)
 		{
 			return Nullable.GetUnderlyingType(type) ?? type;
+		}
+
+		internal static Type GetDataColumnType(this Type type)
+		{
+			var underlyingType = type.GetUnderlyingType();
+			return underlyingType.IsEnum ? Enum.GetUnderlyingType(underlyingType) : underlyingType;
 		}
 
 	}

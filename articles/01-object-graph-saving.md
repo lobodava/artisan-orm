@@ -5,10 +5,12 @@
 > - the JSON sample contained `(A)b` where the diagram showed `(A)Ab` — aligned;
 > - C# samples updated for .NET 6+ (`int` / `string`, NRT annotations).
 >
-> The SQL design pattern is timeless and applies unchanged to every SQL Server version since 2008. A working implementation lives in the Artisan.Orm sample repository:
+> The SQL design pattern uses features available since SQL Server 2008. A working implementation lives in the Artisan.Orm sample repository:
 > [`Database/`](../Database/) for the schema and stored procedures; [`Tests/DAL/GrandRecords/`](../Tests/DAL/GrandRecords/) for the C# repository code.
 >
 > — *Vadim Loboda, originally Nov 2016, revised May 2023*
+
+> **4.1.0 preparation update.** The original narrative and reduced three-table schema remain useful as a standalone example. The current sample has additional columns and returns the saved graph; use its matching SQL types and mappers together. This edition corrects the negative-ID walkthrough, adds transaction ownership to the SQL example, and preserves the original clustered-index claim alongside a detailed correction below. Version 4.1.0 is being prepared; this note does not announce a published package.
 
 A way to persist a C# object graph to the database with a single procedure using ADO.NET and table-valued parameters.
 
@@ -16,8 +18,8 @@ In this article you will learn how to save an object graph in a master-detail re
 
 This is the **first** article in the series. The next articles:
 
-- [Artisan.Orm — How to Reinvent the Wheel](#) *(to be re-published)*
-- [The Artisan Way of Data Reply](#) *(to be re-published)*
+- [Artisan.Orm - How to Reinvent the Wheel](02-artisan-orm.md)
+- [The Artisan Way of Data Reply](03-data-reply.md)
 - [Combination of Id-ParentId and HierarchyId Approaches to Hierarchical Data](04-hierarchyid-combination.md)
 
 ## Introduction
@@ -196,7 +198,7 @@ But — because our tables are linked by foreign keys `GrandRecordId` and `Recor
 
 However, as we remember, new objects have `Id = 0`.
 
-To fix this, let's assign **ever-increasing negative identities** to object Ids that are equal to `0`:
+To fix this, let's assign **increasing negative identities** to object Ids that are equal to `0`. These are temporary correlation keys within the negative range, not a durable ordering contract:
 
 ```csharp
 var id = int.MinValue;
@@ -252,7 +254,7 @@ After the `DataTable`s are prepared, the stored procedure receives the following
 | Id          | Name |
 |------------:|------|
 | 1           | (A)  |
-| -2147483648 | (B)  |
+| -2147483644 | (B)  |
 
 `@Records`
 
@@ -260,16 +262,18 @@ After the `DataTable`s are prepared, the stored procedure receives the following
 |------------:|--------------:|-------|
 | 2           | 1             | (A)A  |
 | -2147483647 | 1             | (A)B  |
-| -2147483646 | -2147483648   | (B)A  |
+| -2147483643 | -2147483644   | (B)A  |
 
 `@ChildRecords`
 
 | Id          | RecordId    | Name   |
 |------------:|------------:|--------|
 | 3           | 2           | (A)Aa  |
-| -2147483645 | 2           | (A)Ab  |
-| -2147483644 | -2147483647 | (A)Ba  |
-| -2147483643 | -2147483647 | (A)Bb  |
+| -2147483648 | 2           | (A)Ab  |
+| -2147483646 | -2147483647 | (A)Ba  |
+| -2147483645 | -2147483647 | (A)Bb  |
+
+These values follow the depth-first loop above: `(A)Ab` receives the first negative ID, before `(A)B` or `(B)`. A mapper that visits all parents before their children can assign different numbers. Correctness requires consistent, unique correlation keys, not a particular traversal order.
 
 ## Object Graph Saving Technique
 
@@ -287,7 +291,7 @@ Behaviour summary for each branch of `MERGE`:
 - **`when not matched by target`** (record exists in `source` only): `MERGE` does an `INSERT`. `inserted.Id` is the **new** identity assigned by the database, `source.Id` is the **negative** placeholder.
 - **`when not matched by source`** (record exists in `target` only): `MERGE` does a `DELETE`. `inserted.Id` and `source.Id` are `NULL`, but `deleted.Id` carries the Id of the deleted record.
 
-Here is the stored procedure that saves our object graph:
+Here is the stored procedure for this article's reduced schema. The transaction wrapper follows the current sample's ownership rule: start and complete a transaction only when no caller transaction exists. An outer caller must roll back its transaction if this procedure fails.
 
 ```sql
 create procedure dbo.SaveGrandRecords
@@ -309,96 +313,113 @@ begin
         [Action]    nvarchar(10)
     );
 
-    -- save GrandRecords
-    merge into dbo.GrandRecords as target
-        using
-        (
-            select Id, Name from @GrandRecords
-        )
-        as source on source.Id = target.Id
+    declare @StartTranCount int = @@trancount;
+    begin try
+        if @StartTranCount = 0 begin transaction;
 
-    when matched then
-        update set
-            Name = source.Name
+        -- save GrandRecords
+        merge into dbo.GrandRecords as target
+            using
+            (
+                select Id, Name from @GrandRecords
+            )
+            as source on source.Id = target.Id
 
-    when not matched by target then
-        insert (Name)
-        values (source.Name)
+        when matched then
+            update set
+                Name = source.Name
 
-    output                                       -- collect translation Ids
-        inserted.Id,
-        source.Id
-    into @GrandRecordIds (InsertedId, ParamId);
+        when not matched by target then
+            insert (Name)
+            values (source.Name)
 
-
-    -- save Records
-    merge into dbo.Records as target
-    using
-    (
-        select
-            Id            ,
-            GrandRecordId =  ids.InsertedId,    -- Id translation target
-            Name
-        from
-            @Records r
-            inner join @GrandRecordIds ids
-                on ids.ParamId = r.GrandRecordId  -- Id translation source
-    )
-    as source on source.Id = target.Id
-
-    when matched then
-        update set
-            GrandRecordId = source.GrandRecordId,
-            Name          = source.Name
-
-    when not matched by target then
-        insert (GrandRecordId, Name)
-        values (source.GrandRecordId, source.Name)
-
-    when not matched by source
-        and target.GrandRecordId in (select InsertedId from @GrandRecordIds) then
-            delete
-
-    output                                       -- collect translation Ids
-        isnull(inserted.Id, deleted.Id),
-        isnull(source.Id,   deleted.Id),
-        $action
-    into @RecordIds (InsertedId, ParamId, [Action]);
-
-    delete from @RecordIds where [Action] = 'DELETE';
+        output                                       -- collect translation Ids
+            inserted.Id,
+            source.Id
+        into @GrandRecordIds (InsertedId, ParamId);
 
 
-    -- save ChildRecords
-    merge into dbo.ChildRecords as target
+        -- save Records
+        merge into dbo.Records as target
         using
         (
             select
-                Id        ,
-                RecordId  =  ids.InsertedId,     -- Id translation target
+                Id            ,
+                GrandRecordId =  ids.InsertedId,    -- Id translation target
                 Name
             from
-                @ChildRecords cr
-                inner join @RecordIds ids
-                    on ids.ParamId = cr.RecordId  -- Id translation source
+                @Records r
+                inner join @GrandRecordIds ids
+                    on ids.ParamId = r.GrandRecordId  -- Id translation source
         )
         as source on source.Id = target.Id
 
-    when matched then
-        update set
-            RecordId = source.RecordId,
-            Name     = source.Name
+        when matched then
+            update set
+                GrandRecordId = source.GrandRecordId,
+                Name          = source.Name
 
-    when not matched by target then
-        insert (RecordId, Name)
-        values (source.RecordId, source.Name)
+        when not matched by target then
+            insert (GrandRecordId, Name)
+            values (source.GrandRecordId, source.Name)
 
-    when not matched by source
-        and target.RecordId in (select InsertedId from @RecordIds) then
-            delete;
+        when not matched by source
+            and target.GrandRecordId in (select InsertedId from @GrandRecordIds) then
+                delete
+
+        output                                       -- collect translation Ids
+            isnull(inserted.Id, deleted.Id),
+            isnull(source.Id,   deleted.Id),
+            $action
+        into @RecordIds (InsertedId, ParamId, [Action]);
+
+        delete from @RecordIds where [Action] = 'DELETE';
+
+
+        -- save ChildRecords
+        merge into dbo.ChildRecords as target
+            using
+            (
+                select
+                    Id        ,
+                    RecordId  =  ids.InsertedId,     -- Id translation target
+                    Name
+                from
+                    @ChildRecords cr
+                    inner join @RecordIds ids
+                        on ids.ParamId = cr.RecordId  -- Id translation source
+            )
+            as source on source.Id = target.Id
+
+        when matched then
+            update set
+                RecordId = source.RecordId,
+                Name     = source.Name
+
+        when not matched by target then
+            insert (RecordId, Name)
+            values (source.RecordId, source.Name)
+
+        when not matched by source
+            and target.RecordId in (select InsertedId from @RecordIds) then
+                delete;
+
+        if @StartTranCount = 0 commit transaction;
+    end try
+    begin catch
+        if xact_state() <> 0 and @StartTranCount = 0 rollback transaction;
+        declare @ErrorMessage nvarchar(4000) = error_message();
+        raiserror ('%s', 16, 1, @ErrorMessage);
+        return;
+    end catch;
 end;
 ```
 
+The collections are **snapshots of the supplied branches**, not patches: omitted records under a supplied grand record and omitted children under a retained record are deleted. Top-level grand records absent from `@GrandRecords` are not deleted by this procedure. Send complete descendant collections for the branches being saved.
+
 ## Important Notice
+
+**Original assertion, retained for readers of the earlier article.** The quotation and its original rationale below are historical; the 4.1.0 clarification that follows replaces their ordering and deadlock guarantees.
 
 > In the `MERGE` statement, the source and the target tables **must** have clustered indexes on their join columns. This prevents deadlocks and guarantees insertion order.
 
@@ -408,6 +429,65 @@ That is why the user-defined table types above have `primary key clustered` in t
 
 That is why the negative identities are ever-increasing and start with `int.MinValue`.
 
+### 4.1.0 clarification: what the indexes actually guarantee
+
+The index recommendation has practical value, but the two guarantees in the original sentence are too strong. Microsoft recommends indexes on the source and target join columns for efficient `MERGE` matching, preferably unique and, for the target, clustered where appropriate. This is an optimization recommendation, not a requirement that makes `MERGE` correct or deadlock-free. See [MERGE index best practices](https://learn.microsoft.com/en-us/sql/t-sql/statements/merge-transact-sql#index-best-practices).
+
+A clustered index organizes table data by its key. It does not turn a multirow statement into a sequence of application-visible operations in that order. An execution plan can use different joins and access paths; maintaining other indexes and checking constraints introduces additional work. A plan that repeatedly appears to allocate IDs in source-key order is an observation, not a durable contract. See [clustered and nonclustered indexes](https://learn.microsoft.com/en-us/sql/relational-databases/indexes/clustered-and-nonclustered-indexes-described).
+
+Several different kinds of order are easy to confuse:
+
+| Requirement | Reliable approach |
+| --- | --- |
+| Attach each saved child to the correct parent | Capture source and generated IDs together; translate by key. |
+| Preserve the user's order within a collection | Persist an explicit `SortOrder` and use `ORDER BY` when reading. |
+| Allocate identity values in a specified order for an insert-only batch | Use the documented `INSERT ... SELECT ... ORDER BY` form; see the limited guarantee below. |
+| Make parent rows exist before inserting dependent rows | Execute parent and child statements sequentially in the same transaction. |
+| Prevent conflicting concurrent saves of the same graph | Define and test a concurrency policy; clustered indexes alone do not provide one. |
+
+### Why the object-graph algorithm remains correct
+
+The essential line is `output inserted.Id, source.Id into @GrandRecordIds`. Each output row contains the generated key **and the source key of the same affected row**. The next statement joins `ids.ParamId = r.GrandRecordId`. Even if SQL Server saves source `-20` before source `-30`, their children use the captured mapping, not an assumed sequence of generated IDs.
+
+Do not pair input and output arrays by position or infer a new ID from the preceding one. SQL Server does not guarantee matching order between table changes and rows written by `OUTPUT`. The pairs are the information that matters; their arrival order does not. Treat the save as successful only after the transaction succeeds. See the [OUTPUT clause remarks](https://learn.microsoft.com/en-us/sql/t-sql/queries/output-clause-transact-sql#remarks).
+
+### A practical recipe for preserving application order
+
+1. Assign a `SortOrder` to each item within its parent collection before building the TVP. Keep temporary IDs for correlation as before.
+2. Add that value to the corresponding SQL table type, persistent table, and explicit mapper. Insert and update it in the save procedure. This is an application schema extension; the current sample does not already contain this column.
+3. Read with an explicit order, for example `ORDER BY GrandRecordId, SortOrder, Id`. The final `Id` breaks ties deterministically. If positions must be unique per parent, enforce that rule and design reordering updates to respect it.
+
+A manual mapper can obtain `SortOrder` from the collection position; the C# model does not have to mirror every TVP column. SQL tables and result sets have no implicit presentation order. An explicit outer `ORDER BY` supplies the read contract. See the [ORDER BY documentation](https://learn.microsoft.com/en-us/sql/t-sql/queries/select-order-by-clause-transact-sql).
+
+If the actual requirement is **ordered allocation of identity values in an insert-only operation**, there is a narrower documented option. Microsoft states that `INSERT ... SELECT ... ORDER BY` controls how identity values are computed, while physical insertion order remains unspecified. For example, this standalone batch allocates the identity for `First` before the identity for `Second`:
+
+```sql
+declare @Input table (InputOrdinal int primary key, Name varchar(30));
+insert into @Input (InputOrdinal, Name) values (2, 'Second'), (1, 'First');
+
+declare @Saved table (Id int identity primary key, InputOrdinal int, Name varchar(30));
+insert into @Saved (InputOrdinal, Name)
+select InputOrdinal, Name
+from @Input
+order by InputOrdinal;
+
+select Id, InputOrdinal, Name
+from @Saved
+order by InputOrdinal;
+```
+
+This guarantee belongs to that `INSERT` form, not to the article's `MERGE`. It also does not make identity values a global business chronology or promise gap-free numbering. Keep a persisted ordering value when order is part of the domain. See [INSERT limitations and restrictions](https://learn.microsoft.com/en-us/sql/t-sql/statements/insert-transact-sql#limitations-and-restrictions).
+
+### What to do about deadlocks
+
+Deadlocks concern cycles of resource dependencies between concurrent transactions. For example, one transaction can hold a lock in `GrandRecords` and wait for `Records`, while another holds the needed lock in `Records` and waits for `GrandRecords`. Both tables can have perfectly good clustered primary keys and the cycle can still exist.
+
+Use a consistent table-access order across competing operations, keep transactions short, and choose useful indexes and an isolation level that satisfies the application's consistency requirements. When a deadlock occurs, inspect its graph to find the actual conflict. A bounded retry may repeat the **whole transaction** after rollback, provided external side effects are handled safely. Adding stronger locks indiscriminately is not a general solution. Microsoft's [deadlocks guide](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-deadlocks-guide#minimize-deadlocks) describes these mitigations.
+
+For error-number-based retries, preserve the original SQL error number. The SQL Server 2008-compatible `RAISERROR` wrapper above, like the current sample's message-based wrapper, reports a new error number 50000. A SQL Server 2012+ adaptation can keep the ownership-aware cleanup and use `THROW;` in the catch block to rethrow the original error, allowing the application to recognize a deadlock by number 1205. See [RAISERROR message numbers](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/raiserror-transact-sql#arguments) and [rethrowing with THROW](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/throw-transact-sql#b-use-throw-to-raise-an-exception-again). The current sample does not provide an automatic retry policy.
+
+For this example, keep the indexes for matching performance, the ID translation tables for relationships, and the transaction for the three-stage save. Add an explicit order column when the application needs ordering. These responsibilities are independent.
+
 Note also the `on delete cascade` clause on the foreign keys in the permanent tables. It allows child records to be deleted when their parent records are deleted by the `when not matched by source ... then delete` branch of `MERGE`.
 
 ## Where This Lives in Artisan.Orm
@@ -415,8 +495,10 @@ Note also the `on delete cascade` clause on the foreign keys in the permanent ta
 The patterns above became the foundation of Artisan.Orm:
 
 - The `dbo.GrandRecords` / `dbo.Records` / `dbo.ChildRecords` tables, the matching `dbo.*TableType` user-defined table types, and the `dbo.SaveGrandRecords` stored procedure live in the [`Database/`](../Database/) project.
-- The C# repository, mappers (with `Int32NegativeIdentity` for negative-id assignment) and integration tests live in [`Tests/DAL/GrandRecords/`](../Tests/DAL/GrandRecords/).
-- The library's `Int32NegativeIdentity` / `Int64NegativeIdentity` / `Int16NegativeIdentity` static classes encapsulate the "next ever-increasing negative number" generator so each mapper just calls `obj.Id = Int32NegativeIdentity.Next` instead of threading a counter through the loop.
+- The C# repository and mappers (with `Int32NegativeIdentity` for negative-ID assignment) live in [`Tests/DAL/GrandRecords/`](../Tests/DAL/GrandRecords/). Integration tests live in [`Tests/Tests/GrandRecordRepositoryTest.cs`](../Tests/Tests/GrandRecordRepositoryTest.cs).
+- The library's `Int32NegativeIdentity` / `Int64NegativeIdentity` / `Int16NegativeIdentity` classes provide temporary-ID generators within finite integer ranges. They are correlation helpers, not persistent ordering mechanisms.
+
+For the current 4.1.0 sample, use [`SaveGrandRecords.sql`](../Database/5.%20Procedures/GrandRecords/SaveGrandRecords.sql), the matching [`RecordTableType.sql`](../Database/4.%20Types/RecordTableType.sql), and the repository mappers. In particular, the current record TVP has nine columns; the three-column TVP above belongs to the reduced standalone example. The current procedure returns three ordered result sets, which the repository assembles into a new saved graph. Use that returned graph for the generated positive IDs; the input graph is not rewritten with those final IDs.
 
 The wiki page [Negative identities and object graph saving](https://github.com/lobodava/artisan-orm/wiki/Negative-identities-and-object-graph-saving) covers the same ground from the library-API perspective; this article is the long-form story behind it.
 
@@ -428,14 +510,14 @@ The original article shipped with a standalone Visual Studio 2015 solution (`Dat
 - fetching a list of top-level objects with all their descendants
 - saving a list of top-level objects with all their descendants
 
-To run them, point the connection string in the test project's `appsettings.json` at your SQL Server instance and publish the `Database` project.
+To run them, point the connection string in the test project's `appsettings.json` at a dedicated sample database. Review the `Database` project's deployment scripts before publishing: its post-deployment folder generator resets sample folder data.
 
 ## What's Next?
 
 The consequence and development of this approach are:
 
-- [Artisan.Orm — How to Reinvent the Wheel](#) — generalising the patterns above into a reusable ADO.NET library.
-- [The Artisan Way of Data Reply](#) — adding a structured protocol for delivering business-logic outcomes from stored procedures back to the client.
+- [Artisan.Orm - How to Reinvent the Wheel](02-artisan-orm.md): generalising the patterns above into a reusable ADO.NET library.
+- [The Artisan Way of Data Reply](03-data-reply.md): adding a structured protocol for delivering business-logic outcomes from stored procedures back to the client.
 
 ---
 
