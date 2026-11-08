@@ -44,6 +44,52 @@ public static class ReaderTypeExamples
 
 `ReadIntegerFlag` is appropriate only when the column is actually `int` and the application defines nonzero as true. If a shared mapper sees incompatible projections, prefer consistent SQL casts/aliases or separate mapping functions over accidental conversions.
 
+## Typed SqlParam factories
+
+The 4.1.0 `SqlParam` factories create unattached SqlClient parameters for repository shortcuts or command collections. Remove `Add` and the trailing `Param` from a typed command helper's name: `AddIntParam` becomes `SqlParam.Int`, `AddNVarcharParam` becomes `SqlParam.NVarchar`, and `AddIntOutputParam` becomes `SqlParam.IntOutput`. Types, sizes, nullable overloads, conversions, validation, `trimToNull`, `truncate`, and `truncateFraction` follow the corresponding helper.
+
+Start a simple query with the repository shortcut. This independent example assumes `dbo.Products(Id int NOT NULL)` and needs no mapper because it reads scalar IDs:
+
+```csharp
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Artisan.Orm;
+
+public static class ProductIdQueries
+{
+    public static Task<IList<int>> ReadAsync(
+        RepositoryBase repository, int minimumId, CancellationToken cancellationToken) =>
+        repository.ReadToListAsync<int>(
+            "SELECT Id FROM dbo.Products WHERE Id >= @MinimumId ORDER BY Id;",
+            cancellationToken, SqlParam.Int("@MinimumId", minimumId));
+}
+```
+
+Use fresh factory results for each command; a mutable `SqlParameter` cannot be shared between command collections or concurrent calls. Factories do not execute SQL or inspect database metadata. There is no factory counterpart for the metadata-discovering `cmd.AddParams(dictionary)` or `RepositoryBase.AddParams(cmd, object)` batch operation.
+
+`SqlParam.Table` mirrors every `AddTableParam` overload in the table below; `TableRow` mirrors `AddTableRowParam`. A table-name override alone still uses the registered mapper. Automatic mapping requires the explicit column list. Mapped factories and method groups produce `ART001` for a missing registration or `ART006` for missing table functions; `DataTable CreateDataTable()` and `object[] CreateDataRow(T value)` satisfy that capability. Non-generic integer-ID overloads and explicit-column automatic overloads need no registration; an explicit generic integer call still does.
+
+A null collection or DataTable passed to `Table` returns null and is omitted by repository parameter arrays. An empty collection supplies a real empty table. This rule now includes the `short` ID overload on both APIs. A null reference passed to mapper-based `TableRow<T>` instead creates an empty mapped table, because row conversion skips null entities; it still needs a valid mapper. Table conversion happens at factory invocation, not during command execution. Scalar nulls produce a parameter with `Value = DBNull.Value` rather than an omitted parameter.
+
+Raw `cmd.Parameters.Add` / `AddRange` does not skip null factory results. Guard them explicitly. This helper depends on the shared `User` and `UserMapper` declarations linked above:
+
+```csharp
+public static class OptionalUserParameters
+{
+    public static void AddUsers(SqlCommand cmd, IEnumerable<User>? users)
+    {
+        var parameter = SqlParam.Table("@Users", users);
+        if (parameter != null)
+            cmd.Parameters.Add(parameter);
+    }
+}
+```
+
+Output factories preserve `Direction.Output`; retain the object and read its value after execution and any reader disposal, handling `DBNull.Value`. They do not create input/output parameters. `SqlParam.ReturnValue()` creates a fresh integer return parameter; see the return-helper rules below before combining it with `Execute*`.
+
+`SqlParam.Json<T>` and the `DateOnly` / `TimeOnly` overloads of `Date` / `Time` exist in the `net8.0` and `net10.0` assets, not `netstandard2.1`. Core factories are present in all three assets. JSON keeps the `AddJsonParam` default-serializer, `nvarchar(max)`, and SQL-null contract; use `NVarcharMax` with explicitly serialized text for custom settings. Typed date/time helpers do not change automatic-mapping support.
+
 ## TVP overloads are not interchangeable
 
 | Call shape | Mapping behavior |
@@ -139,7 +185,9 @@ Use explicit `Add*Param` helpers when avoiding metadata discovery is important. 
 
 Use `AddBitOutputParam`, `AddTinyIntOutputParam`, `AddSmallIntOutputParam`, `AddIntOutputParam`, `AddBigIntOutputParam`, `AddDecimalOutputParam`, `AddGuidOutputParam`, `AddDateTime2OutputParam`, `AddDateTimeOffsetOutputParam`, `AddVarcharOutputParam`, or `AddNVarcharOutputParam` to declare output values. Specify the procedure's string size and decimal precision/scale. These helpers return `void`; read `cmd.Parameters[name].Value` after execution, handling `DBNull.Value` for nullable outputs. For an input/output parameter, construct a `SqlParameter` with `Direction = ParameterDirection.InputOutput` and an initial value; these output-only helpers do not express that contract.
 
-Three results are independent: a procedure's `RETURN` code, its named `OUTPUT` parameters, and the affected-row count returned by `SqlCommand.ExecuteNonQuery*`. `RepositoryBase.ExecuteCommand*` returns the first. Affected-row counts can be `-1`, including when counts are suppressed by `SET NOCOUNT ON`. `ReturnValueParam()` adds or retrieves the `@ReturnValue` parameter; `AddReturnValueParam()` adds it unconditionally.
+Three results are independent: a procedure's `RETURN` code, its named `OUTPUT` parameters, and the affected-row count returned by `SqlCommand.ExecuteNonQuery*`. `RepositoryBase.ExecuteCommand*` returns the first. Affected-row counts can be `-1`, including when counts are suppressed by `SET NOCOUNT ON`. `GetReturnValueParam()` validates and returns the sole integer return parameter regardless of its name, or null if absent. `ReturnValueParam()` reuses that parameter or adds `@ReturnValue`; `AddReturnValueParam()` ensures the same parameter exists and is idempotent. `SqlParam.ReturnValue()` creates a fresh unattached parameter for explicit parameter arrays or callbacks. Multiple return parameters, a non-Int return SQL type, or a non-return parameter using the reserved `ReturnValue` name (with or without `@`, case-insensitive) are rejected before repository execution.
+
+Repository `Execute` / `ExecuteAsync` and `ExecuteCommand` / `ExecuteCommandAsync` reuse a caller-supplied integer return parameter. Configuration callbacks now run before that parameter is ensured; call `cmd.ReturnValueParam()` inside a callback that needs it instead of assuming `@ReturnValue` is already in the collection.
 
 This complete helper assumes a fresh command attached to an already open, caller-owned connection, with any external transaction already assigned. The procedure is `dbo.SaveLabel(@Name nvarchar(100), @SavedId int OUTPUT, @Message nvarchar(200) OUTPUT)`, allows null outputs, and returns an integer code. It returns no row sets. The helper neither closes the connection nor commits the caller's transaction.
 

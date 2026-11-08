@@ -323,8 +323,9 @@ namespace Artisan.Orm
 
 
 		/// <summary>Creates a command pre-configured with <paramref name="sql"/> (auto-detected as a
-		/// stored-procedure name or a text batch) and the supplied <paramref name="sqlParameters"/>.</summary>
-		public SqlCommand CreateCommand(string sql, params SqlParameter[] sqlParameters)
+		/// stored-procedure name or a text batch) and the supplied <paramref name="sqlParameters"/>.
+		/// Null entries, such as an omitted TVP from <c>SqlParam.Table</c>, are skipped.</summary>
+		public SqlCommand CreateCommand(string sql, params SqlParameter?[] sqlParameters)
 		{
 			var cmd = CreateCommand();
 
@@ -387,7 +388,7 @@ namespace Artisan.Orm
 
 		private static int ExecuteCommand(SqlCommand cmd)
 		{
-			var returnValueParam = cmd.GetReturnValueParam();
+			var returnValueParam = cmd.ReturnValueParam();
 			var isConnectionClosed = true;
 
 			try
@@ -405,12 +406,13 @@ namespace Artisan.Orm
 					cmd.Connection.Close();
 			}
 
-			return (int) returnValueParam!.Value!;  // AddReturnValueParam() was called before ExecuteCommand, so param is always present
+			return (int) returnValueParam.Value!;  // ReturnValueParam() ensured a valid return parameter before execution.
 		}
 
 
 		/// <summary>Creates a command, lets <paramref name="action"/> configure it (procedure name + parameters),
-		/// runs <c>ExecuteNonQuery</c>, and returns the TSQL <c>RETURN</c> value.</summary>
+		/// runs <c>ExecuteNonQuery</c>, and returns the TSQL <c>RETURN</c> value.
+		/// After configuration, reuses a supplied int return parameter or creates one if absent.</summary>
 		/// <remarks>
 		/// <para>Three sibling entry points fire <c>ExecuteNonQuery</c> behind the scenes — pick the one that
 		/// matches what you need:</para>
@@ -426,8 +428,6 @@ namespace Artisan.Orm
 		public Int32 ExecuteCommand (Action<SqlCommand> action)
 		{
 			using var cmd = CreateCommand();
-
-			cmd.AddReturnValueParam();
 
 			action(cmd);
 
@@ -447,11 +447,9 @@ namespace Artisan.Orm
 		/// if (status == 2) throw new KeyNotFoundException("User not found");
 		/// ]]></code>
 		/// </example>
-		public Int32 Execute (string sql, params SqlParameter[] sqlParameters)
+		public Int32 Execute (string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
-
-			cmd.AddReturnValueParam();
 
 			return ExecuteCommand(cmd);
 		}
@@ -461,14 +459,12 @@ namespace Artisan.Orm
 		{
 			using var cmd = CreateCommand(sql, action);
 
-			cmd.AddReturnValueParam();
-
 			return ExecuteCommand(cmd);
 		}
 	
 		private static async Task<Int32> ExecuteCommandAsync (SqlCommand cmd, CancellationToken cancellationToken = default)
 		{
-			var returnValueParam = cmd.GetReturnValueParam();
+			var returnValueParam = cmd.ReturnValueParam();
 			var isConnectionClosed = true;
 
 			try
@@ -486,7 +482,7 @@ namespace Artisan.Orm
 					await cmd.Connection.CloseAsync().ConfigureAwait(false);
 			}
 
-			return (int) returnValueParam!.Value!;  // AddReturnValueParam() was called before ExecuteCommandAsync, so param is always present
+			return (int) returnValueParam.Value!;  // ReturnValueParam() ensured a valid return parameter before execution.
 		}
 	
 		/// <inheritdoc cref="ExecuteCommand(Action{SqlCommand})"/>
@@ -494,29 +490,23 @@ namespace Artisan.Orm
 		{
 			using var cmd = CreateCommand();
 
-			cmd.AddReturnValueParam();
-
 			action(cmd);
 
 			return await ExecuteCommandAsync(cmd, cancellationToken).ConfigureAwait(false);
 		}
 	
 		/// <inheritdoc cref="Execute(string, SqlParameter[])"/>
-		public async Task<Int32> ExecuteAsync (string sql, params SqlParameter[] sqlParameters)
+		public async Task<Int32> ExecuteAsync (string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
-
-			cmd.AddReturnValueParam();
 
 			return await ExecuteCommandAsync(cmd).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="Execute(string, SqlParameter[])"/>
-		public async Task<Int32> ExecuteAsync (string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<Int32> ExecuteAsync (string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
-
-			cmd.AddReturnValueParam();
 
 			return await ExecuteCommandAsync(cmd, cancellationToken).ConfigureAwait(false);
 		}
@@ -525,8 +515,6 @@ namespace Artisan.Orm
 		public async Task<Int32> ExecuteAsync (string sql, Action<SqlCommand> action, CancellationToken cancellationToken = default)
 		{
 			using var cmd = CreateCommand(sql, action);
-
-			cmd.AddReturnValueParam();
 
 			return await ExecuteCommandAsync(cmd, cancellationToken).ConfigureAwait(false);
 		}
@@ -630,7 +618,7 @@ namespace Artisan.Orm
 		#region [ ReadTo, ReadAs ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadTo{T}(SqlCommand)"/>
-		public T? ReadTo<T>(string sql, params SqlParameter[] sqlParameters)
+		public T? ReadTo<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadTo<T>();
@@ -644,14 +632,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadTo{T}(SqlCommand)"/>
-		public async Task<T?> ReadToAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<T?> ReadToAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadTo{T}(SqlCommand)"/>
-		public async Task<T?> ReadToAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<T?> ReadToAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -665,7 +653,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAs{T}(SqlCommand)"/>
-		public T? ReadAs<T>(string sql, params SqlParameter[] sqlParameters)
+		public T? ReadAs<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadAs<T>();
@@ -679,14 +667,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAs{T}(SqlCommand)"/>
-		public async Task<T?> ReadAsAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<T?> ReadAsAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAs{T}(SqlCommand)"/>
-		public async Task<T?> ReadAsAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<T?> ReadAsAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -704,7 +692,7 @@ namespace Artisan.Orm
 		#region [ ReadToList, ReadAsList ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToList{T}(SqlCommand)"/>
-		public IList<T> ReadToList<T>(string sql, params SqlParameter[] sqlParameters)
+		public IList<T> ReadToList<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToList<T>();
@@ -718,14 +706,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<T>> ReadToListAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<IList<T>> ReadToListAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<T>> ReadToListAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<IList<T>> ReadToListAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -739,7 +727,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public IList<T> ReadAsList<T>(string sql, params SqlParameter[] sqlParameters)
+		public IList<T> ReadAsList<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadAsList<T>();
@@ -753,14 +741,14 @@ namespace Artisan.Orm
 		}
 	
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<T>> ReadAsListAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<IList<T>> ReadAsListAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsListAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<T>> ReadAsListAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<IList<T>> ReadAsListAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsListAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -777,7 +765,7 @@ namespace Artisan.Orm
 		// --- IList<T>? list overloads (pre-populate an existing list) ---
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToList{T}(SqlCommand, IList{T})"/>
-		public IList<T> ReadToList<T>(string sql, IList<T>? list, params SqlParameter[] sqlParameters)
+		public IList<T> ReadToList<T>(string sql, IList<T>? list, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToList<T>(list);
@@ -791,7 +779,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<T>> ReadToListAsync<T>(string sql, IList<T>? list, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<IList<T>> ReadToListAsync<T>(string sql, IList<T>? list, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListAsync<T>(list, cancellationToken).ConfigureAwait(false);
@@ -805,7 +793,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public IList<T> ReadAsList<T>(string sql, IList<T>? list, params SqlParameter[] sqlParameters)
+		public IList<T> ReadAsList<T>(string sql, IList<T>? list, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadAsList<T>(list);
@@ -819,7 +807,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsList{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<T>> ReadAsListAsync<T>(string sql, IList<T>? list, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<IList<T>> ReadAsListAsync<T>(string sql, IList<T>? list, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsListAsync<T>(list, cancellationToken).ConfigureAwait(false);
@@ -837,7 +825,7 @@ namespace Artisan.Orm
 		#region [ ReadToLists ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2}(SqlCommand)"/>
-		public (IList<T1>, IList<T2>) ReadToLists<T1, T2>(string sql, params SqlParameter[] sqlParameters)
+		public (IList<T1>, IList<T2>) ReadToLists<T1, T2>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToLists<T1, T2>();
@@ -851,14 +839,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2}(SqlCommand)"/>
-		public async Task<(IList<T1>, IList<T2>)> ReadToListsAsync<T1, T2>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<(IList<T1>, IList<T2>)> ReadToListsAsync<T1, T2>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListsAsync<T1, T2>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2}(SqlCommand)"/>
-		public async Task<(IList<T1>, IList<T2>)> ReadToListsAsync<T1, T2>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<(IList<T1>, IList<T2>)> ReadToListsAsync<T1, T2>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListsAsync<T1, T2>(cancellationToken).ConfigureAwait(false);
@@ -873,7 +861,7 @@ namespace Artisan.Orm
 
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2, T3}(SqlCommand)"/>
-		public (IList<T1>, IList<T2>, IList<T3>) ReadToLists<T1, T2, T3>(string sql, params SqlParameter[] sqlParameters)
+		public (IList<T1>, IList<T2>, IList<T3>) ReadToLists<T1, T2, T3>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToLists<T1, T2, T3>();
@@ -887,14 +875,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2, T3}(SqlCommand)"/>
-		public async Task<(IList<T1>, IList<T2>, IList<T3>)> ReadToListsAsync<T1, T2, T3>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<(IList<T1>, IList<T2>, IList<T3>)> ReadToListsAsync<T1, T2, T3>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListsAsync<T1, T2, T3>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2, T3}(SqlCommand)"/>
-		public async Task<(IList<T1>, IList<T2>, IList<T3>)> ReadToListsAsync<T1, T2, T3>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<(IList<T1>, IList<T2>, IList<T3>)> ReadToListsAsync<T1, T2, T3>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListsAsync<T1, T2, T3>(cancellationToken).ConfigureAwait(false);
@@ -909,7 +897,7 @@ namespace Artisan.Orm
 
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2, T3, T4}(SqlCommand)"/>
-		public (IList<T1>, IList<T2>, IList<T3>, IList<T4>) ReadToLists<T1, T2, T3, T4>(string sql, params SqlParameter[] sqlParameters)
+		public (IList<T1>, IList<T2>, IList<T3>, IList<T4>) ReadToLists<T1, T2, T3, T4>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToLists<T1, T2, T3, T4>();
@@ -923,14 +911,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2, T3, T4}(SqlCommand)"/>
-		public async Task<(IList<T1>, IList<T2>, IList<T3>, IList<T4>)> ReadToListsAsync<T1, T2, T3, T4>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<(IList<T1>, IList<T2>, IList<T3>, IList<T4>)> ReadToListsAsync<T1, T2, T3, T4>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListsAsync<T1, T2, T3, T4>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToLists{T1, T2, T3, T4}(SqlCommand)"/>
-		public async Task<(IList<T1>, IList<T2>, IList<T3>, IList<T4>)> ReadToListsAsync<T1, T2, T3, T4>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<(IList<T1>, IList<T2>, IList<T3>, IList<T4>)> ReadToListsAsync<T1, T2, T3, T4>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToListsAsync<T1, T2, T3, T4>(cancellationToken).ConfigureAwait(false);
@@ -948,7 +936,7 @@ namespace Artisan.Orm
 		#region [ ReadToArray, ReadAsArray ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToArray{T}(SqlCommand)"/>
-		public T[] ReadToArray<T>(string sql, params SqlParameter[] sqlParameters)
+		public T[] ReadToArray<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToArray<T>();
@@ -962,7 +950,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToArray{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public T[] ReadToArray<T>(string sql, Func<SqlDataReader, T> createFunc, params SqlParameter[] sqlParameters)
+		public T[] ReadToArray<T>(string sql, Func<SqlDataReader, T> createFunc, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToArray<T>(createFunc);
@@ -976,14 +964,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToArray{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<T[]> ReadToArrayAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<T[]> ReadToArrayAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToArrayAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToArray{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<T[]> ReadToArrayAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<T[]> ReadToArrayAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToArrayAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -997,7 +985,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToArray{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<T[]> ReadToArrayAsync<T>(string sql, Func<SqlDataReader, T> createFunc, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<T[]> ReadToArrayAsync<T>(string sql, Func<SqlDataReader, T> createFunc, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToArrayAsync<T>(createFunc, cancellationToken).ConfigureAwait(false);
@@ -1011,7 +999,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsArray{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public T[] ReadAsArray<T>(string sql, params SqlParameter[] sqlParameters)
+		public T[] ReadAsArray<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadAsArray<T>();
@@ -1025,14 +1013,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsArray{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<T[]> ReadAsArrayAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<T[]> ReadAsArrayAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsArrayAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsArray{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<T[]> ReadAsArrayAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<T[]> ReadAsArrayAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsArrayAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -1050,7 +1038,7 @@ namespace Artisan.Orm
 		#region [ ReadDynamic, ReadDynamicList, ReadDynamicArray ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamic(SqlCommand)"/>
-		public dynamic? ReadDynamic(string sql, params SqlParameter[] sqlParameters)
+		public dynamic? ReadDynamic(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadDynamic();
@@ -1064,14 +1052,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamic(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<dynamic?> ReadDynamicAsync(string sql, params SqlParameter[] sqlParameters)
+		public async Task<dynamic?> ReadDynamicAsync(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadDynamicAsync().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamic(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<dynamic?> ReadDynamicAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<dynamic?> ReadDynamicAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadDynamicAsync(cancellationToken).ConfigureAwait(false);
@@ -1085,7 +1073,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamicList(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public IList<dynamic> ReadDynamicList(string sql, params SqlParameter[] sqlParameters)
+		public IList<dynamic> ReadDynamicList(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadDynamicList();
@@ -1099,14 +1087,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamicList(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<dynamic>> ReadDynamicListAsync(string sql, params SqlParameter[] sqlParameters)
+		public async Task<IList<dynamic>> ReadDynamicListAsync(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadDynamicListAsync().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamicList(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IList<dynamic>> ReadDynamicListAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<IList<dynamic>> ReadDynamicListAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadDynamicListAsync(cancellationToken).ConfigureAwait(false);
@@ -1120,7 +1108,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamicArray(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public IList<dynamic> ReadDynamicArray(string sql, params SqlParameter[] sqlParameters)
+		public IList<dynamic> ReadDynamicArray(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadDynamicArray();
@@ -1134,14 +1122,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamicArray(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<dynamic[]> ReadDynamicArrayAsync(string sql, params SqlParameter[] sqlParameters)
+		public async Task<dynamic[]> ReadDynamicArrayAsync(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadDynamicArrayAsync().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadDynamicArray(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<dynamic[]> ReadDynamicArrayAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<dynamic[]> ReadDynamicArrayAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadDynamicArrayAsync(cancellationToken).ConfigureAwait(false);
@@ -1159,7 +1147,7 @@ namespace Artisan.Orm
 		#region [ ReadToObjectRow, ReadAsObjectRow ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRow(SqlCommand, Func{SqlDataReader, ObjectRow})"/>
-		public ObjectRow? ReadToObjectRow(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter[] sqlParameters)
+		public ObjectRow? ReadToObjectRow(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToObjectRow(createFunc);
@@ -1173,7 +1161,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRow{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public ObjectRow? ReadToObjectRow<T>(string sql, params SqlParameter[] sqlParameters)
+		public ObjectRow? ReadToObjectRow<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToObjectRow<T>();
@@ -1187,14 +1175,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRow{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRow?> ReadToObjectRowAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRow?> ReadToObjectRowAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowAsync(createFunc).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRow{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRow?> ReadToObjectRowAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRow?> ReadToObjectRowAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowAsync(createFunc, cancellationToken).ConfigureAwait(false);
@@ -1208,14 +1196,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRow{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRow?> ReadToObjectRowAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRow?> ReadToObjectRowAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRow{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRow?> ReadToObjectRowAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRow?> ReadToObjectRowAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -1229,7 +1217,7 @@ namespace Artisan.Orm
 		}
 	
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsObjectRow(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public ObjectRow? ReadAsObjectRow(string sql, params SqlParameter[] sqlParameters)
+		public ObjectRow? ReadAsObjectRow(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadAsObjectRow();
@@ -1243,13 +1231,13 @@ namespace Artisan.Orm
 		}
 	
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsObjectRow(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRow?> ReadAsObjectRowAsync(string sql, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRow?> ReadAsObjectRowAsync(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsObjectRowAsync().ConfigureAwait(false);
 		}
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsObjectRow(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRow?> ReadAsObjectRowAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRow?> ReadAsObjectRowAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsObjectRowAsync(cancellationToken).ConfigureAwait(false);
@@ -1268,7 +1256,7 @@ namespace Artisan.Orm
 		#region [ ReadToObjectRows, ReadAsObjectRows ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRows(SqlCommand, Func{SqlDataReader, ObjectRow})"/>
-		public ObjectRows ReadToObjectRows(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter[] sqlParameters)
+		public ObjectRows ReadToObjectRows(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToObjectRows(createFunc);
@@ -1282,7 +1270,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRows{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public ObjectRows ReadToObjectRows<T>(string sql, params SqlParameter[] sqlParameters)
+		public ObjectRows ReadToObjectRows<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToObjectRows<T>();
@@ -1296,14 +1284,14 @@ namespace Artisan.Orm
 		}
 	
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRows{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRows> ReadToObjectRowsAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRows> ReadToObjectRowsAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowsAsync(createFunc).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRows{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRows> ReadToObjectRowsAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRows> ReadToObjectRowsAsync(string sql, Func<SqlDataReader, ObjectRow> createFunc, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowsAsync(createFunc, cancellationToken).ConfigureAwait(false);
@@ -1317,14 +1305,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRows{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRows> ReadToObjectRowsAsync<T>(string sql, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRows> ReadToObjectRowsAsync<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowsAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToObjectRows{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRows> ReadToObjectRowsAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRows> ReadToObjectRowsAsync<T>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToObjectRowsAsync<T>(cancellationToken).ConfigureAwait(false);
@@ -1338,7 +1326,7 @@ namespace Artisan.Orm
 		}
 	
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsObjectRows(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public ObjectRows ReadAsObjectRows(string sql, params SqlParameter[] sqlParameters)
+		public ObjectRows ReadAsObjectRows(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadAsObjectRows();
@@ -1352,14 +1340,14 @@ namespace Artisan.Orm
 		}
 	
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsObjectRows(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRows> ReadAsObjectRowsAsync(string sql, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRows> ReadAsObjectRowsAsync(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsObjectRowsAsync().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsObjectRows(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<ObjectRows> ReadAsObjectRowsAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters)
+		public async Task<ObjectRows> ReadAsObjectRowsAsync(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsObjectRowsAsync(cancellationToken).ConfigureAwait(false);
@@ -1377,7 +1365,7 @@ namespace Artisan.Orm
 		#region [ ReadToDictionary ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToDictionary{TKey, TValue}(SqlCommand)"/>
-		public IDictionary<TKey, TValue> ReadToDictionary<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) where TKey : notnull
+		public IDictionary<TKey, TValue> ReadToDictionary<TKey, TValue>(string sql, params SqlParameter?[] sqlParameters) where TKey : notnull
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToDictionary<TKey, TValue>();
@@ -1391,7 +1379,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsDictionary{TKey, TValue}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public IDictionary<TKey, TValue> ReadAsDictionary<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) where TKey : notnull
+		public IDictionary<TKey, TValue> ReadAsDictionary<TKey, TValue>(string sql, params SqlParameter?[] sqlParameters) where TKey : notnull
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadAsDictionary<TKey, TValue>();
@@ -1405,14 +1393,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToDictionary{TKey, TValue}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) where TKey : notnull
+		public async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(string sql, params SqlParameter?[] sqlParameters) where TKey : notnull
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToDictionaryAsync<TKey, TValue>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToDictionary{TKey, TValue}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters) where TKey : notnull
+		public async Task<IDictionary<TKey, TValue>> ReadToDictionaryAsync<TKey, TValue>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters) where TKey : notnull
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToDictionaryAsync<TKey, TValue>(cancellationToken).ConfigureAwait(false);
@@ -1426,14 +1414,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsDictionary{TKey, TValue}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(string sql, params SqlParameter[] sqlParameters) where TKey : notnull
+		public async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(string sql, params SqlParameter?[] sqlParameters) where TKey : notnull
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsDictionaryAsync<TKey, TValue>().ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsDictionary{TKey, TValue}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(string sql, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters) where TKey : notnull
+		public async Task<IDictionary<TKey, TValue>> ReadAsDictionaryAsync<TKey, TValue>(string sql, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters) where TKey : notnull
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadAsDictionaryAsync<TKey, TValue>(cancellationToken).ConfigureAwait(false);
@@ -1451,7 +1439,7 @@ namespace Artisan.Orm
 		#region [ ReadToEnumerable, ReadAsEnumerable ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToEnumerable{T}(SqlCommand)"/>
-		public IEnumerable<T> ReadToEnumerable<T>(string sql, params SqlParameter[] sqlParameters)
+		public IEnumerable<T> ReadToEnumerable<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			foreach (var item in cmd.ReadToEnumerable<T>())
@@ -1467,7 +1455,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadAsEnumerable{T}(Microsoft.Data.SqlClient.SqlCommand)"/>
-		public IEnumerable<T> ReadAsEnumerable<T>(string sql, params SqlParameter[] sqlParameters)
+		public IEnumerable<T> ReadAsEnumerable<T>(string sql, params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			foreach (var item in cmd.ReadAsEnumerable<T>())
@@ -1495,7 +1483,7 @@ namespace Artisan.Orm
 		public async IAsyncEnumerable<T> ReadToAsyncEnumerable<T>(
 			string sql,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default,
-			params SqlParameter[] sqlParameters)
+			params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			await foreach (var item in cmd.ReadToAsyncEnumerable<T>(cancellationToken).ConfigureAwait(false))
@@ -1527,7 +1515,7 @@ namespace Artisan.Orm
 		public async IAsyncEnumerable<T> ReadAsAsyncEnumerable<T>(
 			string sql,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default,
-			params SqlParameter[] sqlParameters)
+			params SqlParameter?[] sqlParameters)
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			await foreach (var item in cmd.ReadAsAsyncEnumerable<T>(cancellationToken).ConfigureAwait(false))
@@ -1555,7 +1543,7 @@ namespace Artisan.Orm
 		#region [ ReadToTree, ReadToTreeList ]
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTree{T}(SqlCommand, IList{T}, bool)"/>
-		public T? ReadToTree<T>(string sql, bool hierarchicallySorted = false, params SqlParameter[] sqlParameters) where T : class, INode<T>
+		public T? ReadToTree<T>(string sql, bool hierarchicallySorted = false, params SqlParameter?[] sqlParameters) where T : class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToTree<T>(hierarchicallySorted);
@@ -1569,7 +1557,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTreeList{T}(Microsoft.Data.SqlClient.SqlCommand, System.Func{Microsoft.Data.SqlClient.SqlDataReader, T}, System.Collections.Generic.IList{T}, bool)"/>
-		public IList<T> ReadToTreeList<T>(string sql, bool hierarchicallySorted = false, params SqlParameter[] sqlParameters) where T: class, INode<T>
+		public IList<T> ReadToTreeList<T>(string sql, bool hierarchicallySorted = false, params SqlParameter?[] sqlParameters) where T: class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return cmd.ReadToTreeList<T>(hierarchicallySorted);
@@ -1583,14 +1571,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTree{T}(Microsoft.Data.SqlClient.SqlCommand, System.Collections.Generic.IList{T}, bool)"/>
-		public async Task<T?> ReadToTreeAsync<T>(string sql, bool hierarchicallySorted = false, params SqlParameter[] sqlParameters) where T : class, INode<T>
+		public async Task<T?> ReadToTreeAsync<T>(string sql, bool hierarchicallySorted = false, params SqlParameter?[] sqlParameters) where T : class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToTreeAsync<T>(hierarchicallySorted).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTree{T}(Microsoft.Data.SqlClient.SqlCommand, System.Collections.Generic.IList{T}, bool)"/>
-		public async Task<T?> ReadToTreeAsync<T>(string sql, CancellationToken cancellationToken = default, bool hierarchicallySorted = false, params SqlParameter[] sqlParameters) where T : class, INode<T>
+		public async Task<T?> ReadToTreeAsync<T>(string sql, CancellationToken cancellationToken = default, bool hierarchicallySorted = false, params SqlParameter?[] sqlParameters) where T : class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToTreeAsync<T>(hierarchicallySorted, cancellationToken).ConfigureAwait(false);
@@ -1604,7 +1592,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTree{T}(Microsoft.Data.SqlClient.SqlCommand, System.Collections.Generic.IList{T}, bool)"/>
-		public async Task<T?> ReadToTreeAsync<T>(string sql, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters) where T : class, INode<T>
+		public async Task<T?> ReadToTreeAsync<T>(string sql, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters) where T : class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToTreeAsync<T>(createFunc, hierarchicallySorted, cancellationToken).ConfigureAwait(false);
@@ -1618,14 +1606,14 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTreeList{T}(Microsoft.Data.SqlClient.SqlCommand, System.Func{Microsoft.Data.SqlClient.SqlDataReader, T}, System.Collections.Generic.IList{T}, bool)"/>
-		public async Task<IList<T>> ReadToTreeListAsync<T>(string sql, bool hierarchicallySorted = false, params SqlParameter[] sqlParameters) where T : class, INode<T>
+		public async Task<IList<T>> ReadToTreeListAsync<T>(string sql, bool hierarchicallySorted = false, params SqlParameter?[] sqlParameters) where T : class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToTreeListAsync<T>(hierarchicallySorted).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTreeList{T}(Microsoft.Data.SqlClient.SqlCommand, System.Func{Microsoft.Data.SqlClient.SqlDataReader, T}, System.Collections.Generic.IList{T}, bool)"/>
-		public async Task<IList<T>> ReadToTreeListAsync<T>(string sql, CancellationToken cancellationToken = default, bool hierarchicallySorted = false, params SqlParameter[] sqlParameters) where T : class, INode<T>
+		public async Task<IList<T>> ReadToTreeListAsync<T>(string sql, CancellationToken cancellationToken = default, bool hierarchicallySorted = false, params SqlParameter?[] sqlParameters) where T : class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToTreeListAsync<T>(hierarchicallySorted, cancellationToken).ConfigureAwait(false);
@@ -1639,7 +1627,7 @@ namespace Artisan.Orm
 		}
 
 		/// <inheritdoc cref="SqlCommandExtensions.ReadToTreeList{T}(Microsoft.Data.SqlClient.SqlCommand, System.Func{Microsoft.Data.SqlClient.SqlDataReader, T}, System.Collections.Generic.IList{T}, bool)"/>
-		public async Task<IList<T>> ReadToTreeListAsync<T>(string sql, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false, CancellationToken cancellationToken = default, params SqlParameter[] sqlParameters) where T : class, INode<T>
+		public async Task<IList<T>> ReadToTreeListAsync<T>(string sql, Func<SqlDataReader, T> createFunc, bool hierarchicallySorted = false, CancellationToken cancellationToken = default, params SqlParameter?[] sqlParameters) where T : class, INode<T>
 		{
 			using var cmd = CreateCommand(sql, sqlParameters);
 			return await cmd.ReadToTreeListAsync<T>(createFunc, hierarchicallySorted, cancellationToken).ConfigureAwait(false);

@@ -28,6 +28,7 @@
     <PackageReleaseNotes>Artisan.ORM 4.1.0
 
 - Bundled Roslyn mapper diagnostics ART001-ART007, including complete RequiredMethod.AllMain checks.
+- Added SqlParam factories mirroring typed Add*Param overloads, with nullable TVP omission, OUTPUT/RETURN support, and Roslyn checks for mapped TVP factories.
 - Fixed first-row reads, explicit projections, async cancellation, transaction ownership and cleanup.
 - Isolated mapper and procedure-parameter caches; preserved complete parameter metadata.
 - Corrected string and decimal normalization, dictionary parameter names, and enum auto-mapping.
@@ -42,6 +43,7 @@ ReadToLists supports two, three, or four result sets.
 Compatibility: excess decimal scale is rejected unless truncateFraction is true (truncation toward zero).
 Exhausted negative-ID generators throw instead of wrapping. Undefined/composite DataReply statuses are rejected.
 Mapper contract errors can now fail builds; see docs/analyzers.md and the changelog for migration guidance.
+Null short-ID TVP collections are now omitted consistently. Execute methods reuse one valid integer RETURN parameter; ambiguous or conflicting return parameters are rejected.
 
 Full notes: https://github.com/lobodava/artisan-orm/blob/master/CHANGELOG.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>

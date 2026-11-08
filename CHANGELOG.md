@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `SqlParam` factories mirror every typed `Add*Param` overload, preserving argument names,
+  defaults, SQL metadata, nullable values, and string/decimal normalization. Factories work
+  with existing repository parameter-array overloads and create fresh unattached parameters.
+  JSON and DateOnly/TimeOnly factories follow the existing target-framework availability.
+- Roslyn checks mapped `SqlParam.Table<T>` and `SqlParam.TableRow<T>` calls for the required
+  table mapper functions, while explicit automatic mapping needs no registered mapper.
 - Roslyn analyzer bundled in `Artisan.ORM`: errors ART001-ART007 validate mapper registrations,
   required functions, signatures, duplicate registrations, ambiguous reflection lookups, and
   mapper-dependent calls. English messages use localizable resources. Requires Roslyn 4.8+.
@@ -18,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Repository parameter arrays skip null entries, allowing a null TVP factory result to mean
+  omission. Null short-ID collections now follow the same omission rule as other ID collections;
+  non-null empty collections still produce an empty TVP.
+- Repository and command execution reuse a caller-supplied integer RETURN parameter instead
+  of adding a duplicate. Return helpers reject multiple return parameters, incompatible SQL
+  types, and reserved-name collisions before SQL execution. `AddReturnValueParam` is idempotent.
 - Negative-ID generators stop at exhaustion with `InvalidOperationException` instead of returning
   zero, positive values, or repeated IDs. This applies to Int16, Int32, and Int64 generators.
 - Decimal parameters accept fractional `decimal(p,p)` values and validate precision/scale.
@@ -72,6 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Compatibility
 
+- `ExecuteCommand` / `ExecuteCommandAsync` ensure a RETURN parameter after the configuration
+  callback. A callback that needs that parameter should call `cmd.ReturnValueParam()` instead
+  of assuming `cmd.Parameters["@ReturnValue"]` was populated before configuration.
+- Null `IEnumerable<short>` TVPs are omitted instead of explicitly binding an empty table.
+  Pass an empty non-null collection when an explicit empty TVP is intended.
 - `truncateFraction: true` now means truncation toward zero, not implicit SQL rounding. Without
   that flag, nonzero excess fractional digits still fail. SQL precision must be 1..38, scale 0..precision.
 - Negative IDs remain unique only within a generator's finite lifetime; use Int32/Int64 for larger

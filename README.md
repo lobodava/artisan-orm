@@ -27,6 +27,8 @@ For hierarchical data — folder trees, organisation charts and the like — the
 Version 4.1.0 adds compile-time mapper checks, corrects read projections and cancellation,
 clarifies transaction ownership, isolates mapping and parameter caches, and fixes parameter
 normalization and graph helper edge cases. The optional DataReply protocol remains available.
+Typed `SqlParam` factories mirror the existing `Add*Param` helpers for compact repository calls,
+including OUTPUT/RETURN parameters and nullable TVPs. See the [SqlParam guide](https://github.com/lobodava/artisan-orm/wiki/SqlParam).
 See [CHANGELOG.md](CHANGELOG.md) for behavior changes and migration notes.
 
 The repository includes a [Claude Code skill](.claude/skills/artisan-orm/SKILL.md) for working

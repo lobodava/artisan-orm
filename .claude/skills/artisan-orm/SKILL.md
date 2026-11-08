@@ -37,7 +37,7 @@ Do not infer these from C# property declaration order. Manual mappers may delibe
 | Choose repository shortcuts, command extensions, or reader extensions | [Execution levels](references/execution-levels.md) |
 | Entity mappers, registered vs automatic mapping, single/multiple results, streaming, trees, MergeJoin | [Reading and mapping](references/reading-and-mapping.md) |
 | Dynamic results, dictionaries, compact `ObjectRow` / `ObjectRows` results | [Result shapes](references/result-shapes.md) |
-| Scalar/OUTPUT/JSON parameters, TVPs, DateOnly/TimeOnly, nullable values, GUID/rowversion conversions | [Parameters and types](references/parameters-and-types.md); its `User` TVP examples also need the [shared model and mapper](references/reading-and-mapping.md#minimal-shared-model-and-mapper) |
+| `SqlParam` factories, scalar/OUTPUT/JSON parameters, TVPs, DateOnly/TimeOnly, nullable values, GUID/rowversion conversions | [Parameters and types](references/parameters-and-types.md); its `User` TVP examples also need the [shared model and mapper](references/reading-and-mapping.md#minimal-shared-model-and-mapper) |
 | Bulk inserts through a connection or repository, mapped vs automatic columns | [Bulk copy](references/bulk-copy.md) |
 | Reader mapping, DataTable shape, and procedure-parameter caches | Read both [mapping caches](references/reading-and-mapping.md#automatic-mapping-and-caches) and [parameter metadata caching](references/parameters-and-types.md#procedure-parameter-discovery-and-caching) |
 | Transactions, graph saving, insertion order/deadlocks, DataReply and JSON/HTTP contracts | [Writes and transactions](references/writes-and-transactions.md) |
@@ -47,7 +47,7 @@ Read the task's reference and any example prerequisites it explicitly links. For
 
 ## Choose the execution path
 
-Start with `RepositoryBase.ReadTo*`, `ReadAs*`, or `Execute*` shortcuts for simple operations. They also accept parameter-configuration callbacks. Use command or reader callbacks when the task needs their additional control; see [execution levels](references/execution-levels.md) for the same lookup at all three levels.
+Start with `RepositoryBase.ReadTo*`, `ReadAs*`, or `Execute*` shortcuts for simple operations. Use typed factories such as `SqlParam.Int` and `SqlParam.Table` with their parameter-array overloads; null TVP results are omitted. Repository shortcuts also accept parameter-configuration callbacks. Use command or reader callbacks when the task needs their additional control; see [execution levels](references/execution-levels.md) for the same lookup at all three levels.
 
 | Entry point | Callback responsibility | Result |
 | --- | --- | --- |
@@ -78,7 +78,7 @@ Paths below are relative to the ArtisanOrm repository root, not to this skill di
 | Mapper discovery and requirements | `Artisan.Orm/MappingManager.cs`, `Artisan.Orm/MapperForAttribute.cs`, `docs/analyzers.md` |
 | Reader getters and result-set advancement | `Artisan.Orm/SqlDataReaderExtensions_Get.cs`, `Artisan.Orm/SqlDataReaderExtensions_Read.cs` |
 | Command reads and streaming | `Artisan.Orm/SqlCommandExtensions_Sync.cs`, `Artisan.Orm/SqlCommandExtensions_Async.cs` |
-| Parameters and TVPs | `Artisan.Orm/SqlCommandExtensions_Parameters.cs`, `Artisan.Orm/DataTableExtensions.cs` |
+| Parameters and TVPs | `Artisan.Orm/SqlParam.cs`, `Artisan.Orm/SqlCommandExtensions_Parameters.cs`, `Artisan.Orm/DataTableExtensions.cs` |
 | Graph joining | `Artisan.Orm/MergeJoinExtensions.cs`, `Tests/DAL/GrandRecords/Repository.cs` |
 | Working graph persistence | `Tests/DAL/GrandRecords/`, `Database/5. Procedures/GrandRecords/SaveGrandRecords.sql` |
 | Folder hierarchy and SQL regressions | 4.1.0 fixes only `dbo.RecalcSubFolderHids` and `dbo.GetHidCode`; `dbo.SaveFolder` and the existing procedure parameters are unchanged. See [folder scope](references/reading-and-mapping.md#current-folder-sample-sql). |

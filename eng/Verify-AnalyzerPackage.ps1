@@ -87,7 +87,13 @@ $cases = @(
     @{ Name = 'signature'; Error = 'ART003'; Source = '[MapperFor(typeof(User))] public static class M { public static string CreateObject(SqlDataReader r) => ""; }' },
     @{ Name = 'optional'; Error = 'ART006'; Source = '[MapperFor(typeof(User))] public static class M {} public class C { void Run(SqlCommand c) { c.ReadToObjectRow<User>(); } }' },
     @{ Name = 'valid'; Error = ''; Source = '[MapperFor(typeof(User), RequiredMethod.CreateObject)] public static class M { public static User CreateObject(SqlDataReader r) => new User(); } public class C { void Run(SqlCommand c) { c.ReadTo<User>(); c.ReadAs<User>(); c.ReadTo<int>(); c.ReadTo(r => new { Id = 1 }); } }' },
-    @{ Name = 'external'; Error = ''; External = $true; Source = 'public class C { void Run(SqlCommand c) { c.ReadTo<User>(); } }' }
+    @{ Name = 'external'; Error = ''; External = $true; Source = 'public class C { void Run(SqlCommand c) { c.ReadTo<User>(); } }' },
+    @{ Name = 'factory-missing'; Error = 'ART001'; Source = 'public class C { void Run() { SqlParam.Table("@Users", new User[0]); } }' },
+    @{ Name = 'factory-incomplete'; Error = 'ART006'; Source = '[MapperFor(typeof(User), RequiredMethod.CreateObject)] public static class M { public static User CreateObject(SqlDataReader r) => new User(); } public class C { void Run() { SqlParam.TableRow("@User", new User()); } }' },
+    @{ Name = 'factory-mapped'; Error = ''; Source = '[MapperFor(typeof(User), RequiredMethod.BothForDataTable)] public static class M { public static DataTable CreateDataTable() => new DataTable("dbo.UserType").AddColumn<int>("Id"); public static object[] CreateDataRow(User u) => new object[] { u.Id }; } public class C { void Run() { SqlParam.Table("@Users", new User[0]); SqlParam.Table("@Users", new User[0], "dbo.OtherUserType"); SqlParam.TableRow("@User", new User()); } }' },
+    @{ Name = 'factory-automatic'; Error = ''; Source = 'public class C { void Run() { SqlParam.Table("@Users", new User[0], "dbo.UserType", "Id"); SqlParam.TableRow("@User", new User(), "dbo.UserType", "Id"); } }' },
+    @{ Name = 'factory-repository'; Error = ''; Source = '#nullable enable
+public class C { void Run(RepositoryBase r) { DataTable? rows = null; r.ReadTo<int>("SELECT @Id", SqlParam.Table("@Rows", rows), SqlParam.Int("@Id", 1)); r.Execute("SELECT 1", SqlParam.ReturnValue()); } }' }
 )
 
 foreach ($framework in $Frameworks) {

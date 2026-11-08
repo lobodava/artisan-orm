@@ -64,12 +64,13 @@ Omitting the second argument imposes no presence requirements by itself. However
 
 ## Which calls are checked
 
-The analyzer identifies Artisan methods by their resolved symbols, declaring types, and overloads. It checks calls and method-group references on `RepositoryBase`, `SqlCommandExtensions`, `SqlDataReaderExtensions`, `SqlConnectionExtensions`, and `DataTableExtensions`:
+The analyzer identifies Artisan methods by their resolved symbols, declaring types, and overloads. It checks calls and method-group references on `RepositoryBase`, `SqlCommandExtensions`, `SqlDataReaderExtensions`, `SqlConnectionExtensions`, `DataTableExtensions`, and `SqlParam`:
 
 - Registered-mapper overloads of `ReadTo*`, including async, streaming, tree, dictionary, and multiple-result operations.
 - `ReadToObjectRow<T>` / `ReadToObjectRows<T>` require `CreateObjectRow`.
 - Dictionary operations check `TValue`; multiple-result operations check every result type.
 - `ToDataTable`, mapper-based `AddTableParam` / `AddTableRowParam`, and `BulkCopy` / `BulkCopyAsync` require both DataTable functions.
+- Mapper-based `SqlParam.Table<T>` / `TableRow<T>` factories require both DataTable functions too, including `Table<T>` with a table-name override. Their explicit-column automatic-mapping overloads and non-generic integer-ID overloads do not require a registration; `SqlParam.Json` and other parameter factories do not request mapper functions.
 - Direct `MappingManager.GetCreateObjectFunc<T>` and `GetCreateObjectRowFunc<T>` calls.
 
 `As` operations, inline-mapper overloads, and scalar read paths do not require a registered mapper. A repository's `Action<SqlCommand>` argument configures the command and is not an inline mapper. Nullable/Try-style `MappingManager` getters are allowed without a registration.

@@ -245,7 +245,8 @@ public sealed class ArtisanMapperAnalyzer : DiagnosticAnalyzer
         var owner = method.ContainingType.ToDisplayString();
         if (owner != "Artisan.Orm.SqlCommandExtensions" && owner != "Artisan.Orm.SqlDataReaderExtensions" &&
             owner != "Artisan.Orm.RepositoryBase" && owner != "Artisan.Orm.DataTableExtensions" &&
-            owner != "Artisan.Orm.SqlConnectionExtensions" && owner != "Artisan.Orm.MappingManager") yield break;
+            owner != "Artisan.Orm.SqlConnectionExtensions" && owner != "Artisan.Orm.MappingManager" &&
+            owner != "Artisan.Orm.SqlParam") yield break;
         // Action<SqlCommand> configures a command and must not be mistaken for a mapper.
         if (method.Parameters.Any(p => p.Type is INamedTypeSymbol t && t.Name == "Func" &&
             t.ContainingNamespace.ToDisplayString() == "System")) yield break;
@@ -257,6 +258,12 @@ public sealed class ArtisanMapperAnalyzer : DiagnosticAnalyzer
             // Nullable getters and Try-style getters do not require a registration.
             if (name == "GetCreateObjectFunc") yield return new Call(method, entity, location, MapperFunction.CreateObject);
             if (name == "GetCreateObjectRowFunc") yield return new Call(method, entity, location, MapperFunction.CreateObjectRow);
+            yield break;
+        }
+        if (owner == "Artisan.Orm.SqlParam")
+        {
+            if (name is "Table" or "TableRow" && !method.Parameters.Any(p => p.Name == "columnNames"))
+                yield return new Call(method, entity, location, MapperFunction.CreateDataTable, MapperFunction.CreateDataRow);
             yield break;
         }
         if (name is "ToDataTable" or "AddTableParam" or "AddTableRowParam" or "BulkCopy" or "BulkCopyAsync")
