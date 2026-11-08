@@ -1,4 +1,4 @@
-# [![Artisan.Orm Logo](https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png)](http://www.nuget.org/packages/Artisan.ORM) Artisan.ORM
+# [![Artisan.Orm Logo](https://raw.githubusercontent.com/lobodava/artisan-orm/master/Logo.png)](https://www.nuget.org/packages/Artisan.ORM) Artisan.ORM
 
 ADO.NET Micro-ORM to SQL Server. Multi-targets `.NET Standard 2.1`, `.NET 8` and `.NET 10` (since 4.0.0).
 Use version 3.5.x for `.NET Standard 2.1`-only projects, or version 2.x.x (built against `.NET Standard 2.0`) for `.NET Framework` and earlier `.NET Core`.
@@ -10,31 +10,31 @@ First there was a desire to save a graph of objects for one access to the databa
 * one request to the application server,
 * one access to the database.
 
-Thus the method of [How to Save an Object Graph in Master-Detail Relationship with One Stored Procedure](articles/01-object-graph-saving.md) was found.
+Thus the method of [How to Save an Object Graph in Master-Detail Relationship with One Stored Procedure](https://github.com/lobodava/artisan-orm/blob/master/articles/01-object-graph-saving.md) was found.
 
 Then there was a desire of more control over Object-Relational Mapping, better performance and ADO.NET code reduction.
 
-Thus a set of extensions to ADO.NET methods turned into a separate project. Here is a story about [Artisan.Orm or How To Reinvent the Wheel](articles/02-artisan-orm.md).
+Thus a set of extensions to ADO.NET methods turned into a separate project. Here is a story about [Artisan.Orm or How To Reinvent the Wheel](https://github.com/lobodava/artisan-orm/blob/master/articles/02-artisan-orm.md).
 
-Finally the *object graph saving method* required a new approach to transmitting more details about exceptional cases. [The Artisan Way of Data Reply](articles/03-data-reply.md) became such an answer.
+Finally the *object graph saving method* required a new approach to transmitting more details about exceptional cases. [The Artisan Way of Data Reply](https://github.com/lobodava/artisan-orm/blob/master/articles/03-data-reply.md) became such an answer.
 
-For hierarchical data — folder trees, organisation charts and the like — the Id-ParentId model can be combined with SQL Server's `hierarchyid` for the best of both worlds. See [Combination of Id-ParentId and HierarchyId Approaches to Hierarchical Data](articles/04-hierarchyid-combination.md).
+For hierarchical data — folder trees, organisation charts and the like — the Id-ParentId model can be combined with SQL Server's `hierarchyid` for the best of both worlds. See [Combination of Id-ParentId and HierarchyId Approaches to Hierarchical Data](https://github.com/lobodava/artisan-orm/blob/master/articles/04-hierarchyid-combination.md).
 
-> Note: the four articles above were originally published on [CodeProject](https://www.codeproject.com/) between 2016 and 2021. CodeProject went read-only in late 2024; the articles have been re-published in [`articles/`](articles/) under [CC-BY-SA-4.0](articles/LICENSE).  
+> Note: the four articles above were originally published on [CodeProject](https://www.codeproject.com/) between 2016 and 2021. CodeProject went read-only in late 2024; the articles have been re-published in [`articles/`](https://github.com/lobodava/artisan-orm/tree/master/articles) under [CC-BY-SA-4.0](https://github.com/lobodava/artisan-orm/blob/master/articles/LICENSE).
 
-## Preparing 4.1.0
+## What's new in 4.1.0
 
 Version 4.1.0 adds compile-time mapper checks, corrects read projections and cancellation,
 clarifies transaction ownership, isolates mapping and parameter caches, and fixes parameter
 normalization and graph helper edge cases. The optional DataReply protocol remains available.
 Typed `SqlParam` factories mirror the existing `Add*Param` helpers for compact repository calls,
 including OUTPUT/RETURN parameters and nullable TVPs. See the [SqlParam guide](https://github.com/lobodava/artisan-orm/wiki/SqlParam).
-See [CHANGELOG.md](CHANGELOG.md) for behavior changes and migration notes.
+See [CHANGELOG.md](https://github.com/lobodava/artisan-orm/blob/master/CHANGELOG.md) for behavior changes and migration notes.
 
-The repository includes a [Claude Code skill](.claude/skills/artisan-orm/SKILL.md) for working
+The repository includes a [Claude Code skill](https://github.com/lobodava/artisan-orm/blob/master/.claude/skills/artisan-orm/SKILL.md) for working
 with the library. Sample SQL corrections require explicit deployment; installing the package
 never updates a database. Release verification and publication steps are in
-[the release checklist](docs/releasing.md).
+[the release checklist](https://github.com/lobodava/artisan-orm/blob/master/docs/releasing.md).
 
 ## What's new in 4.0
 
@@ -47,7 +47,7 @@ never updates a database. Release verification and publication steps are in
 - **Nullable Reference Types** across the whole public API.
 - **SourceLink + symbols (.snupkg)** — step-into debugging from any IDE.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full list.
+See [CHANGELOG.md](https://github.com/lobodava/artisan-orm/blob/master/CHANGELOG.md) for the full list.
 
 ## What to read for better understanding
 
@@ -59,7 +59,7 @@ Diagnostics are errors by default and run automatically during `dotnet build` wi
 `PackageReference`. Runtime mapping and reflection checks remain in place.
 
 The analyzer requires Roslyn 4.8 or later (for example, .NET SDK 8.0.100+). Messages are in English,
-with resources ready for additional translations. See [analyzer rules and configuration](docs/analyzers.md),
+with resources ready for additional translations. See [analyzer rules and configuration](https://github.com/lobodava/artisan-orm/blob/master/docs/analyzers.md),
 including exceptions for inline mappers, `As` methods, and runtime-only mapper assemblies.
 
 ### Wiki and examples
@@ -96,6 +96,6 @@ To achieve these goals Artisan.ORM uses:
 * [unique negative identities](https://github.com/lobodava/artisan-orm/blob/master/Artisan.Orm/NegativeIdentity.cs) as a flag of new entities;
 * a [special approach](https://github.com/lobodava/artisan-orm/wiki/Negative-identities-and-object-graph-saving) to writing stored procedures for object reading and saving.
 
-Artisan.ORM is available as [NuGet Package](http://www.nuget.org/packages/Artisan.ORM).
+Artisan.ORM is available as [NuGet Package](https://www.nuget.org/packages/Artisan.ORM).
 
 More examples of the Artisan.ORM usage are available in the [Tests](https://github.com/lobodava/artisan-orm/tree/master/Tests) and [Database](https://github.com/lobodava/artisan-orm/tree/master/Database) projects.
