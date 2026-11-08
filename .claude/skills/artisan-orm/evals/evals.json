@@ -46,13 +46,15 @@
       "name": "Explicit adoption in a new application",
       "kind": "selection",
       "context": "A new C# application targets .NET 8 and has no ORM dependency. The local Artisan.Orm source for the planned 4.1.0 release is available. No claim has been made that 4.1.0 is published. dbo.Products has non-null Id int and Name nvarchar(100) columns.",
-      "prompt": "Show how to adopt Artisan.Orm for a product lookup using the local library source. Include a minimal model, mapper, and repository example.",
+      "prompt": "Show how to adopt Artisan.Orm for a product lookup using the local library source. Include a minimal model, mapper, and repository example. Include how this local-source consumer enables the Roslyn mapper analyzer and distinguish supplied schema assumptions from inspected evidence.",
       "expected_skill_usage": true,
       "assertions": [
         "Selects the skill because the user explicitly requests adoption, despite the absence of an existing dependency.",
         "Uses a local project reference or describes the available source integration instead of asserting that a published 4.1.0 package exists.",
-        "Uses Microsoft.Data.SqlClient and maps the supplied SQL schema.",
-        "Uses a read-only mapper contract for the lookup rather than adding unused write-method stubs."
+        "Uses Microsoft.Data.SqlClient and maps the supplied SQL schema; any advertised project configuration resolves the local library's dependencies without introducing a direct package downgrade.",
+        "Uses a read-only mapper contract for the lookup rather than adding unused write-method stubs.",
+        "Does not assume a library-only ProjectReference enables consumer analyzer diagnostics; shows an explicit analyzer ProjectReference with OutputItemType Analyzer and ReferenceOutputAssembly false, or an equivalent verified source integration.",
+        "Distinguishes the supplied SQL schema from source/database inspection and does not infer published or unpublished package status from the development checkout."
       ]
     },
     {
@@ -60,13 +62,13 @@
       "name": "Declared mapper promise versus operation requirements",
       "kind": "behavior",
       "context": "A project uses the local 4.1.0 development source and its analyzer. Product is a class with an int Id property. ProductMapper is public static, has [MapperFor(typeof(Product), RequiredMethod.AllMain)], and contains only public static Product CreateObject(SqlDataReader reader) => new Product { Id = reader.GetInt32(0) };. The SQL projection is one non-null int Id column. The only current operation is reader.ReadTo<Product>().",
-      "prompt": "Explain the mapper errors and fix the declaration for a mapper intended only for entity reads. Also explain what would be required if we later called products.ToDataTable().",
+      "prompt": "Explain the mapper errors and fix the declaration for a mapper intended only for entity reads. Would removing the analyzer make the original declaration safe at runtime? Also explain what would be required if we later called products.ToDataTable().",
       "expected_skill_usage": true,
       "assertions": [
-        "Explains that AllMain requires CreateObject, CreateDataTable, and CreateDataRow even without a table-writing call.",
+        "Explains that AllMain requires CreateObject, CreateDataTable, and CreateDataRow even without a table-writing call; the runtime mapper scan also enforces the promise and can throw ArtisanMappingException without the analyzer.",
         "Identifies the two missing methods as ART002 and changes the intentionally read-only mapper to RequiredMethod.CreateObject.",
         "Does not suppress diagnostics or add empty implementations to satisfy AllMain.",
-        "Explains that a later mapper-based ToDataTable call independently needs both DataTable methods and would otherwise produce ART006.",
+        "Explains that a later mapper-based ToDataTable call independently needs both DataTable methods and would otherwise produce ART006; adding compatible implementations suffices, while broadening RequiredMethod is optional.",
         "If combining RequiredMethod values, uses comma-separated arguments rather than bitwise OR."
       ]
     },
@@ -74,14 +76,14 @@
       "id": 6,
       "name": "Parameter examples with their shared declarations",
       "kind": "behavior",
-      "context": "A consumer project uses a build from the planned 4.1.0 source. Only the skill folder is available in this evaluation workspace; its source-map paths are not present. The user has opened references/parameters-and-types.md. dbo.UserTableType already exists with Id int NOT NULL, Name nvarchar(50) NOT NULL, and Email nvarchar(100) NULL, in that order. No application User or UserMapper has been defined.",
-      "prompt": "Make the User TVP examples self-contained. Include the shared model and mapper, then show a helper using the registered mapper and another using automatic mapping with explicit columns. The helpers should only configure a supplied command.",
+      "context": "A consumer application uses a build from the prepared 4.1.0 source. The evaluation workspace contains an App/ directory and this skill folder, but no Artisan.Orm source checkout; the skill's source-map paths are unavailable. The user is reading references/parameters-and-types.md. dbo.UserTableType already exists with Id int NOT NULL, Name nvarchar(50) NOT NULL, and Email nvarchar(100) NULL, in that order. No application User or UserMapper has been defined.",
+      "prompt": "Write a complete, self-contained application example in App/UserTvpExamples.cs. Include all imports, the shared User model and UserMapper, and the full bodies of two helpers: one using the registered mapper and one using automatic mapping with explicit columns. The helpers must only configure a supplied SqlCommand. Change only the application example file.",
       "expected_skill_usage": true,
       "assertions": [
-        "Reads the linked minimal shared model and mapper section rather than inventing missing declarations or assuming the main source checkout exists.",
+        "Reads the linked minimal shared model and mapper section as guidance without editing skill references or assuming the main source checkout exists.",
         "Provides the required imports, User model, and compatible mapper declarations with Id, Name, and nullable Email in the supplied order.",
-        "Uses the registered-mapper AddTableParam overload for the mapped helper.",
-        "Uses AddTableParam with an explicit Id,Name,Email column list, or an equivalent explicitly projected AsDataTable, for automatic mapping.",
+        "Writes a complete registered-mapper helper body using the mapped AddTableParam overload in the requested application file, rather than only naming a reference example.",
+        "Writes a complete automatic-mapping helper body with an explicit Id,Name,Email column list, or equivalent explicitly projected AsDataTable, in the same application file.",
         "Does not describe the three-argument list overload as automatic mapping and does not execute the supplied command."
       ]
     },
@@ -110,7 +112,7 @@
       "assertions": [
         "Does not claim that the 4.0.0 package includes the 4.1.0 fixes or bundled analyzer based only on a version label in a source project.",
         "States that the installed package or matching implementation must be checked and identifies the missing evidence.",
-        "Distinguishes the string-flag fix, explicit-Ok DataReply fix, and analyzer availability as separate compatibility questions.",
+        "Distinguishes the string-flag fix, explicit-Ok DataReply fix, and analyzer availability; identifies RepositoryBase.CheckForDataReplyException as the explicit-Ok verification target rather than relying on the enum or reply DTOs.",
         "Does not claim to have inspected unavailable source paths or executed package tests.",
         "Does not instruct the user to install a published 4.1.0 package without verifying that it is available."
       ]
@@ -120,13 +122,14 @@
       "name": "First-row preservation and explicit scalar factories",
       "kind": "behavior",
       "context": "A project references the prepared 4.1.0 source. A SQL query returns rows ordered by Ordinal: (Ordinal=1, Ignored=10, Value=1), (Ordinal=2, Ignored=NULL, Value=2), (Ordinal=3, Ignored=30, Value=3). Its SELECT list is Ignored int NULL, Value int NOT NULL. An explicit factory reads column 1 and doubles it. The code uses a command-level scalar ReadToEnumerable<int> overload inside a live command scope.",
-      "prompt": "What values should this enumeration produce? Show how to retain the supplied factory and explain whether null in the first column or the scalar return type changes which mapping path is used. Also describe the one-row case.",
+      "prompt": "What values should this enumeration produce? Show how to retain the supplied factory and explain whether null in the first column or the scalar return type changes which mapping path is used. Also describe the one-row case. Compare the SQL NULL row without the factory when T is int versus int?.",
       "expected_skill_usage": true,
       "assertions": [
         "Returns 2, 4, 6 in order and includes the first row; a one-row result produces one value.",
         "Honors the supplied factory for scalar results and for the row whose first column is SQL NULL.",
         "Does not pre-read or discard a row as a workaround, substitute the first-column value, or add a fake mapper registration for int.",
-        "Keeps the command alive for enumeration or materializes the result within its scope."
+        "Keeps the command alive for enumeration or materializes the result within its scope.",
+        "Distinguishes an empty result from a row containing SQL NULL: the no-factory int conversion of DBNull throws, while int? can preserve null; does not claim every scalar null becomes zero."
       ]
     },
     {
@@ -149,15 +152,16 @@
       "name": "Graph order and deadlocks without constraining manual mappers",
       "kind": "behavior",
       "context": "An Artisan.Orm application uses explicit graph mappers and MERGE procedures with clustered join keys. OUTPUT pairs source.Id with inserted.Id. New objects use increasing negative IDs. The model has no SortOrder property, but its List order matters to users. The application permits adding an order column to its SQL table, UDTT, and hand-written mapper. Existing procedures use message-based RAISERROR catch wrappers.",
-      "prompt": "Can the indexes and increasing temporary IDs guarantee insertion order and prevent deadlocks? Preserve the graph approach, propose a reliable way to retain the list order, and explain what would be needed for a bounded deadlock retry. Distinguish MERGE from an insert-only INSERT SELECT ORDER BY.",
+      "prompt": "Can the indexes and increasing temporary IDs guarantee insertion order and prevent deadlocks? Preserve the graph approach, propose a reliable way to retain the list order, and explain what would be needed for a bounded deadlock retry. Distinguish MERGE from an insert-only INSERT SELECT ORDER BY. State what diagnostic evidence would guide deadlock mitigation before choosing changes or retries.",
       "expected_skill_usage": true,
       "assertions": [
         "Retains key-pair OUTPUT translation and never matches input/output arrays by their positions.",
         "Rejects the clustered-index guarantees while explaining their matching-performance value.",
-        "Persists an explicit position and reads with ORDER BY; permits a manual mapper to derive it from collection order without requiring a C# property.",
+        "Persists an explicit position and reads with ORDER BY without requiring a C# property; the collection owner prepares an indexed projection or row-writing context because CreateDataRow(T) receives no collection index.",
         "Scopes the documented INSERT SELECT ORDER BY guarantee to identity-value computation, not physical insertion order or MERGE.",
-        "Discusses consistent access order, short transactions, actual deadlock evidence, and bounded whole-transaction retry after rollback with safe external effects.",
-        "Recognizes that current message-based RAISERROR wrappers emit 50000 and that SQL Server 2012+ THROW can preserve 1205; does not invent a built-in automatic retry."
+        "Discusses consistent access order, short transactions, and bounded whole-transaction retry after rollback with safe external effects; treats these as risk reduction rather than a guarantee of deadlock freedom.",
+        "Recognizes that current message-based RAISERROR wrappers emit 50000 and that SQL Server 2012+ THROW can preserve 1205; does not invent a built-in automatic retry.",
+        "Identifies a captured deadlock graph, such as SQL Server system_health xml_deadlock_report or an equivalent capture, as evidence to examine for statements, resources, and access order; does not claim to have captured it in this planning task."
       ]
     },
     {
@@ -172,7 +176,8 @@
         "Distinguishes compiling SQL/source/package updates from deploying database objects.",
         "Exercises a move between nonempty sibling groups with interleaved names, stable IDs, continuous per-parent paths, and descendant updates.",
         "Checks complete distinct hexadecimal codes beyond 1000 characters plus null/root/short behavior; accounts for 1784 characters for 892 bytes.",
-        "Does not claim the fixes add cycle, cross-user, live-schema, or arbitrary-depth validation; acknowledges the actual sample preconditions."
+        "Does not claim the fixes add cycle, cross-user, live-schema, or arbitrary-depth validation; acknowledges the actual sample preconditions.",
+        "Does not invent a changed dbo.SaveFolder signature, required third SQL object update, or parameter-count incompatibility; separates the corrected RecalcSubFolderHids and GetHidCode definitions from the unchanged SaveFolder contract."
       ]
     },
     {
@@ -194,16 +199,213 @@
       "id": 14,
       "name": "Mapping and metadata cache isolation",
       "kind": "behavior",
-      "context": "The prepared 4.1.0 source is available. Two unrelated runtime types share the same FullName, readers return different ordered schemas, and two databases each define dbo.Save with different parameter metadata. Connections include ordinary SQL-login authentication and integrated authentication. An old helper seeds MappingManager.AddSqlParameters with only a procedure-name key.",
-      "prompt": "Explain how current caches separate these cases and whether the old cache-seeding helper controls AddParams. Recommend an approach if the application must avoid metadata-discovery round trips. Do these caches prove a manual mapper matches the database?",
+      "context": "The prepared 4.1.0 source is available. Two unrelated runtime types share the same FullName, readers return different ordered schemas, and two databases each define dbo.Save with different parameter metadata. Connections include ordinary SQL-login authentication and integrated authentication. An old helper seeds MappingManager.AddSqlParameters with only a procedure-name key. Automatic DataTables are also created for the same model using different table names and column orders. Some commands use unqualified procedure names; some connections have an unknown Database value when the cache is consulted.",
+      "prompt": "Explain the keys and isolation boundaries of the automatic reader, automatic DataTable, and procedure-parameter caches in these cases. Identify when procedure metadata is not cached and whether commands share mutable parameter instances or values. Does the old cache-seeding helper control AddParams? Recommend an approach if metadata-discovery round trips must be avoided. Do these caches prove a manual mapper matches the database?",
       "expected_skill_usage": true,
       "assertions": [
         "Distinguishes actual runtime Type identity and ordered result shape rather than relying on FullName or SQL text alone.",
         "Describes DataTable shape isolation by type, table name, and ordered columns.",
-        "Separates parameter metadata by database/connection/authentication context and notes connection-instance scope for integrated/token authentication.",
+        "Separates parameter metadata by database/connection/authentication context; eligible integrated/token-authentication calls reuse metadata on the same connection instance, while a new instance discovers it again.",
         "Explains that unqualified procedure names or an unknown default database are not cached and that commands receive independent parameter clones.",
         "Does not claim legacy AddSqlParameters seeds the scoped AddParams cache; recommends explicit Add*Param helpers when discovery must be avoided.",
         "Does not infer live-schema validation or a mandatory one-property-per-column contract for manual mappers."
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Bulk copy mapping, identity, and destination contract",
+      "kind": "behavior",
+      "context": "A C# application uses the prepared Artisan.Orm 4.1.0 source and Microsoft.Data.SqlClient. ImportProduct has SourceId int, Label string, Enabled bool, and a DisplayText string property used only by the UI. dbo.ImportProducts already exists with Name nvarchar(100) NOT NULL, IsActive bit NOT NULL, and Id int IDENTITY NOT NULL, in that physical order. Source IDs are unique and must be preserved. No mapper or UDTT exists. A caller supplies an open connection and an active transaction belonging to it; the caller owns both resources.",
+      "prompt": "Provide complete import helpers using a registered mapper and, as an alternative, automatic mapping. Insert only the three destination columns while preserving the supplied IDs and checking constraints. Do not create database objects or complete the caller's transaction. Explain how the mapping handles the column order and what the returned value represents.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Provides a compatible write mapper with CreateDataTable and CreateDataRow and uses BulkCopy for that path; the row array follows its DataTable column order.",
+        "Uses BulkCopyAs with a projection or import DTO whose Id, Name, and IsActive names match the destination, omitting DisplayText; does not invent a columnNames overload.",
+        "Recognizes name-based bulk column mappings despite the differing SQL physical order; does not impose the TVP ordinal rule.",
+        "Targets dbo.ImportProducts as a table and does not require or create a UDTT.",
+        "Passes the supplied transaction with KeepIdentity and CheckConstraints, without UseInternalTransaction, committing, rolling back, or disposing caller-owned resources.",
+        "Explains that success returns the copied DataTable row count and does not populate generated IDs in input objects or return an identity mapping."
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Bulk copy buffering, cancellation, and atomicity",
+      "kind": "behavior",
+      "context": "A prepared Artisan.Orm 4.1.0 consumer imports two million objects from a lazy IEnumerable using repo.BulkCopyAsAsync(rows, \"dbo.ImportProducts\", cancellationToken, batchSize: 1000, timeout: 60). The object properties match the existing destination schema. The repository starts without an attached transaction. The application requires all rows to be rolled back if any batch fails, and the developer expects the batch size to bound client memory and the cancellation token to stop preparation immediately. No database execution is authorized in this exercise.",
+      "prompt": "Review those expectations and provide an asynchronous import helper with the required commit policy. Explain when the token is observed, what batchSize and timeout control, and whether this helper alone provides bounded-memory streaming. Describe the alternative if buffering the entire input is unacceptable.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Explains that the complete input is synchronously materialized as a DataTable before the bulk write; batchSize does not bound that memory.",
+        "Provides a complete helper using existing application types or a valid generic declaration and one repository or explicit external transaction for the whole import; forwards cancellation to the copy and does not combine that transaction with UseInternalTransaction.",
+        "Distinguishes batch size from transaction scope and timeout from input-enumeration duration; does not claim internal per-batch transactions make the entire import atomic.",
+        "States that the token reaches connection opening and WriteToServerAsync but is not automatically checked during mapping/enumeration.",
+        "Proposes an explicitly owned reader-based SqlClient bulk-copy path, or explicitly bounded application chunks under one transaction, for bounded memory without pretending the Artisan wrapper streams.",
+        "Keeps rollback/commit ownership coherent, distinguishes copy success from transaction commit, and does not claim to have executed the database import."
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Dynamic report names, nulls, and asynchronous lifetime",
+      "kind": "behavior",
+      "context": "An application uses the prepared Artisan.Orm 4.1.0 source. A report joins dbo.Products p (Id int NOT NULL, Name nvarchar(50) NOT NULL, CategoryId int NOT NULL) to dbo.Categories c (Id int NOT NULL). Its current SELECT list is p.Id, c.Id, p.Name, CAST(NULL AS nvarchar(100)) AS Note. There is no report entity or mapper. The caller supplies a live RepositoryBase and a CancellationToken; the desired output is a materialized list of dynamic records.",
+      "prompt": "Write a complete asynchronous helper for this report. Keep product and category IDs distinguishable, show how the caller can inspect whether Note is null, and explain the empty-result behavior and which resources must remain alive until the helper completes. Do not execute it against a database.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Uses ReadDynamicListAsync through the existing repository/command APIs without requiring an entity mapper.",
+        "Aliases the two Id columns with distinct names and explains that duplicate dynamic member names fail rather than overwrite.",
+        "Treats returned records as ExpandoObject values, uses the declared aliases, and recognizes SQL NULL as C# null rather than DBNull.Value.",
+        "Passes the token to a direct repository shortcut, or forwards it through wrapper and command operation when using a callback; does not use an async GetByReaderAsync projection.",
+        "Returns an empty list for no rows and keeps the command/repository alive until asynchronous materialization completes; does not return a live reader."
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Dictionary keys, full-row value mappings, and duplicate policy",
+      "kind": "behavior",
+      "context": "An Artisan.Orm 4.1.0 consumer has a configured SqlCommand whose result columns are LookupKey int NULL at ordinal 0, Name nvarchar(50) NULL at ordinal 1, and Id int NOT NULL at ordinal 2. CatalogEntry has public int Id and string? Name properties. No mapper exists yet. Typical rows are (11, 'Widget', 7), (12, NULL, 8), and (NULL, 'Ignored', 9). A faulty query can additionally return a second row with LookupKey 11. The caller owns the configured command and keeps it alive until awaited work finishes.",
+      "prompt": "Provide complete asynchronous helpers for a key-to-name dictionary and a key-to-CatalogEntry dictionary with an explicit projection, using a cancellation token. Explain which rows and values are returned, what happens if the duplicate appears, and how registered versus automatic entity mapping would differ. Do not change the SELECT order or execute the command now.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Uses column 0 as the dictionary key and column 1 as the simple scalar value, preserving the nullable Name.",
+        "The entity projection reads Id from ordinal 2 and Name from ordinal 1 on the entire current row rather than shifting ordinals past the key.",
+        "Explains that the SQL NULL key row is skipped and a duplicate key throws instead of overwriting or grouping automatically.",
+        "Distinguishes registered CreateObject, automatic property-name mapping, and the supplied factory; recognizes that automatic mapping preserves SQL NULL for the string Name property and does not invent a key-selector overload or reader-level async dictionary helper.",
+        "Passes the token to command-level ReadToDictionaryAsync and awaits materialization within the caller's live-command contract."
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Compact ObjectRows with an explicit positional contract",
+      "kind": "behavior",
+      "context": "A prepared Artisan.Orm 4.1.0 application reads Id int NOT NULL, Name nvarchar(50) NOT NULL, and Email nvarchar(100) NULL in that SELECT order. Its Product model has Id, Name, and Email properties. A client expects compact rows in the order Name, Id, Email, with C# null for missing Email, and a separate ordered Columns array. No Product mapper exists. A supplied RepositoryBase remains alive through an awaited call.",
+      "prompt": "Provide a complete model, mapper, and asynchronous read helper returning the compact report. Declare only the mapper capability this operation needs. Explain how the unmapped ReadAsObjectRows alternative would change ordering, schema information, and SQL NULL handling. Do not execute any SQL.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Defines a public static CreateObjectRow(SqlDataReader) returning ObjectRow and uses RequiredMethod.CreateObjectRow without unused CreateObject or DataTable stubs.",
+        "Reads SQL ordinals deliberately and emits Name, Id, Email with null normalization, allowing this manual row shape to differ from model property order.",
+        "Returns ObjectRows plus a matching separate ordered Columns contract; does not claim that ObjectRows carries its own names or SQL schema.",
+        "Explains that non-generic ReadAsObjectRows copies SELECT order with GetValue and retains DBNull.Value, rather than applying the requested mapper or JSON normalization.",
+        "Uses the actual ReadToObjectRowsAsync API with a token and a synchronous mapper callback; keeps the repository alive through materialization and reports an empty collection for no rows."
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Procedure output parameters and return code",
+      "kind": "behavior",
+      "context": "A .NET 8 application uses the prepared Artisan.Orm 4.1.0 source. dbo.SaveLabel has @Name nvarchar(100) input, @SavedId int OUTPUT and @Message nvarchar(200) OUTPUT; both outputs may be SQL NULL. It returns an integer RETURN code and no row sets. The caller supplies a fresh SqlCommand attached to an open connection and, optionally, an external transaction. The caller owns both resources. SET NOCOUNT ON is enabled in the procedure.",
+      "prompt": "Write a complete asynchronous helper that executes this command with a cancellation token and returns the procedure code and nullable output values. Explain how those values differ from an affected-row count, and when outputs would become available if a later version also returned a reader. Keep resource ownership with the caller.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Declares typed output parameters with the stated string size, configures the procedure and input, and obtains a ReturnValue parameter before execution.",
+        "Executes asynchronously with the supplied cancellation token and reads outputs only after completion, preserving SQL NULL as nullable C# values.",
+        "Distinguishes RETURN code, named outputs, and ExecuteNonQuery affected-row count; does not treat the count under NOCOUNT as the procedure code.",
+        "Explains that reader-based execution requires closing or disposing the reader before reading outputs, while keeping the command alive.",
+        "Does not close the caller connection, commit or roll back the external transaction, or invent helpers returning output values directly."
+      ]
+    },
+    {
+      "id": 21,
+      "name": "JSON parameter serialization and asset compatibility",
+      "kind": "behavior",
+      "context": "An application references prepared Artisan.Orm 4.1.0. A Preferences model has public Theme and FontSize properties. dbo.SavePreferences expects @Preferences nvarchar(max), permits SQL NULL, and reads lowercase theme and fontSize JSON members. ASP.NET Core is configured for camel-case JSON. One caller supplies a model; another already has a JSON document string. A separate shared component targets netstandard2.1.",
+      "prompt": "Show complete command-configuration helpers for the model and already-serialized text, preserving SQL NULL. Describe AddJsonParam's own SQL type, size, and null binding. Can it use the ASP.NET Core settings or accept serializer options? Explain how the shared netstandard component can send the same contract without changing the database.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Identifies AddJsonParam as default System.Text.Json serialization into nvarchar(max), with null mapped to SQL NULL and Size -1.",
+        "Does not invent a JsonSerializerOptions overload or assume ASP.NET Core settings apply to the helper.",
+        "Uses explicit serialization with camel-case options for the model and sends the result through AddNVarcharMaxParam, preserving null.",
+        "Sends already-serialized text directly with AddNVarcharMaxParam, avoiding JSON string double-serialization.",
+        "Explains that AddJsonParam is present in net8.0 and net10.0 assets but absent from netstandard2.1; the shared component can serialize with a compatible serializer and use the text helper."
+      ]
+    },
+    {
+      "id": 22,
+      "name": "DateOnly and TimeOnly with explicit mapping",
+      "kind": "behavior",
+      "context": "A consumer uses prepared Artisan.Orm 4.1.0 on .NET 8 and .NET 10. ScheduleValue has DateOnly Day and TimeOnly? StartsAt. A procedure accepts @Day date and @StartsAt time and returns Day date NOT NULL, StartsAt time NULL, in that order. There is no mapper yet. A shared library consuming the netstandard2.1 asset also needs an equivalent date/time representation.",
+      "prompt": "Provide complete parameter-configuration and reader-mapping helpers for ScheduleValue. Preserve null and explain whether automatic mapping is sufficient for these properties. What changes are needed for the netstandard component? Do not access a database. Show a complete call site for the modern reader helper through RepositoryBase and explain whether the DateTime/TimeSpan shared model can use automatic mapping.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Uses the DateOnly and nullable TimeOnly overloads of AddDateParam and AddTimeParam for the modern targets.",
+        "Provides an inline or registered mapper using GetDateOnly and GetTimeOnlyNullable at the declared ordinals, without adding extra reader advancement inside the mapper.",
+        "Preserves SQL NULL rather than substituting midnight or a sentinel date.",
+        "Identifies that 4.1.0 automatic simple-type mapping does not include DateOnly and TimeOnly; typed helper availability is not evidence of automatic mapping support.",
+        "Distinguishes net8.0/net10.0 helper availability from the netstandard2.1 asset and uses DateTime/TimeSpan with existing helpers for the latter.",
+        "Recognizes that DateTime and nullable TimeSpan are supported automatic-mapping property types, subject to matching names and SQL types; does not carry the DateOnly/TimeOnly exclusion over to the netstandard model.",
+        "Shows a complete invocation through GetByCommand/GetByCommandAsync and command-level ReadTo/ReadToAsync for an inline single-object mapper, or uses a registered mapper with the repository shortcut; any derived repository supplies a valid base constructor, and no repo.ReadTo(factory, configure) overload is invented."
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Compact numeric lists and opaque rowversion tokens",
+      "kind": "behavior",
+      "context": "An application using prepared Artisan.Orm 4.1.0 has a positioned reader whose columns are RoleIds nvarchar(max) NULL and Version binary(8) NULL. RoleIds is a comma-separated integer list. Inputs may include NULL, blank text, 1,2,3, or 1,,3. A later update accepts an externally supplied base64 rowversion token as @Version binary(8). No matching mapper exists yet.",
+      "prompt": "Write complete helpers to read these values and configure the update token. Explain the different list inputs and whether converting rowversion to Int64 makes it a portable numeric ordering value. Keep the token suitable for round-tripping across the application boundary. Show how a configured SqlCommand invokes the helper for one row and handles an empty result.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Uses GetInt32ArrayFromString for the textual list and explains empty arrays for SQL NULL or whitespace, parsed integers for valid text, and failure for an empty interior element.",
+        "Preserves a null rowversion and uses raw bytes or base64 with the matching parameter helper for non-null tokens.",
+        "Validates externally supplied tokens as eight bytes and does not mistake a binary concurrency token for a date/time value.",
+        "Recognizes BitConverter-based Int64 conversion as platform-byte-order dependent and does not promise SQL numeric equivalence or portable sorting.",
+        "Invokes the positioned-row helper through an appropriate row-reading operation, or explicitly calls Read inside GetByReader before the helper; handles no row and does not directly pass the positioned helper to an unpositioned whole-reader callback."
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Review generated mapper and SQL scaffolding",
+      "kind": "behavior",
+      "context": "A prepared Artisan.Orm 4.1.0 source checkout includes Database/Utility Scripts/Artisan Code Generation.sql. The application needs a read-only Product view with Id int NOT NULL, Token uniqueidentifier NOT NULL, and Version rowversion NOT NULL in that SELECT order. No mapper exists. The database is not connected in this evaluation; its DDL and the generator source are available. The developer wants to understand how to configure the utility and use its output, including whether the packaged Roslyn analyzer generates the same files.",
+      "prompt": "Explain the generation workflow and provide a complete current C# model and read mapper for this projection. Identify what must be reviewed in the generated C# and SQL before use, whether generation installs any database objects, and how to declare the intended mapper capabilities. Do not execute or deploy SQL. For namespace prefix ExampleApp.Data, schema dbo, table Products, and object Product, state the generated names and the actual list-reading API.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Identifies the SQL utility and its namespace/schema/table/object settings, Messages-pane output, and metadata requirement; does not claim it ran without a database.",
+        "Distinguishes the SQL scaffold generator from the Roslyn diagnostic analyzer and from NuGet installation or SQL deployment.",
+        "Recognizes the limited type map and historical rowversion getter/type output; provides a real Guid getter and consistent bytes or explicitly converted rowversion representation.",
+        "Provides complete compilable read-only declarations with RequiredMethod.CreateObject and the supplied ordinals, without invalid unused write stubs.",
+        "Calls out review of generated SQL types/constraints and schema-qualified TVP names/nullability if write scaffolding is later retained; does not treat generation or C# compilation as SQL validation.",
+        "Names ProductMapper and ProductTableType (dbo.ProductTableType in SQL), distinguishes unsupported-type markers from object names, and uses ReadToList<Product> for a list rather than ReadTo<List<Product>>; any example query uses the available view's actual SQL name rather than an invented replacement."
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Repository shortcuts and command versus reader control",
+      "kind": "behavior",
+      "context": "A .NET 8/.NET 10 application uses prepared Artisan.Orm 4.1.0 with RepositoryBase. LookupProduct and its valid read-only registered mapper already exist. dbo.GetProductById accepts @Id int and returns zero or one row with Id int NOT NULL and Name nvarchar(100) NOT NULL. A caller supplies a live repository and CancellationToken. No special output parameters or mixed result protocol is required.",
+      "prompt": "Write the simplest asynchronous lookup helper for this existing style. Then show equivalent synchronous versions at repository, SqlCommand, and SqlDataReader levels to explain when each level is useful. Explain whether configuring a parameter or timeout alone requires a nested reader callback, and who executes SQL at each level.",
+      "expected_skill_usage": true,
+      "assertions": [
+        "Starts with the actual RepositoryBase.ReadToAsync<LookupProduct> convenience overload with the supplied token and typed Id parameter, rather than unnecessary nested command/reader callbacks.",
+        "Uses a synchronous parameter-configuration callback and does not turn an Action<SqlCommand> into async void.",
+        "Shows equivalent sync repository, command, and reader operations that preserve the registered mapper and null-on-no-row behavior without executing the lookup three times as one operation.",
+        "Explains that command read extensions execute SQL while reader extensions consume an existing result; GetByCommand requires its callback to execute and configuration alone does not.",
+        "Keeps command/reader ownership within scope, explains that GetByCommand creates and owns its command with the repository connection/transaction, and avoids an extra Read or NextResult before/after a reader materializer.",
+        "Reserves lower levels for additional control, recognizes that simple configuration is supported by repository shortcuts, and keeps the repository alive until the async call completes."
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Plain SqlClient bulk import without Artisan",
+      "kind": "selection",
+      "context": "A C# application references Microsoft.Data.SqlClient only and uses its own ADO.NET import service. It has no Artisan.ORM dependency, RepositoryBase, or mapper code. The service already has a populated DataTable, an open SqlConnection, and an active SqlTransaction for the destination dbo.ImportProducts with matching column names.",
+      "prompt": "Show how to bulk-copy this DataTable asynchronously using the current SqlClient service and cancellation token. Keep the existing dependencies and leave transaction completion to the caller.",
+      "expected_skill_usage": false,
+      "assertions": [
+        "Does not load or directly read the Artisan.Orm skill solely because bulk copy, SqlClient, or transactions are mentioned.",
+        "Uses the existing SqlClient/DataTable approach without introducing Artisan.ORM, RepositoryBase, or MapperFor.",
+        "Addresses the requested asynchronous import and token while preserving caller transaction ownership; does not execute a database import."
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Unrelated JSON serialization and date values",
+      "kind": "selection",
+      "context": "A .NET 8 console application reads local JSON files with System.Text.Json. It has no SQL data-access code, SQL package, or Artisan.ORM dependency. Its configuration model has a DateOnly Day property and a nullable string Label property.",
+      "prompt": "Show a complete helper to serialize this configuration with camel-case member names and omit null Label values. Keep it as file-format serialization; no database integration is needed.",
+      "expected_skill_usage": false,
+      "assertions": [
+        "Does not load or directly read the Artisan.Orm skill based only on JSON, DateOnly, or null handling.",
+        "Uses System.Text.Json for the supplied file-format contract and does not add database parameters, mappers, or library dependencies.",
+        "Provides a relevant complete helper with camel-case naming and null omission rather than failing silently or declining the unrelated task."
       ]
     }
   ]

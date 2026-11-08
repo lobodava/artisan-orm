@@ -7,15 +7,15 @@ Examples use `Microsoft.Data.SqlClient` and `Artisan.Orm`. Apply the [version an
 - `ReadTo<T>` / `ReadToList<T>` use a registered `CreateObject` for complex entities. Scalar paths such as `ReadTo<int>()` read column 0 without a mapper. An overload taking `Func<SqlDataReader, T>` can supply the mapping inline.
 - `ReadAs<T>` / `ReadAsList<T>` map public writable simple properties by exact, case-sensitive column name and cache the generated mapping by result shape. They are valid choices when that contract fits; they are not restricted to prototypes. Alias SQL columns deliberately.
 - `ReadToObjectRow<T>` / `ReadToObjectRows<T>` require `CreateObjectRow`, not `CreateObject`. `ReadAsObjectRow()` / `ReadAsObjectRows()` take no entity type argument and copy result columns into compact rows.
-- `GetByCommand` provides a configured command to a delegate. `RunCommand` does the same without a return value: merely configuring SQL inside it does not execute anything. The delegate must invoke a read/execution operation. `ExecuteCommand` executes the command and returns the T-SQL `RETURN` value, not the affected-row count.
+- `GetByCommand` creates a command bound to the repository connection and transaction, then disposes it after the callback. The callback configures SQL/parameters and invokes a read/execution operation. `RunCommand` does the same without returning a value; configuration alone does not execute SQL. `ExecuteCommand` executes the configured command and returns the T-SQL `RETURN` value, not the affected-row count.
 
 In 4.1.0, synchronous scalar enumeration includes its first row, including one-row and nullable results. A supplied factory takes precedence over scalar conversion in list, array, enumerable, and multi-result paths. It receives each row even when column 0 is SQL NULL; the factory decides how to read other columns or substitute nulls. Do not work around an earlier first-row bug by pre-reading the reader, or assume null in column 0 bypasses a custom projection. Regressions: `Tests/Tests/ReadProjectionRegressionTest.cs`.
 
+Distinguish no row from a row containing SQL NULL. A single-value read with no row returns `default(T)`. Without a factory, converting a SQL NULL scalar to non-nullable `int` throws; it does not yield zero. Use `int?` for a nullable scalar contract. For lists, supply the element type: `ReadToList<Product>()`, not `ReadTo<List<Product>>()`, which requests a single mapped List object.
+
 Keep at most one mapper registration per entity type. Conventional mapper methods are public, static, non-generic methods; use a static mapper class for clarity. Do not assume C# property declaration order controls an explicit mapper: reader ordinals must match the SELECT list.
 
-Automatic reader caches use actual runtime `Type` identity plus ordered column names and field types, rather than SQL text or `Type.FullName` alone. Automatic DataTable caches distinguish runtime type, table name, and ordered selected columns. Reusing a cache does not verify the live SQL schema or impose automatic-mapping rules on a hand-written mapper. Regressions: `Tests/Tests/MappingCacheTest.cs`.
-
-Automatic mapping skips indexers. Reader mapping requires public setters; automatic DataTable mapping requires public getters. Numeric enum properties, including nullable enums, participate consistently using their underlying numeric types. SQL NULL is preserved for nullable value types and strings, independently of nullable-reference annotations. These rules do not impose property-to-column matching on manual mappers.
+## Mapper requirements
 
 | Requirement | Methods required |
 | --- | --- |
@@ -30,11 +30,27 @@ Automatic mapping skips indexers. Reader mapping requires public setters; automa
 
 Requirements do not disable optional methods. Omitting the second attribute argument removes declared method-presence requirements; it does not disable signature validation or supply functions needed by actual operations. In 4.1.0, `AllMain` enforces all three documented methods; choose `CreateObject` when the mapper is intended only for entity reads.
 
+Separate declaration checks from operation checks. `AllMain` with only `CreateObject` produces two `ART002` diagnostics even when no writes are called. Changing an intentionally read-only declaration to `RequiredMethod.CreateObject` fixes that promise.
+
+The runtime also enforces declared requirements during lazy mapper discovery. An incomplete `AllMain` declaration can throw `ArtisanMappingException` when mapper lookup initializes the scan, even if the immediate operation only reads an entity. Removing or disabling the analyzer does not make that declaration valid at runtime.
+
+If that mapper still lacks `CreateDataTable` and `CreateDataRow`, a later mapper-based `ToDataTable()` or `AddTableParam` produces `ART006` for the missing operation functions. Adding compatible implementations is enough to enable the call while retaining `RequiredMethod.CreateObject`. Choosing `AllMain` or combining `CreateObject, BothForDataTable` additionally promises those capabilities even without callers; it is optional, not an access switch.
+
 A read-only registration cannot satisfy a TVP operation by itself. Runtime-only calls without the required `CreateDataTable` / `CreateDataRow` fail with `ArtisanMappingException`; do not generate placeholder write methods or silently fall back to automatic mapping.
 
 The 4.1.0 analyzer reports missing registrations (`ART001`), missing required methods (`ART002`), incompatible signatures (`ART003`), duplicate registrations (`ART004`), ambiguous overloads (`ART005`), unavailable operation-specific functions (`ART006`), and invalid registrations (`ART007`). Resolve the contract, rather than suppressing errors to make a build pass.
 
 Analyzer success does not validate SQL column order, types, or nullability. See `docs/analyzers.md` in a source checkout or [compile-time mapper validation](https://github.com/lobodava/artisan-orm/wiki/Compile-time-Mapper-Validation) for contract examples and intentional runtime-only mapper scenarios.
+
+## Automatic mapping and caches
+
+Automatic reader caches use actual runtime `Type` identity plus ordered column names and field types, rather than SQL text or `Type.FullName` alone. Automatic DataTable caches distinguish runtime type, table name, and ordered selected columns. Reusing a cache does not verify the live SQL schema or impose automatic-mapping rules on a hand-written mapper. Regressions: `Tests/Tests/MappingCacheTest.cs`.
+
+Automatic mapping skips indexers. Reader mapping requires public setters; automatic DataTable mapping requires public getters. Numeric enum properties, including nullable enums, participate consistently using their underlying numeric types. SQL NULL is preserved for nullable value types and strings, independently of nullable-reference annotations. These rules do not impose property-to-column matching on manual mappers.
+
+When checking this null behavior in source, follow `TypeExtensions.IsNullableValueType`: despite its name, it returns true for `string` too. `CreateAutoMappingFunc` uses that result to wrap the string getter in an `IsDBNull` conditional. Selecting `GetString` alone does not mean the generated mapper calls it for SQL NULL.
+
+For questions spanning caches, also read [procedure parameter discovery and caching](parameters-and-types.md#procedure-parameter-discovery-and-caching). Cover reader shape, DataTable shape, parameter-cache scope and bypass conditions separately; each cache solves a different problem.
 
 ## Minimal shared model and mapper
 
@@ -154,6 +170,8 @@ For three levels, sub-details must follow the order in which the detail stream i
 ### Current folder sample SQL
 
 The sample combines both save algorithms in `dbo.SaveFolder` through `@WithHidReculc`; C# calls `SaveFolder(folder, withHidReorder: true)` for contiguous sibling paths. The SQL object is `dbo.RecalcSubFolderHids`; its source file retains the spelling `ReculcSubFolderHids.sql`. There is no separately installed `SaveFolderWithHidReculc` procedure.
+
+The 4.1.0 folder corrections change only `dbo.RecalcSubFolderHids` and `dbo.GetHidCode`. `dbo.SaveFolder` and the recalculation procedure's parameters are unchanged from 4.0.0: SaveFolder already passes `@OldParentId` and `@OldParentHid`. The correction uses the existing path parameter in the body; it does not add a new caller dependency. Verify deployed definitions and the actual version diff when planning updates; a caller relationship alone is not evidence that the caller must be redeployed.
 
 The 4.1.0 corrections use `@OldParentHid` as the old parent's path prefix and `ROW_NUMBER() OVER (PARTITION BY ParentId ORDER BY Name, Id)` in the recalculation anchor. Both old and new sibling groups, and their descendants, need coverage when testing a move. `dbo.GetHidCode` returns up to 1784 hexadecimal characters for a hierarchyid's maximum 892 bytes. Keep that width in consumers; it is separate from the historical `HidPath` string buffers and recursive-depth limits.
 

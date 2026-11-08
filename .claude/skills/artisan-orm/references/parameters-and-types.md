@@ -123,13 +123,219 @@ By default, nonzero fractional digits beyond scale cause an exception; insignifi
 
 ## Procedure parameter discovery and caching
 
-`AddParams` derives stored-procedure metadata when it is not cached. In 4.1.0 its cache distinguishes server, database, command, connection settings, and authentication identity. A known database and ordinary schema-qualified two-part procedure name are required for caching; unqualified names and unknown default databases are rediscovered.
+`AddParams` derives stored-procedure metadata when it is not cached. For cache questions, also read [automatic reader and DataTable caches](reading-and-mapping.md#automatic-mapping-and-caches). In 4.1.0:
+
+- Parameter-cache keys distinguish server, database, procedure, connection settings, and authentication identity.
+- Caching requires an ordinary schema-qualified two-part procedure name and a known database at cache lookup. An unqualified name or unknown database bypasses caching and requires discovery again.
+- Omitting `Initial Catalog` alone does not establish that the database is unknown: an open connection may already know its database. Inspect the connection state used by the cache.
 
 Dictionary arguments to `AddParams` accept either `"Id"` or `"@Id"` for the SQL parameter `@Id`. Use one spelling per key; do not supply duplicate logical names. Object arguments bind public properties by their parameter name.
 
-Ordinary SQL-login connections can share compatible metadata. Integrated, token, and other connection-specific authentication uses a cache scoped to that `SqlConnection` instance, so a new connection performs discovery again. Each command receives cloned parameters with complete metadata; cached templates do not retain parameter values. The legacy public `MappingManager.AddSqlParameters(string, ...)` cache remains separate and no longer seeds `AddParams`.
+Ordinary SQL-login connections can share compatible metadata. Integrated, token, and other connection-specific authentication uses a cache scoped to that `SqlConnection` instance: repeated eligible calls on the same instance reuse metadata, while a new instance performs discovery again. Each command receives cloned parameters with complete metadata; cached templates do not retain parameter values. The legacy public `MappingManager.AddSqlParameters(string, ...)` cache remains separate and no longer seeds `AddParams`.
 
 Use explicit `Add*Param` helpers when avoiding metadata discovery is important. Do not replace the scoped key with a procedure-name-only cache or assume metadata remains valid after changing the database contract. Regressions: `Tests/Tests/ParameterCacheTest.cs`.
+
+## Output parameters and procedure return values
+
+Use `AddBitOutputParam`, `AddTinyIntOutputParam`, `AddSmallIntOutputParam`, `AddIntOutputParam`, `AddBigIntOutputParam`, `AddDecimalOutputParam`, `AddGuidOutputParam`, `AddDateTime2OutputParam`, `AddDateTimeOffsetOutputParam`, `AddVarcharOutputParam`, or `AddNVarcharOutputParam` to declare output values. Specify the procedure's string size and decimal precision/scale. These helpers return `void`; read `cmd.Parameters[name].Value` after execution, handling `DBNull.Value` for nullable outputs. For an input/output parameter, construct a `SqlParameter` with `Direction = ParameterDirection.InputOutput` and an initial value; these output-only helpers do not express that contract.
+
+Three results are independent: a procedure's `RETURN` code, its named `OUTPUT` parameters, and the affected-row count returned by `SqlCommand.ExecuteNonQuery*`. `RepositoryBase.ExecuteCommand*` returns the first. Affected-row counts can be `-1`, including when counts are suppressed by `SET NOCOUNT ON`. `ReturnValueParam()` adds or retrieves the `@ReturnValue` parameter; `AddReturnValueParam()` adds it unconditionally.
+
+This complete helper assumes a fresh command attached to an already open, caller-owned connection, with any external transaction already assigned. The procedure is `dbo.SaveLabel(@Name nvarchar(100), @SavedId int OUTPUT, @Message nvarchar(200) OUTPUT)`, allows null outputs, and returns an integer code. It returns no row sets. The helper neither closes the connection nor commits the caller's transaction.
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Artisan.Orm;
+using Microsoft.Data.SqlClient;
+
+public static class OutputParameterExamples
+{
+    public static async Task<(int ReturnCode, int? SavedId, string? Message, int AffectedRows)>
+        SaveAsync(SqlCommand cmd, string name, CancellationToken cancellationToken)
+    {
+        cmd.UseProcedure("dbo.SaveLabel");
+        cmd.AddNVarcharParam("@Name", 100, name);
+        cmd.AddIntOutputParam("@SavedId");
+        cmd.AddNVarcharOutputParam("@Message", 200);
+        var returnParameter = cmd.ReturnValueParam();
+
+        var affectedRows = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        var id = cmd.Parameters["@SavedId"].Value;
+        var message = cmd.Parameters["@Message"].Value;
+        return ((int)returnParameter.Value,
+            id is null or DBNull ? null : (int)id,
+            message is null or DBNull ? null : (string)message,
+            affectedRows);
+    }
+}
+```
+
+With `ExecuteReader*`, read outputs only after closing/disposing the reader. Normal close processes remaining results to populate outputs; an explicit loop over every `NextResult()` is not required just to obtain them. A projection inside `GetByReader*` still runs while the reader is open; return its materialized payload first, then inspect outputs while the command is still alive. In a repository callback, finish this work before returning, since `GetByCommand*` disposes its command afterward.
+
+## JSON parameters
+
+The complete call is `cmd.AddJsonParam("@Preferences", payload)`. Its own binding contract is:
+
+| Aspect | `AddJsonParam<T>` behavior |
+| --- | --- |
+| SQL metadata | `SqlDbType.NVarChar`, `Size = -1`: `nvarchar(max)` |
+| Null payload | `DBNull.Value` (SQL NULL), not JSON text `"null"` |
+| Non-null payload | `System.Text.Json.JsonSerializer.Serialize(value)` with default options and applicable model attributes |
+| Custom settings | No options overload and no inheritance of ASP.NET Core JSON settings |
+
+For custom naming, converters, or field handling, serialize explicitly and pass that text to `AddNVarcharMaxParam`. Passing pre-serialized JSON to `AddJsonParam` serializes it again as a JSON string. When comparing the two approaches, keep the JSON helper's SQL metadata/null contract separate from the serializer-options decision.
+
+This helper is compiled into the `net8.0` and `net10.0` assets, not `netstandard2.1`. A netstandard consumer can serialize with its own supported serializer and use `AddNVarcharMaxParam`. JSON is an explicit SQL text contract; it does not create a UDTT, validate the server-side shape, or deploy JSON parsing code. Use a TVP when the procedure expects its typed table contract.
+
+These independent helpers only configure a supplied command. The custom example assumes the procedure reads a lowercase `theme` property; the default example uses `Theme`.
+
+```csharp
+using System.Text.Json;
+using Artisan.Orm;
+using Microsoft.Data.SqlClient;
+
+public sealed class PreferencePayload
+{
+    public string Theme { get; set; } = "dark";
+}
+
+public static class JsonParameterExamples
+{
+    public static void AddDefault(SqlCommand cmd, PreferencePayload? payload) =>
+        cmd.AddJsonParam("@Preferences", payload);
+
+    public static void AddCamelCase(SqlCommand cmd, PreferencePayload? payload)
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        var json = payload is null ? null : JsonSerializer.Serialize(payload, options);
+        cmd.AddNVarcharMaxParam("@Preferences", json);
+    }
+}
+```
+
+## DateOnly and TimeOnly
+
+The `net8.0` and `net10.0` assets provide `AddDateParam` overloads for `DateOnly` / `DateOnly?` and `AddTimeParam` overloads for `TimeOnly` / `TimeOnly?`. They bind SQL `date` through `DateTime` at midnight and SQL `time` through `TimeSpan`; null becomes `DBNull.Value`. Read with `GetDateOnly`, `GetDateOnlyNullable`, `GetTimeOnly`, or `GetTimeOnlyNullable`. Default-value getter overloads exist, but only substitute a value when the application contract calls for it.
+
+These overloads are absent from the `netstandard2.1` asset. Use `DateTime` / `TimeSpan` and their existing helpers there. Availability of typed helpers does not add these types to automatic mapping: 4.1.0's simple-type list excludes `DateOnly` and `TimeOnly`. Use a registered or inline reader mapper and explicit conversion to `DateTime` / `TimeSpan` in manually built DataTables when needed.
+
+The automatic-mapping simple-type list does include `string`, `char`, `bool`, `Guid`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, `decimal`, `DateTime`, `DateTimeOffset`, `TimeSpan`, enums, and nullable forms of those value types. Public writable properties still need matching column names and compatible SQL values. In particular, a `DateTime Day` / `TimeSpan? StartsAt` model can use `ReadAs*` for matching `date` / nullable `time` columns on all three assets. Do not transfer the DateOnly/TimeOnly limitation to that legacy representation.
+
+This self-contained example configures `@Day date` and `@StartsAt time`, and maps `Day date NOT NULL, StartsAt time NULL`, in that order. `procedureName` identifies an existing application procedure with this contract. The `Read` factory expects a positioned reader; `cmd.ReadToAsync` positions it automatically. The factory itself does not call `Read()` or `NextResult()`.
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Artisan.Orm;
+using Microsoft.Data.SqlClient;
+
+public sealed class ScheduleValue
+{
+    public DateOnly Day { get; set; }
+    public TimeOnly? StartsAt { get; set; }
+}
+
+public static class ScheduleParameterExamples
+{
+    public static void Configure(SqlCommand cmd, ScheduleValue value)
+    {
+        cmd.AddDateParam("@Day", value.Day);
+        cmd.AddTimeParam("@StartsAt", value.StartsAt);
+    }
+
+    public static ScheduleValue Read(SqlDataReader reader) => new ScheduleValue
+    {
+        Day = reader.GetDateOnly(0),
+        StartsAt = reader.GetTimeOnlyNullable(1)
+    };
+
+    public static ScheduleValue? ReadConfigured(SqlCommand cmd) =>
+        cmd.ReadTo(Read);
+
+    public static Task<ScheduleValue?> ReadAsync(
+        RepositoryBase repo, string procedureName, ScheduleValue input,
+        CancellationToken cancellationToken) =>
+        repo.GetByCommandAsync((cmd, token) =>
+        {
+            cmd.UseProcedure(procedureName);
+            Configure(cmd, input);
+            return cmd.ReadToAsync(Read, token);
+        }, cancellationToken);
+}
+```
+
+`ReadConfigured` expects an already configured, live command. The single-object repository `ReadTo` / `ReadToAsync` shortcuts do not accept an inline factory; use the command-level calls above or register a mapper. See [execution levels](execution-levels.md) for the actual shortcut argument order.
+
+The equivalent legacy model can use automatic reading without registering a mapper. This complete example also compiles against the `netstandard2.1` asset:
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Artisan.Orm;
+
+public sealed class LegacyScheduleValue
+{
+    public DateTime Day { get; set; }
+    public TimeSpan? StartsAt { get; set; }
+}
+
+public static class LegacyScheduleExamples
+{
+    public static Task<LegacyScheduleValue?> ReadAsync(
+        RepositoryBase repo, string procedureName, DateTime day, TimeSpan? startsAt,
+        CancellationToken cancellationToken) =>
+        repo.ReadAsAsync<LegacyScheduleValue>(procedureName, cmd =>
+        {
+            cmd.AddDateParam("@Day", day);
+            cmd.AddTimeParam("@StartsAt", startsAt);
+        }, cancellationToken);
+}
+```
+
+## Compact numeric lists and rowversion tokens
+
+`GetByteArrayFromString`, `GetInt16ArrayFromString`, and `GetInt32ArrayFromString` parse a textual comma-separated numeric column. SQL NULL and blank text produce an empty array. Invalid, empty interior, or out-of-range elements throw; this is not a general CSV parser and does not skip malformed values. Use these helpers only when that text shape is the procedure's declared result, not instead of a TVP for typed input rows.
+
+For rowversion, `GetBytesFromRowVersion` returns bytes and `GetBase64StringFromRowVersion` returns base64; both preserve SQL NULL. Send the corresponding non-null token back with `AddRowVersionParam` or `AddRowVersionFromBase64StringParam`. Validate externally supplied tokens as eight bytes. Treat rowversion as an opaque concurrency token, not a timestamp or application ordering key.
+
+`GetInt64FromRowVersion` / `GetInt64FromRowVersionNullable` and `AddRowVersionFromInt64Param` use `BitConverter` in both directions. Their integer representation follows the platform's byte order; it is not a promise of SQL numeric conversion or portable numeric sorting. Prefer bytes/base64 at application boundaries.
+
+```csharp
+using System;
+using Artisan.Orm;
+using Microsoft.Data.SqlClient;
+
+public static class CompactValueExamples
+{
+    // Positioned reader: RoleIds nvarchar(max) NULL, Version binary(8) NULL.
+    public static (int[] RoleIds, string? Version) Read(SqlDataReader reader) =>
+        (reader.GetInt32ArrayFromString(0), reader.GetBase64StringFromRowVersion(1));
+
+    // Configured command; this example defines an empty result as no IDs/token.
+    public static (int[] RoleIds, string? Version) ReadSingle(SqlCommand cmd) =>
+        cmd.GetByReader(reader => reader.Read()
+            ? Read(reader)
+            : (Array.Empty<int>(), (string?)null));
+
+    public static void AddVersion(SqlCommand cmd, string token)
+    {
+        if (Convert.FromBase64String(token).Length != 8)
+            throw new ArgumentException("A rowversion token must contain eight bytes.", nameof(token));
+        cmd.AddRowVersionFromBase64StringParam("@Version", token);
+    }
+}
+```
+
+`GetByReader` supplies a reader before its first row. A positioned-row helper such as `Read` cannot be passed to it directly; `ReadSingle` advances once and handles an empty result explicitly. A reader materializer such as `reader.ReadTo(factory)` already advances, so do not add another `Read()` before that materializer.
+
+Sources for these additional contracts: `Tests/Tests/OutputParamsTest.cs`, `Tests/Tests/JsonParamTest.cs`, `Tests/Tests/DateOnlyTimeOnlyTest.cs`, `Tests/Tests/SqlParameterTest.cs`, and `Artisan.Orm/TypeExtensions.cs`.
 
 ## Check a mismatched result locally
 
